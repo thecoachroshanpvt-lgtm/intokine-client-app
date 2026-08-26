@@ -1,0 +1,8 @@
+{
+  "name": "Intokine Client App",
+  "description": "Client-facing portal for Intokine athletes to access and view shared training plans and workouts.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

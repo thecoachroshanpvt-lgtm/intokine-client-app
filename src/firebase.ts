@@ -27,12 +27,12 @@ import {
 // same backend, so there is only ever one authoritative source of
 // client data, never a duplicate database.
 const FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyCFgCZGIN0YbCRRZfHkHDM86bxIcnavxwU',
-  authDomain: 'intokine-7c86e.firebaseapp.com',
-  projectId: 'intokine-7c86e',
-  storageBucket: 'intokine-7c86e.firebasestorage.app',
-  messagingSenderId: '770844058604',
-  appId: '1:770844058604:web:babf8f5c863307429056c9',
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || 'AIzaSyCFgCZGIN0YbCRRZfHkHDM86bxIcnavxwU',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'intokine-7c86e.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'intokine-7c86e',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'intokine-7c86e.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '770844058604',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:770844058604:web:babf8f5c863307429056c9',
 };
 
 let app: FirebaseApp | null = null;
