@@ -6,10 +6,20 @@ import {
   getDoc,
   User,
 } from './firebase';
+import { OnboardingScreen } from './OnboardingScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
 import { ClientDashboard } from './ClientDashboard';
 
+const ONBOARDING_SEEN_KEY = 'intokine_onboarding_seen';
+
 function App() {
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true';
+    } catch (e) {
+      return true;
+    }
+  });
   const [authChecked, setAuthChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [clientInfo, setClientInfo] = useState<{ clientId: string; name: string } | null>(null);
@@ -54,10 +64,23 @@ function App() {
     return () => unsubscribe();
   }, []);
 
+  const handleOnboardingComplete = () => {
+    try {
+      localStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
+    } catch (e) {
+      // Non-critical - onboarding will just show again next visit.
+    }
+    setShowOnboarding(false);
+  };
+
+  if (showOnboarding) {
+    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  }
+
   if (!authChecked) {
     return (
-      <div className="min-h-screen bg-[#0c0d10] flex items-center justify-center">
-        <div className="text-neutral-500 text-sm">Loading...</div>
+      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
+        <div className="text-white/40 text-sm font-light">Loading...</div>
       </div>
     );
   }
@@ -68,9 +91,9 @@ function App() {
 
   if (lookupError) {
     return (
-      <div className="min-h-screen bg-[#0c0d10] flex items-center justify-center p-5">
+      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center p-5">
         <div className="max-w-sm text-center space-y-3">
-          <p className="text-sm text-red-400">{lookupError}</p>
+          <p className="text-sm text-[#ec2226] font-light">{lookupError}</p>
         </div>
       </div>
     );
@@ -78,8 +101,8 @@ function App() {
 
   if (!clientInfo) {
     return (
-      <div className="min-h-screen bg-[#0c0d10] flex items-center justify-center">
-        <div className="text-neutral-500 text-sm">Loading your account...</div>
+      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
+        <div className="text-white/40 text-sm font-light">Loading your account...</div>
       </div>
     );
   }
