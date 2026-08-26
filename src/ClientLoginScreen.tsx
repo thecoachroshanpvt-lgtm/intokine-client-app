@@ -27,8 +27,32 @@ export const ClientLoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center p-5">
-      <div className="w-full max-w-sm space-y-8">
+    <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center p-5 relative overflow-hidden">
+      <div
+        className="absolute pointer-events-none hidden sm:block"
+        style={{
+          top: '15%',
+          left: '-10%',
+          width: '60%',
+          height: '2px',
+          background: 'linear-gradient(90deg, transparent, #6ccbde, transparent)',
+          transform: 'rotate(-20deg)',
+          opacity: 0.25,
+        }}
+      />
+      <div
+        className="absolute pointer-events-none hidden sm:block"
+        style={{
+          bottom: '10%',
+          right: '-10%',
+          width: '60%',
+          height: '2px',
+          background: 'linear-gradient(90deg, transparent, #ec2226, transparent)',
+          transform: 'rotate(-20deg)',
+          opacity: 0.2,
+        }}
+      />
+      <div className="w-full max-w-sm space-y-8 relative z-10">
         <div className="text-center space-y-3">
           <div
             className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center shadow-xl"

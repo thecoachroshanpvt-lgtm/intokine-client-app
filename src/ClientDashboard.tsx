@@ -86,7 +86,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
             opacity: 0.4,
           }}
         />
-        <div className="flex items-center justify-between relative z-10">
+        <div className="flex items-center justify-between relative z-10 max-w-4xl mx-auto">
           <div>
             <p className="text-[11px] text-white/50 font-light tracking-wide">WELCOME BACK</p>
             <h1 className="font-header text-2xl text-white tracking-wide">{clientName.toUpperCase()}</h1>
@@ -101,7 +101,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
       </div>
 
       {/* Plans list */}
-      <div className="px-5 pb-8 space-y-3 -mt-1">
+      <div className="px-5 pb-8 space-y-3 -mt-1 max-w-4xl mx-auto">
         <h2 className="text-[11px] font-semibold text-[#6ccbde] uppercase tracking-[0.15em] px-1 pt-2">
           Your Training Plans
         </h2>
@@ -115,30 +115,32 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
             </p>
           </div>
         ) : (
-          plans.map((plan) => (
-            <div key={plan.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white">{plan.planTitle}</span>
-                <span className="text-[10px] font-semibold text-[#ec2226] bg-[#ec2226]/10 px-2 py-0.5 rounded-full border border-[#ec2226]/25 whitespace-nowrap">
-                  {plan.date}
-                </span>
-              </div>
-              <div className="text-xs text-white/50 font-light flex items-center gap-2 flex-wrap">
-                <span>{plan.category}</span>
-                {plan.durationMinutes && (
-                  <>
-                    <span>·</span>
-                    <span>{plan.durationMinutes} mins</span>
-                  </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {plans.map((plan) => (
+              <div key={plan.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-white">{plan.planTitle}</span>
+                  <span className="text-[10px] font-semibold text-[#ec2226] bg-[#ec2226]/10 px-2 py-0.5 rounded-full border border-[#ec2226]/25 whitespace-nowrap">
+                    {plan.date}
+                  </span>
+                </div>
+                <div className="text-xs text-white/50 font-light flex items-center gap-2 flex-wrap">
+                  <span>{plan.category}</span>
+                  {plan.durationMinutes && (
+                    <>
+                      <span>·</span>
+                      <span>{plan.durationMinutes} mins</span>
+                    </>
+                  )}
+                  <span>·</span>
+                  <span>Coach {plan.coachName}</span>
+                </div>
+                {plan.targetFocus && (
+                  <p className="text-xs text-white/70 font-light">{plan.targetFocus}</p>
                 )}
-                <span>·</span>
-                <span>Coach {plan.coachName}</span>
               </div>
-              {plan.targetFocus && (
-                <p className="text-xs text-white/70 font-light">{plan.targetFocus}</p>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
     </div>

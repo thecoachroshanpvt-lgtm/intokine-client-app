@@ -58,7 +58,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       />
 
       {/* Skip */}
-      <div className="flex justify-end p-5 relative z-10">
+      <div className="flex justify-end p-5 sm:p-8 relative z-10">
         {!isLast && (
           <button
             onClick={onComplete}
@@ -70,38 +70,42 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col justify-center px-8 relative z-10">
-        <span className="text-xs font-semibold tracking-[0.25em] text-[#6ccbde] mb-3">
-          {slide.eyebrow}
-        </span>
-        <h1 className="font-header text-5xl sm:text-6xl text-white leading-[0.95] mb-5">
-          {slide.headline}
-        </h1>
-        <p className="text-base text-white/70 font-light max-w-xs leading-relaxed">
-          {slide.body}
-        </p>
+      <div className="flex-1 flex flex-col justify-center px-8 sm:px-0 relative z-10">
+        <div className="w-full sm:max-w-md sm:mx-auto">
+          <span className="text-xs font-semibold tracking-[0.25em] text-[#6ccbde] mb-3 block">
+            {slide.eyebrow}
+          </span>
+          <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95] mb-5">
+            {slide.headline}
+          </h1>
+          <p className="text-base sm:text-lg text-white/70 font-light max-w-xs sm:max-w-sm leading-relaxed">
+            {slide.body}
+          </p>
+        </div>
       </div>
 
       {/* Footer: dots + action */}
-      <div className="px-8 pb-10 space-y-6 relative z-10">
-        <div className="flex items-center gap-2">
-          {SLIDES.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1 rounded-full transition-all ${
-                i === step ? 'w-8 bg-[#ec2226]' : 'w-1.5 bg-white/25'
-              }`}
-            />
-          ))}
-        </div>
+      <div className="px-8 sm:px-0 pb-10 sm:pb-14 space-y-6 relative z-10">
+        <div className="w-full sm:max-w-md sm:mx-auto space-y-6">
+          <div className="flex items-center gap-2">
+            {SLIDES.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1 rounded-full transition-all ${
+                  i === step ? 'w-8 bg-[#ec2226]' : 'w-1.5 bg-white/25'
+                }`}
+              />
+            ))}
+          </div>
 
-        <button
-          onClick={() => (isLast ? onComplete() : setStep(step + 1))}
-          className="w-full py-4 rounded-2xl font-bold text-sm text-white shadow-xl active:scale-[0.98] transition"
-          style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
-        >
-          {isLast ? 'GET STARTED' : 'NEXT'}
-        </button>
+          <button
+            onClick={() => (isLast ? onComplete() : setStep(step + 1))}
+            className="w-full sm:w-auto sm:px-14 py-4 rounded-2xl font-bold text-sm text-white shadow-xl active:scale-[0.98] transition"
+            style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+          >
+            {isLast ? 'GET STARTED' : 'NEXT'}
+          </button>
+        </div>
       </div>
     </div>
   );

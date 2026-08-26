@@ -15,6 +15,9 @@
     "allowJs": true,
     "jsx": "react-jsx",
     "allowImportingTsExtensions": true,
+    "types": [
+      "vite/client"
+    ],
     "noEmit": true
   }
 }
