@@ -6,20 +6,18 @@ import {
   getDoc,
   User,
 } from './firebase';
-import { OnboardingScreen } from './OnboardingScreen';
+import { WelcomeScreen } from './WelcomeScreen';
+import { PostLoginWelcomeScreen } from './PostLoginWelcomeScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
 import { ClientDashboard } from './ClientDashboard';
 
-const ONBOARDING_SEEN_KEY = 'intokine_onboarding_seen';
-
 function App() {
-  const [showOnboarding, setShowOnboarding] = useState(() => {
-    try {
-      return localStorage.getItem(ONBOARDING_SEEN_KEY) !== 'true';
-    } catch (e) {
-      return true;
-    }
-  });
+  // Both welcome screens are meant to show every time the app opens,
+  // not just once - so these are plain state with no localStorage
+  // persistence, always starting fresh on load.
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [showPostLoginWelcome, setShowPostLoginWelcome] = useState(true);
+
   const [authChecked, setAuthChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [clientInfo, setClientInfo] = useState<{ clientId: string; name: string } | null>(null);
@@ -64,17 +62,9 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleOnboardingComplete = () => {
-    try {
-      localStorage.setItem(ONBOARDING_SEEN_KEY, 'true');
-    } catch (e) {
-      // Non-critical - onboarding will just show again next visit.
-    }
-    setShowOnboarding(false);
-  };
-
-  if (showOnboarding) {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  // 1. Welcome screen always shows first, on every app open.
+  if (showWelcome) {
+    return <WelcomeScreen onContinue={() => setShowWelcome(false)} />;
   }
 
   if (!authChecked) {
@@ -85,6 +75,7 @@ function App() {
     );
   }
 
+  // 2. Not signed in - straight to login.
   if (!firebaseUser) {
     return <ClientLoginScreen />;
   }
@@ -107,6 +98,19 @@ function App() {
     );
   }
 
+  // 3. Signed in (whether from a fresh login or an already-active
+  // session on reopen) - show the second welcome screen before
+  // landing on the dashboard.
+  if (showPostLoginWelcome) {
+    return (
+      <PostLoginWelcomeScreen
+        clientName={clientInfo.name}
+        onContinue={() => setShowPostLoginWelcome(false)}
+      />
+    );
+  }
+
+  // 4. Home.
   return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} />;
 }
 
