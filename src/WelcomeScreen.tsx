@@ -13,7 +13,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
           file isn't present yet, so the app never breaks waiting on it. */}
       {!imageFailed ? (
         <img
-          src="/welcome-photo.jpg"
+          src="/welcome-photo.JPEG"
           alt=""
           onError={() => setImageFailed(true)}
           className="absolute inset-0 w-full h-full object-cover"

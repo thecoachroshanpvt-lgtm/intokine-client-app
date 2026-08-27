@@ -12,7 +12,7 @@ export const PostLoginWelcomeScreen: React.FC<PostLoginWelcomeScreenProps> = ({ 
     <div className="min-h-screen relative overflow-hidden bg-[#1c1c1c] flex flex-col justify-between">
       {!imageFailed ? (
         <img
-          src="/home-photo.jpg"
+          src="/home-photo.JPEG"
           alt=""
           onError={() => setImageFailed(true)}
           className="absolute inset-0 w-full h-full object-cover"
