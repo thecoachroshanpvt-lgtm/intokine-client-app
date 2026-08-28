@@ -7,7 +7,6 @@ import {
   User,
 } from './firebase';
 import { WelcomeScreen } from './WelcomeScreen';
-import { PostLoginWelcomeScreen } from './PostLoginWelcomeScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
 import { ProgramHomeScreen } from './ProgramHomeScreen';
 import { ClientDashboard } from './ClientDashboard';
@@ -15,11 +14,10 @@ import { ClientDashboard } from './ClientDashboard';
 type ProgramCategory = 'ZAKI' | 'KATBA' | 'Personal Training' | 'Online Personal Training';
 
 function App() {
-  // Both welcome screens are meant to show every time the app opens,
-  // not just once - so these are plain state with no localStorage
+  // Both photo screens are meant to show every time the app opens,
+  // not just once - so this is plain state with no localStorage
   // persistence, always starting fresh on load.
   const [showWelcome, setShowWelcome] = useState(true);
-  const [showPostLoginWelcome, setShowPostLoginWelcome] = useState(true);
   const [showProgramHome, setShowProgramHome] = useState(true);
 
   const [authChecked, setAuthChecked] = useState(false);
@@ -77,7 +75,8 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  // 1. Welcome screen always shows first, on every app open.
+  // 1. Welcome/about-INTOKINE screen always shows first, on every
+  // app open. First of exactly 2 photo screens.
   if (showWelcome) {
     return <WelcomeScreen onContinue={() => setShowWelcome(false)} />;
   }
@@ -113,18 +112,9 @@ function App() {
     );
   }
 
-  // 3. Signed in - show the second welcome screen before landing on
-  // their program.
-  if (showPostLoginWelcome) {
-    return (
-      <PostLoginWelcomeScreen
-        clientName={clientInfo.name}
-        onContinue={() => setShowPostLoginWelcome(false)}
-      />
-    );
-  }
-
-  // 4. Their own single program card - never all 4, only theirs.
+  // 3. Their own single program card - the second of exactly 2 photo
+  // screens, and also where the "welcome back" greeting lives now,
+  // so there's no separate screen just for that anymore.
   if (showProgramHome) {
     return (
       <ProgramHomeScreen
@@ -135,7 +125,7 @@ function App() {
     );
   }
 
-  // 5. What "Enter" leads to depends on the program. ZAKI and KATBA
+  // 4. What "Enter" leads to depends on the program. ZAKI and KATBA
   // are meant to be a fixed, standardized curriculum - not built yet,
   // so a simple placeholder for now. Personal Training and Online
   // Personal Training are the existing coach-and-client relationship,
