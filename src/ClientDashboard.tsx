@@ -5,6 +5,8 @@ import {
   query,
   where,
   onSnapshot,
+  setDoc,
+  doc,
   signOut,
 } from './firebase';
 
@@ -67,6 +69,12 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
   const [plansLoading, setPlansLoading] = useState(true);
 
   const [sessions, setSessions] = useState<ScheduledSession[]>([]);
+  const [requestedSessionIds, setRequestedSessionIds] = useState<Set<string>>(new Set());
+  const [rescheduleModalSession, setRescheduleModalSession] = useState<ScheduledSession | null>(null);
+  const [newDateInput, setNewDateInput] = useState('');
+  const [newTimeInput, setNewTimeInput] = useState('');
+  const [reasonInput, setReasonInput] = useState('');
+  const [submittingRequest, setSubmittingRequest] = useState(false);
   const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
@@ -133,6 +141,28 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
         setSessionsLoading(false);
       }
     );
+
+    return () => unsubscribe();
+  }, [clientId]);
+
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+
+    const requestsQuery = query(
+      collection(db, 'intokine_reschedule_requests'),
+      where('clientId', '==', clientId)
+    );
+
+    const unsubscribe = onSnapshot(requestsQuery, (snapshot) => {
+      const pendingSessionIds = new Set(
+        snapshot.docs
+          .map((d) => d.data())
+          .filter((r: any) => r.status === 'Pending')
+          .map((r: any) => r.sessionId)
+      );
+      setRequestedSessionIds(pendingSessionIds);
+    });
 
     return () => unsubscribe();
   }, [clientId]);
@@ -341,19 +371,39 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
             </div>
           ) : (
             sessions.map((s) => (
-              <div key={s.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-white">{s.date} {s.time && `· ${s.time}`}</div>
-                  <div className="text-xs text-white/50 font-light mt-0.5">
-                    {s.sessionType} · {s.location} · Coach {s.coachName}
+              <div key={s.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-semibold text-white">{s.date} {s.time && `· ${s.time}`}</div>
+                    <div className="text-xs text-white/50 font-light mt-0.5">
+                      {s.sessionType} · {s.location} · Coach {s.coachName}
+                    </div>
                   </div>
+                  <span
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap"
+                    style={{ color: statusColor(s.status), borderColor: `${statusColor(s.status)}40`, backgroundColor: `${statusColor(s.status)}15` }}
+                  >
+                    {s.status.toUpperCase()}
+                  </span>
                 </div>
-                <span
-                  className="text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap"
-                  style={{ color: statusColor(s.status), borderColor: `${statusColor(s.status)}40`, backgroundColor: `${statusColor(s.status)}15` }}
-                >
-                  {s.status.toUpperCase()}
-                </span>
+
+                {s.status === 'Scheduled' && (
+                  requestedSessionIds.has(s.id) ? (
+                    <div className="text-[11px] text-[#6ccbde] font-light">Reschedule requested — waiting on your coach</div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setRescheduleModalSession(s);
+                        setNewDateInput('');
+                        setNewTimeInput('');
+                        setReasonInput('');
+                      }}
+                      className="text-[11px] font-semibold text-white/60 hover:text-white border border-white/15 rounded-lg px-3 py-1.5 transition"
+                    >
+                      Request Reschedule
+                    </button>
+                  )
+                )}
               </div>
             ))
           )}
@@ -474,6 +524,89 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
               <div className="text-[11px] text-white/40 font-light">Nutritionist: {dietPlan.nutritionistName}</div>
             </div>
           )}
+        </div>
+      )}
+
+      {rescheduleModalSession && (
+        <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[#1c1c1c] border border-white/10 rounded-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <h4 className="text-sm font-bold text-white">Request Reschedule</h4>
+              <button onClick={() => setRescheduleModalSession(null)} className="text-white/40 hover:text-white">✕</button>
+            </div>
+
+            <p className="text-xs text-white/50 font-light">
+              Current: {rescheduleModalSession.date} {rescheduleModalSession.time && `· ${rescheduleModalSession.time}`}
+            </p>
+
+            <div className="space-y-2">
+              <div>
+                <label className="text-[10px] text-white/50 uppercase font-semibold block mb-1">New Date</label>
+                <input
+                  type="date"
+                  value={newDateInput}
+                  onChange={(e) => setNewDateInput(e.target.value)}
+                  className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-white/50 uppercase font-semibold block mb-1">New Time</label>
+                <input
+                  type="time"
+                  value={newTimeInput}
+                  onChange={(e) => setNewTimeInput(e.target.value)}
+                  className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-white/50 uppercase font-semibold block mb-1">Reason (optional)</label>
+                <input
+                  type="text"
+                  value={reasonInput}
+                  onChange={(e) => setReasonInput(e.target.value)}
+                  placeholder="e.g. Work conflict"
+                  className="w-full bg-white/[0.06] border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <button
+              disabled={!newDateInput || !newTimeInput || submittingRequest}
+              onClick={async () => {
+                const { db } = initializeClientFirebaseApp();
+                if (!db || !rescheduleModalSession) return;
+                setSubmittingRequest(true);
+                try {
+                  const requestId = `RESCHED-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+                  const requestData: any = {
+                    id: requestId,
+                    clientId,
+                    clientName,
+                    sessionId: rescheduleModalSession.id,
+                    originalDate: rescheduleModalSession.date,
+                    originalTime: rescheduleModalSession.time,
+                    requestedDate: newDateInput,
+                    requestedTime: newTimeInput,
+                    status: 'Pending',
+                    createdAt: new Date().toISOString(),
+                  };
+                  if (reasonInput.trim()) {
+                    requestData.reason = reasonInput.trim();
+                  }
+                  await setDoc(doc(db, 'intokine_reschedule_requests', requestId), requestData);
+                  setRescheduleModalSession(null);
+                } catch (e) {
+                  console.warn('Could not submit reschedule request:', e);
+                } finally {
+                  setSubmittingRequest(false);
+                }
+              }}
+              className="w-full py-3 rounded-xl font-bold text-sm text-white shadow-xl disabled:opacity-40 transition"
+              style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+            >
+              {submittingRequest ? 'SUBMITTING...' : 'SUBMIT REQUEST'}
+            </button>
+          </div>
         </div>
       )}
     </div>
