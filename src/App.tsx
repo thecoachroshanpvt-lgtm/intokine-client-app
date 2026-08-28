@@ -9,6 +9,7 @@ import {
 import { WelcomeScreen } from './WelcomeScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
 import { ProgramHomeScreen } from './ProgramHomeScreen';
+import { CurriculumScreen } from './CurriculumScreen';
 import { ClientDashboard } from './ClientDashboard';
 
 type ProgramCategory = 'ZAKI' | 'KATBA' | 'Personal Training' | 'Online Personal Training';
@@ -126,21 +127,11 @@ function App() {
   }
 
   // 4. What "Enter" leads to depends on the program. ZAKI and KATBA
-  // are meant to be a fixed, standardized curriculum - not built yet,
-  // so a simple placeholder for now. Personal Training and Online
-  // Personal Training are the existing coach-and-client relationship,
-  // which the current dashboard already reasonably represents.
+  // show their shared, fixed curriculum. Personal Training and
+  // Online Personal Training are the existing coach-and-client
+  // relationship, which the current dashboard already represents.
   if (programCategory === 'ZAKI' || programCategory === 'KATBA') {
-    return (
-      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center p-6 text-center">
-        <div className="max-w-sm space-y-3">
-          <h2 className="font-header text-2xl text-white">{programCategory} PROGRAM</h2>
-          <p className="text-sm text-white/50 font-light leading-relaxed">
-            Your {programCategory} curriculum is being built and will appear here soon.
-          </p>
-        </div>
-      </div>
-    );
+    return <CurriculumScreen programCategory={programCategory} />;
   }
 
   return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} />;
