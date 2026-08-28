@@ -45,7 +45,20 @@ interface AssessmentSnapshot {
   targetMilestone?: string;
 }
 
-type DashboardTab = 'plans' | 'schedule' | 'progress';
+interface DietPlan {
+  id: string;
+  nutritionistName: string;
+  dietType: string;
+  dailyCalories: number;
+  proteinGrams: number;
+  carbsGrams: number;
+  fatGrams: number;
+  hydrationLiters: number;
+  notes: string;
+  lastUpdated: string;
+}
+
+type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet';
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('plans');
@@ -56,6 +69,8 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
   const [sessions, setSessions] = useState<ScheduledSession[]>([]);
   const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
+  const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
+  const [dietPlanLoading, setDietPlanLoading] = useState(true);
   const [sessionsLoading, setSessionsLoading] = useState(true);
 
   useEffect(() => {
@@ -154,6 +169,39 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
     return () => unsubscribe();
   }, [clientId]);
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) {
+      setDietPlanLoading(false);
+      return;
+    }
+
+    // This exact query shape - both where() clauses together - is
+    // required to match the Firestore security rule for this
+    // collection, same pattern used throughout this file.
+    const dietQuery = query(
+      collection(db, 'intokine_nutrition_plans'),
+      where('clientId', '==', clientId),
+      where('clientVisible', '==', true)
+    );
+
+    const unsubscribe = onSnapshot(
+      dietQuery,
+      (snapshot) => {
+        // A client has at most one active diet plan at a time.
+        const first = snapshot.docs[0];
+        setDietPlan(first ? (first.data() as DietPlan) : null);
+        setDietPlanLoading(false);
+      },
+      (err) => {
+        console.warn('Could not load diet plan:', err);
+        setDietPlanLoading(false);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [clientId]);
+
 
   const handleSignOut = async () => {
     const { auth } = initializeClientFirebaseApp();
@@ -226,6 +274,14 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
             }`}
           >
             PROGRESS
+          </button>
+          <button
+            onClick={() => setActiveTab('diet')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+              activeTab === 'diet' ? 'bg-white/[0.08] text-white' : 'text-white/40'
+            }`}
+          >
+            DIET
           </button>
         </div>
       </div>
@@ -360,6 +416,63 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
                 )}
               </div>
             ))
+          )}
+        </div>
+      )}
+
+      {/* Diet tab */}
+      {activeTab === 'diet' && (
+        <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
+          {dietPlanLoading ? (
+            <div className="text-center py-12 text-white/40 text-sm font-light">Loading your diet plan...</div>
+          ) : !dietPlan ? (
+            <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+              <p className="text-sm text-white/50 font-light leading-relaxed">
+                No diet plan shared yet — your nutritionist will share your plan here once it's ready.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">{dietPlan.dietType}</span>
+                <span className="text-[10px] text-white/40 font-light">Updated {dietPlan.lastUpdated}</span>
+              </div>
+
+              <div className="text-center py-3 bg-white/[0.03] rounded-xl">
+                <div className="text-[10px] text-white/40 uppercase">Daily Target</div>
+                <div className="text-2xl font-black text-white font-mono">{dietPlan.dailyCalories} <span className="text-xs font-light text-white/50">kcal</span></div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="bg-white/[0.03] rounded-xl p-2">
+                  <div className="text-[9px] text-white/40 uppercase">Protein</div>
+                  <div className="text-sm font-bold text-[#6ccbde] font-mono">{dietPlan.proteinGrams}g</div>
+                </div>
+                <div className="bg-white/[0.03] rounded-xl p-2">
+                  <div className="text-[9px] text-white/40 uppercase">Carbs</div>
+                  <div className="text-sm font-bold text-white font-mono">{dietPlan.carbsGrams}g</div>
+                </div>
+                <div className="bg-white/[0.03] rounded-xl p-2">
+                  <div className="text-[9px] text-white/40 uppercase">Fats</div>
+                  <div className="text-sm font-bold text-[#ec2226] font-mono">{dietPlan.fatGrams}g</div>
+                </div>
+                <div className="bg-white/[0.03] rounded-xl p-2">
+                  <div className="text-[9px] text-white/40 uppercase">Water</div>
+                  <div className="text-sm font-bold text-white font-mono">{dietPlan.hydrationLiters}L</div>
+                </div>
+              </div>
+
+              {dietPlan.notes && (
+                <div>
+                  <div className="text-[10px] text-white/40 uppercase font-semibold mb-1">Notes & Meal Protocol</div>
+                  <div className="text-xs text-white/70 font-light whitespace-pre-wrap leading-relaxed bg-white/[0.03] rounded-xl p-3">
+                    {dietPlan.notes}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-[11px] text-white/40 font-light">Nutritionist: {dietPlan.nutritionistName}</div>
+            </div>
           )}
         </div>
       )}
