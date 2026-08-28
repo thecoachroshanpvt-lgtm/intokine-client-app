@@ -1,30 +1,27 @@
 import React, { useState } from 'react';
 
-type ProgramCategory = 'ZAKI' | 'KATBA' | 'Personal Training' | 'Online Personal Training';
+type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training' | 'KATBA' | 'ZAKI';
+type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Recorded Session' | 'Couple Training' | 'Diet Program' | 'Psychology Consultation';
 
 interface ProgramHomeScreenProps {
   clientName: string;
-  programCategory: ProgramCategory;
+  programType: ProgramType;
+  service: ServiceType;
   onEnter: () => void;
 }
 
-const PROGRAM_ACCENT: Record<ProgramCategory, string> = {
-  ZAKI: '#6ccbde',
-  KATBA: '#ec2226',
-  'Personal Training': '#ec2226',
-  'Online Personal Training': '#6ccbde',
-};
+// A simple accent rule rather than a lookup sized for every one of
+// the 9x6 possible combinations - ZAKI and KATBA get their brand
+// colors, everything else uses the standard crimson/cyan mix.
+function getAccent(programType: ProgramType): string {
+  if (programType === 'ZAKI') return '#6ccbde';
+  if (programType === 'KATBA') return '#ec2226';
+  return '#ec2226';
+}
 
-const PROGRAM_TAGLINE: Record<ProgramCategory, string> = {
-  ZAKI: 'Your structured training program',
-  KATBA: 'Your structured training program',
-  'Personal Training': 'Your dedicated coaching program',
-  'Online Personal Training': 'Your dedicated coaching program',
-};
-
-export const ProgramHomeScreen: React.FC<ProgramHomeScreenProps> = ({ clientName, programCategory, onEnter }) => {
+export const ProgramHomeScreen: React.FC<ProgramHomeScreenProps> = ({ clientName, programType, service, onEnter }) => {
   const [imageFailed, setImageFailed] = useState(false);
-  const accent = PROGRAM_ACCENT[programCategory];
+  const accent = getAccent(programType);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#1c1c1c] flex flex-col justify-between">
@@ -51,11 +48,11 @@ export const ProgramHomeScreen: React.FC<ProgramHomeScreenProps> = ({ clientName
         <span className="text-xs font-semibold tracking-[0.25em] text-[#6ccbde] mb-4">
           WELCOME BACK, {clientName.toUpperCase()}
         </span>
-        <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95] mb-3">
-          {programCategory.toUpperCase()}
+        <h1 className="font-header text-4xl sm:text-6xl text-white leading-[0.95] mb-3">
+          {programType.toUpperCase()}
         </h1>
         <p className="text-base sm:text-lg text-white/80 font-light max-w-xs sm:max-w-md leading-relaxed">
-          {PROGRAM_TAGLINE[programCategory]}
+          {service}
         </p>
       </div>
 

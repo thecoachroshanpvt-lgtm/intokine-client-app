@@ -12,7 +12,8 @@ import { ProgramHomeScreen } from './ProgramHomeScreen';
 import { CurriculumScreen } from './CurriculumScreen';
 import { ClientDashboard } from './ClientDashboard';
 
-type ProgramCategory = 'ZAKI' | 'KATBA' | 'Personal Training' | 'Online Personal Training';
+type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training' | 'KATBA' | 'ZAKI';
+type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Recorded Session' | 'Couple Training' | 'Diet Program' | 'Psychology Consultation';
 
 function App() {
   // Both photo screens are meant to show every time the app opens,
@@ -24,7 +25,8 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [clientInfo, setClientInfo] = useState<{ clientId: string; name: string } | null>(null);
-  const [programCategory, setProgramCategory] = useState<ProgramCategory | null>(null);
+  const [programType, setProgramType] = useState<ProgramType | null>(null);
+  const [service, setService] = useState<ServiceType | null>(null);
   const [lookupError, setLookupError] = useState('');
 
   useEffect(() => {
@@ -50,13 +52,14 @@ function App() {
               setClientInfo({ clientId: data.clientId, name: data.name });
               setLookupError('');
 
-              // Also fetch their real client record, to get which
-              // program (ZAKI/KATBA/Personal Training/Online) they're
-              // actually enrolled in.
+              // Also fetch their real client record, to get their
+              // actual Program and Service - two separate fields now,
+              // not the old single combined category.
               const clientDoc = await getDoc(doc(db, 'intokine_clients', data.clientId));
               if (clientDoc.exists()) {
                 const clientData = clientDoc.data();
-                setProgramCategory((clientData.programCategory as ProgramCategory) || 'Personal Training');
+                setProgramType((clientData.programType as ProgramType) || 'Weight Training');
+                setService((clientData.service as ServiceType) || 'Offline Personal Training');
               }
             } else {
               setLookupError('This login is not linked to a client account. Please contact your coach.');
@@ -67,7 +70,8 @@ function App() {
         }
       } else {
         setClientInfo(null);
-        setProgramCategory(null);
+        setProgramType(null);
+        setService(null);
       }
 
       setAuthChecked(true);
@@ -105,7 +109,7 @@ function App() {
     );
   }
 
-  if (!clientInfo || !programCategory) {
+  if (!clientInfo || !programType || !service) {
     return (
       <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
         <div className="text-white/40 text-sm font-light">Loading your account...</div>
@@ -113,25 +117,27 @@ function App() {
     );
   }
 
-  // 3. Their own single program card - the second of exactly 2 photo
-  // screens, and also where the "welcome back" greeting lives now,
-  // so there's no separate screen just for that anymore.
+  // 3. Their own program card - the second of exactly 2 photo
+  // screens, showing both their Program and Service together (e.g.
+  // "KATBA - Personal Training"), and also where the "welcome back"
+  // greeting lives now.
   if (showProgramHome) {
     return (
       <ProgramHomeScreen
         clientName={clientInfo.name}
-        programCategory={programCategory}
+        programType={programType}
+        service={service}
         onEnter={() => setShowProgramHome(false)}
       />
     );
   }
 
-  // 4. What "Enter" leads to depends on the program. ZAKI and KATBA
-  // show their shared, fixed curriculum. Personal Training and
-  // Online Personal Training are the existing coach-and-client
+  // 4. What "Enter" leads to depends on the combination. Recorded
+  // Session clients on ZAKI or KATBA see the shared, fixed
+  // curriculum. Everything else is the existing coach-and-client
   // relationship, which the current dashboard already represents.
-  if (programCategory === 'ZAKI' || programCategory === 'KATBA') {
-    return <CurriculumScreen programCategory={programCategory} />;
+  if (service === 'Recorded Session' && (programType === 'ZAKI' || programType === 'KATBA')) {
+    return <CurriculumScreen programCategory={programType} />;
   }
 
   return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} />;
