@@ -133,11 +133,12 @@ function App() {
   }
 
   // 4. What "Enter" leads to depends on the combination. Recorded
-  // Session clients on ZAKI or KATBA see the shared, fixed
-  // curriculum. Everything else is the existing coach-and-client
+  // Session clients on ZAKI, KATBA, or Calisthenics see their own
+  // individualized episodes, built specifically for them by their
+  // coach. Everything else is the existing coach-and-client
   // relationship, which the current dashboard already represents.
-  if (service === 'Recorded Session' && (programType === 'ZAKI' || programType === 'KATBA')) {
-    return <CurriculumScreen programCategory={programType} />;
+  if (service === 'Recorded Session' && (programType === 'ZAKI' || programType === 'KATBA' || programType === 'Calisthenics')) {
+    return <CurriculumScreen clientId={clientInfo.clientId} programType={programType} />;
   }
 
   return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} />;
