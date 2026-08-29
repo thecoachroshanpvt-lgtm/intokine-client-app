@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScheduleScreen } from './ScheduleScreen';
+import { MiniLineChart } from './MiniLineChart';
 import {
   initializeClientFirebaseApp,
   collection,
@@ -309,7 +310,42 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
               </p>
             </div>
           ) : (
-            assessments.map((a) => (
+            <>
+              {(() => {
+                // Charts read oldest-to-newest, left-to-right - the
+                // opposite order from the cards below, which show
+                // newest-first.
+                const chronological = [...assessments].reverse();
+                const weightData = chronological.map((a) => ({ date: a.date, value: a.weightKg }));
+                const bodyFatData = chronological.map((a) => ({ date: a.date, value: a.bodyFatPercentage }));
+                const vo2Data = chronological.map((a) => ({ date: a.date, value: a.vo2Max }));
+                const muscleData = chronological
+                  .filter((a) => a.muscleMassKg != null)
+                  .map((a) => ({ date: a.date, value: a.muscleMassKg as number }));
+
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
+                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">Body Weight</span>
+                      <MiniLineChart data={weightData} color="#ec2226" unit="kg" />
+                    </div>
+                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
+                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">Body Fat</span>
+                      <MiniLineChart data={bodyFatData} color="#f59e0b" unit="%" />
+                    </div>
+                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
+                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">Skeletal Muscle Mass</span>
+                      <MiniLineChart data={muscleData} color="#6ccbde" unit="kg" />
+                    </div>
+                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
+                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">VO2 Max</span>
+                      <MiniLineChart data={vo2Data} color="#a78bfa" unit="" />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {assessments.map((a) => (
               <div key={a.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-3">
                 <div className="text-sm font-semibold text-white">{a.date}</div>
                 <div className="grid grid-cols-3 gap-2 text-center">
@@ -352,7 +388,8 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
                   <div className="text-xs text-[#6ccbde] font-light">🎯 {a.targetMilestone}</div>
                 )}
               </div>
-            ))
+              ))}
+            </>
           )}
         </div>
       )}
