@@ -143,74 +143,66 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
     if (auth) await signOut(auth);
   };
 
+  const tabs: { key: DashboardTab; label: string }[] = [
+    { key: 'plans', label: 'Plans' },
+    { key: 'schedule', label: 'Schedule' },
+    { key: 'progress', label: 'Progress' },
+    { key: 'diet', label: 'Diet' },
+  ];
+
   return (
     <div className="min-h-screen bg-[#1c1c1c]">
       {/* Header */}
       <div
-        className="px-5 pt-8 pb-5 relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #1c1c1c 0%, #1c1c1c 60%, rgba(236,34,38,0.15) 100%)' }}
+        className="px-5 pt-8 pb-6 relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #1c1c1c 0%, #1c1c1c 55%, rgba(236,34,38,0.12) 100%)' }}
       >
         <div
           className="absolute pointer-events-none"
           style={{
-            top: '-30%',
-            right: '-10%',
-            width: '120%',
+            top: '-40%',
+            right: '-15%',
+            width: '140%',
             height: '2px',
-            background: 'linear-gradient(90deg, transparent, #6ccbde, transparent)',
-            transform: 'rotate(20deg)',
-            opacity: 0.4,
+            background: 'linear-gradient(90deg, transparent, #ec2226, #6ccbde, transparent)',
+            transform: 'rotate(18deg)',
+            opacity: 0.35,
           }}
         />
         <div className="flex items-center justify-between relative z-10 max-w-4xl mx-auto">
           <div>
-            <p className="text-[11px] text-white/50 font-light tracking-wide">WELCOME BACK</p>
-            <h1 className="font-header text-2xl text-white tracking-wide">{clientName.toUpperCase()}</h1>
+            <p className="text-[10px] text-white/40 font-semibold tracking-[0.2em]">WELCOME BACK</p>
+            <h1 className="font-header text-3xl text-white tracking-wide leading-tight mt-0.5">{clientName.toUpperCase()}</h1>
           </div>
           <button
             onClick={handleSignOut}
-            className="text-[11px] text-white/60 hover:text-white px-3 py-1.5 rounded-lg border border-white/15 font-semibold tracking-wide"
+            className="text-[10px] text-white/50 hover:text-white px-3 py-2 rounded-lg border border-white/10 hover:border-white/25 font-bold tracking-[0.15em] transition"
           >
             SIGN OUT
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="px-5 max-w-4xl mx-auto">
-        <div className="flex gap-2 border-b border-white/[0.08] pb-3">
-          <button
-            onClick={() => setActiveTab('plans')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'plans' ? 'bg-white/[0.08] text-white' : 'text-white/40'
-            }`}
-          >
-            PLANS
-          </button>
-          <button
-            onClick={() => setActiveTab('schedule')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'schedule' ? 'bg-white/[0.08] text-white' : 'text-white/40'
-            }`}
-          >
-            SCHEDULE
-          </button>
-          <button
-            onClick={() => setActiveTab('progress')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'progress' ? 'bg-white/[0.08] text-white' : 'text-white/40'
-            }`}
-          >
-            PROGRESS
-          </button>
-          <button
-            onClick={() => setActiveTab('diet')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-              activeTab === 'diet' ? 'bg-white/[0.08] text-white' : 'text-white/40'
-            }`}
-          >
-            DIET
-          </button>
+      {/* Tabs - underline style, active indicator carries the brand gradient */}
+      <div className="px-5 max-w-4xl mx-auto sticky top-0 z-20 bg-[#1c1c1c]/95 backdrop-blur-sm">
+        <div className="flex gap-1 border-b border-white/[0.08]">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`relative px-4 py-3 text-[11px] font-bold tracking-[0.1em] transition ${
+                activeTab === tab.key ? 'text-white' : 'text-white/35 hover:text-white/60'
+              }`}
+            >
+              {tab.label.toUpperCase()}
+              {activeTab === tab.key && (
+                <span
+                  className="absolute bottom-0 left-3 right-3 h-[2.5px] rounded-full"
+                  style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+                />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -251,20 +243,24 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
                 return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
-                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">Body Weight</span>
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Weight</span>
                       <MiniLineChart data={weightData} color="#ec2226" unit="kg" />
                     </div>
-                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
-                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">Body Fat</span>
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Fat</span>
                       <MiniLineChart data={bodyFatData} color="#f59e0b" unit="%" />
                     </div>
-                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
-                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">Skeletal Muscle Mass</span>
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Skeletal Muscle Mass</span>
                       <MiniLineChart data={muscleData} color="#6ccbde" unit="kg" />
                     </div>
-                    <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4">
-                      <span className="text-[10px] text-white/40 uppercase font-semibold block mb-2">VO2 Max</span>
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">VO2 Max</span>
                       <MiniLineChart data={vo2Data} color="#a78bfa" unit="" />
                     </div>
                   </div>
@@ -332,15 +328,15 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
               </p>
             </div>
           ) : (
-            <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-4">
+            <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-white">{dietPlan.dietType}</span>
                 <span className="text-[10px] text-white/40 font-light">Updated {dietPlan.lastUpdated}</span>
               </div>
 
-              <div className="text-center py-3 bg-white/[0.03] rounded-xl">
-                <div className="text-[10px] text-white/40 uppercase">Daily Target</div>
-                <div className="text-2xl font-black text-white font-mono">{dietPlan.dailyCalories} <span className="text-xs font-light text-white/50">kcal</span></div>
+              <div className="text-center py-4 rounded-xl relative overflow-hidden" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
+                <div className="text-[10px] text-white/40 uppercase font-bold tracking-[0.15em]">Daily Target</div>
+                <div className="font-header text-4xl text-white tracking-wide mt-1">{dietPlan.dailyCalories}<span className="text-sm font-light text-white/50 ml-1.5 font-sans">kcal</span></div>
               </div>
 
               <div className="grid grid-cols-4 gap-2 text-center">
