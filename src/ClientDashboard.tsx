@@ -47,6 +47,14 @@ interface ScheduledSession {
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
 }
 
+interface SkillProgressItem {
+  skillName: string;
+  category: string;
+  level: string;
+  progressPercentage: number;
+  benchmarkMetric?: string;
+}
+
 interface AssessmentSnapshot {
   id: string;
   date: string;
@@ -57,6 +65,7 @@ interface AssessmentSnapshot {
   squat1RM?: number;
   deadlift1RM?: number;
   targetMilestone?: string;
+  skillProgressions?: SkillProgressItem[];
 }
 
 interface MealEntry {
@@ -255,6 +264,57 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
                       <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">VO2 Max</span>
                       <MiniLineChart data={vo2Data} color="#a78bfa" unit="" />
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {(() => {
+                // Collect every unique skill the coach has ever logged
+                // for this client, then build a chronological progress
+                // graph for each one from its percentage across every
+                // assessment date where it appears.
+                const chronological = [...assessments].reverse();
+                const skillNames = Array.from(
+                  new Set(
+                    chronological.flatMap((a) => (a.skillProgressions || []).map((s) => s.skillName))
+                  )
+                );
+                if (skillNames.length === 0) return null;
+
+                return (
+                  <div className="space-y-3 mb-4">
+                    <div className="text-[10px] text-white/40 uppercase font-semibold">Skill Progress</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {skillNames.map((skillName) => {
+                        const points = chronological
+                          .map((a) => {
+                            const match = (a.skillProgressions || []).find((s) => s.skillName === skillName);
+                            return match ? { date: a.date, value: match.progressPercentage } : null;
+                          })
+                          .filter((p): p is { date: string; value: number } => p !== null);
+
+                        const latest = points.length > 0
+                          ? chronological.slice().reverse().find((a) => (a.skillProgressions || []).some((s) => s.skillName === skillName))
+                              ?.skillProgressions?.find((s) => s.skillName === skillName)
+                          : undefined;
+
+                        return (
+                          <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[11px] text-white font-bold">{skillName}</span>
+                              {latest && (
+                                <span className="text-[9px] text-[#6ccbde] font-semibold uppercase">{latest.level}</span>
+                              )}
+                            </div>
+                            {latest?.benchmarkMetric && (
+                              <div className="text-[10px] text-white/40 font-light mb-2">{latest.benchmarkMetric}</div>
+                            )}
+                            <MiniLineChart data={points} color="#ec2226" unit="%" />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
