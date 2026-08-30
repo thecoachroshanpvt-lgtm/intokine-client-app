@@ -134,14 +134,20 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     if (!db) return;
 
     const todayKey = new Date().toISOString().split('T')[0];
+    // Query by clientId only, matching the Firestore rule exactly -
+    // same proven pattern as the Schedule tab. Adding a second date
+    // filter directly into the query can require a composite index
+    // Firestore was never told to create, which fails silently from
+    // the user's perspective. Filtering by date client-side avoids
+    // that entirely.
     const sessionsQuery = query(
       collection(db, 'intokine_sessions'),
-      where('clientId', '==', clientId),
-      where('date', '==', todayKey)
+      where('clientId', '==', clientId)
     );
 
     const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
-      setTodaySessions(snapshot.docs.map((d) => d.data() as TodaySession));
+      const allSessions = snapshot.docs.map((d) => d.data() as TodaySession & { date: string });
+      setTodaySessions(allSessions.filter((s) => s.date === todayKey));
     });
 
     return () => unsubscribe();
