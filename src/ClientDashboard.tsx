@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScheduleScreen } from './ScheduleScreen';
 import { PlansScreen } from './PlansScreen';
-import { MiniLineChart } from './MiniLineChart';
+import { ProgressScreen } from './ProgressScreen';
 import {
   initializeClientFirebaseApp,
   collection,
@@ -47,27 +47,6 @@ interface ScheduledSession {
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
 }
 
-interface SkillProgressItem {
-  skillName: string;
-  category: string;
-  level: string;
-  progressPercentage: number;
-  benchmarkMetric?: string;
-}
-
-interface AssessmentSnapshot {
-  id: string;
-  date: string;
-  weightKg: number;
-  bodyFatPercentage: number;
-  vo2Max: number;
-  benchPress1RM?: number;
-  squat1RM?: number;
-  deadlift1RM?: number;
-  targetMilestone?: string;
-  skillProgressions?: SkillProgressItem[];
-}
-
 interface MealEntry {
   id: string;
   mealTime: string;
@@ -98,43 +77,8 @@ type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet';
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('plans');
 
-  const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
-  const [assessmentsLoading, setAssessmentsLoading] = useState(true);
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
   const [dietPlanLoading, setDietPlanLoading] = useState(true);
-
-  useEffect(() => {
-    const { db } = initializeClientFirebaseApp();
-    if (!db) {
-      setAssessmentsLoading(false);
-      return;
-    }
-
-    // This exact query shape - both where() clauses together - is
-    // required to match the Firestore security rule for this
-    // collection, same pattern as the training plans query above.
-    const assessmentsQuery = query(
-      collection(db, 'intokine_assessments'),
-      where('clientId', '==', clientId),
-      where('clientVisible', '==', true)
-    );
-
-    const unsubscribe = onSnapshot(
-      assessmentsQuery,
-      (snapshot) => {
-        const results = snapshot.docs.map((d) => d.data() as AssessmentSnapshot);
-        results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setAssessments(results);
-        setAssessmentsLoading(false);
-      },
-      (err) => {
-        console.warn('Could not load progress:', err);
-        setAssessmentsLoading(false);
-      }
-    );
-
-    return () => unsubscribe();
-  }, [clientId]);
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
     if (!db) {
@@ -220,153 +164,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
       {/* Progress tab */}
       {activeTab === 'progress' && (
-        <div className="px-5 pb-8 pt-4 space-y-3 max-w-4xl mx-auto">
-          {assessmentsLoading ? (
-            <div className="text-center py-12 text-white/40 text-sm font-light">Loading your progress...</div>
-          ) : assessments.length === 0 ? (
-            <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
-              <p className="text-sm text-white/50 font-light leading-relaxed">
-                No progress reports shared yet — your coach will share your assessment results here.
-              </p>
-            </div>
-          ) : (
-            <>
-              {(() => {
-                // Charts read oldest-to-newest, left-to-right - the
-                // opposite order from the cards below, which show
-                // newest-first.
-                const chronological = [...assessments].reverse();
-                const weightData = chronological.map((a) => ({ date: a.date, value: a.weightKg }));
-                const bodyFatData = chronological.map((a) => ({ date: a.date, value: a.bodyFatPercentage }));
-                const vo2Data = chronological.map((a) => ({ date: a.date, value: a.vo2Max }));
-                const muscleData = chronological
-                  .filter((a) => a.muscleMassKg != null)
-                  .map((a) => ({ date: a.date, value: a.muscleMassKg as number }));
-
-                return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Weight</span>
-                      <MiniLineChart data={weightData} color="#ec2226" unit="kg" />
-                    </div>
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Fat</span>
-                      <MiniLineChart data={bodyFatData} color="#f59e0b" unit="%" />
-                    </div>
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Skeletal Muscle Mass</span>
-                      <MiniLineChart data={muscleData} color="#6ccbde" unit="kg" />
-                    </div>
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">VO2 Max</span>
-                      <MiniLineChart data={vo2Data} color="#a78bfa" unit="" />
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {(() => {
-                // Collect every unique skill the coach has ever logged
-                // for this client, then build a chronological progress
-                // graph for each one from its percentage across every
-                // assessment date where it appears.
-                const chronological = [...assessments].reverse();
-                const skillNames = Array.from(
-                  new Set(
-                    chronological.flatMap((a) => (a.skillProgressions || []).map((s) => s.skillName))
-                  )
-                );
-                if (skillNames.length === 0) return null;
-
-                return (
-                  <div className="space-y-3 mb-4">
-                    <div className="text-[10px] text-white/40 uppercase font-semibold">Skill Progress</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {skillNames.map((skillName) => {
-                        const points = chronological
-                          .map((a) => {
-                            const match = (a.skillProgressions || []).find((s) => s.skillName === skillName);
-                            return match ? { date: a.date, value: match.progressPercentage } : null;
-                          })
-                          .filter((p): p is { date: string; value: number } => p !== null);
-
-                        const latest = points.length > 0
-                          ? chronological.slice().reverse().find((a) => (a.skillProgressions || []).some((s) => s.skillName === skillName))
-                              ?.skillProgressions?.find((s) => s.skillName === skillName)
-                          : undefined;
-
-                        return (
-                          <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[11px] text-white font-bold">{skillName}</span>
-                              {latest && (
-                                <span className="text-[9px] text-[#6ccbde] font-semibold uppercase">{latest.level}</span>
-                              )}
-                            </div>
-                            {latest?.benchmarkMetric && (
-                              <div className="text-[10px] text-white/40 font-light mb-2">{latest.benchmarkMetric}</div>
-                            )}
-                            <MiniLineChart data={points} color="#ec2226" unit="%" />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {assessments.map((a) => (
-              <div key={a.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-3">
-                <div className="text-sm font-semibold text-white">{a.date}</div>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-white/[0.03] rounded-xl p-2">
-                    <div className="text-[9px] text-white/40 uppercase">Weight</div>
-                    <div className="text-sm font-bold text-white font-mono">{a.weightKg} kg</div>
-                  </div>
-                  <div className="bg-white/[0.03] rounded-xl p-2">
-                    <div className="text-[9px] text-white/40 uppercase">Body Fat</div>
-                    <div className="text-sm font-bold text-white font-mono">{a.bodyFatPercentage}%</div>
-                  </div>
-                  <div className="bg-white/[0.03] rounded-xl p-2">
-                    <div className="text-[9px] text-white/40 uppercase">VO2 Max</div>
-                    <div className="text-sm font-bold text-white font-mono">{a.vo2Max}</div>
-                  </div>
-                </div>
-                {(a.benchPress1RM || a.squat1RM || a.deadlift1RM) && (
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    {a.benchPress1RM && (
-                      <div className="bg-white/[0.03] rounded-xl p-2">
-                        <div className="text-[9px] text-white/40 uppercase">Bench 1RM</div>
-                        <div className="text-sm font-bold text-[#ec2226] font-mono">{a.benchPress1RM} kg</div>
-                      </div>
-                    )}
-                    {a.squat1RM && (
-                      <div className="bg-white/[0.03] rounded-xl p-2">
-                        <div className="text-[9px] text-white/40 uppercase">Squat 1RM</div>
-                        <div className="text-sm font-bold text-[#ec2226] font-mono">{a.squat1RM} kg</div>
-                      </div>
-                    )}
-                    {a.deadlift1RM && (
-                      <div className="bg-white/[0.03] rounded-xl p-2">
-                        <div className="text-[9px] text-white/40 uppercase">Deadlift 1RM</div>
-                        <div className="text-sm font-bold text-[#ec2226] font-mono">{a.deadlift1RM} kg</div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {a.targetMilestone && (
-                  <div className="text-xs text-[#6ccbde] font-light">🎯 {a.targetMilestone}</div>
-                )}
-              </div>
-              ))}
-            </>
-          )}
-        </div>
+        <ProgressScreen clientId={clientId} />
       )}
 
       {/* Diet tab */}
