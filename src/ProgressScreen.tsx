@@ -7,6 +7,7 @@ import {
   onSnapshot,
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
+import { MiniBarChart } from './MiniBarChart';
 
 interface ProgressScreenProps {
   clientId: string;
@@ -291,22 +292,22 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                     <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
                     <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Bench Press</span>
-                    <MiniLineChart data={benchData} color="#ec2226" unit="kg" />
+                    <MiniBarChart data={benchData} color="#ec2226" unit="kg" />
                   </div>
                   <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                     <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
                     <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Squat</span>
-                    <MiniLineChart data={squatData} color="#f59e0b" unit="kg" />
+                    <MiniBarChart data={squatData} color="#f59e0b" unit="kg" />
                   </div>
                   <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                     <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
                     <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Deadlift</span>
-                    <MiniLineChart data={deadliftData} color="#6ccbde" unit="kg" />
+                    <MiniBarChart data={deadliftData} color="#6ccbde" unit="kg" />
                   </div>
                   <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                     <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
                     <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Cardio (VO2 Max)</span>
-                    <MiniLineChart data={vo2Data} color="#a78bfa" unit="" />
+                    <MiniBarChart data={vo2Data} color="#a78bfa" unit="" />
                   </div>
                 </div>
               </div>

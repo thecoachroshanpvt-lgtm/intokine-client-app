@@ -30,9 +30,10 @@ export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit 
   }
 
   const width = 300;
-  const height = 96;
-  const paddingX = 8;
-  const paddingY = 14;
+  const height = 120;
+  const paddingX = 12;
+  const paddingTop = 26;
+  const paddingBottom = 24;
 
   const values = data.map((d) => d.value);
   const minVal = Math.min(...values);
@@ -41,34 +42,35 @@ export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit 
 
   const points = data.map((d, i) => {
     const x = paddingX + (i / (data.length - 1)) * (width - paddingX * 2);
-    const y = height - paddingY - ((d.value - minVal) / range) * (height - paddingY * 2);
+    const y = paddingTop + (height - paddingTop - paddingBottom) - ((d.value - minVal) / range) * (height - paddingTop - paddingBottom);
     return { x, y, value: d.value, date: d.date };
   });
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
 
-  const first = data[0].value;
-  const last = data[data.length - 1].value;
-  const delta = last - first;
+  // Show every point's date if there are few enough to fit without
+  // crowding; otherwise thin them out to avoid overlapping text.
+  const maxDateLabels = 5;
+  const dateLabelStep = Math.max(1, Math.ceil(points.length / maxDateLabels));
 
   return (
     <div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-24" preserveAspectRatio="none">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height: `${height}px` }} preserveAspectRatio="none">
         <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="2.5" fill={color} />
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="2.5" fill={color} />
+            <text x={p.x} y={p.y - 8} fontSize="8" fill="white" fillOpacity="0.85" textAnchor="middle" fontFamily="monospace">
+              {p.value}
+            </text>
+            {i % dateLabelStep === 0 && (
+              <text x={p.x} y={height - 6} fontSize="7" fill="white" fillOpacity="0.35" textAnchor="middle">
+                {p.date.slice(5)}
+              </text>
+            )}
+          </g>
         ))}
       </svg>
-      <div className="flex items-center justify-between mt-1">
-        <span className="text-[10px] text-white/40">{data[0].date}</span>
-        <span
-          className="text-[10px] font-semibold"
-          style={{ color: delta === 0 ? '#ffffff80' : delta < 0 ? '#6ccbde' : '#ec2226' }}
-        >
-          {delta === 0 ? 'No change' : `${delta > 0 ? '+' : ''}${delta.toFixed(1)}${unit}`}
-        </span>
-        <span className="text-[10px] text-white/40">{data[data.length - 1].date}</span>
-      </div>
     </div>
   );
 };
