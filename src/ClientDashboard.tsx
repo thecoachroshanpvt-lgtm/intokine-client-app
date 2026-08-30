@@ -47,6 +47,16 @@ interface AssessmentSnapshot {
   targetMilestone?: string;
 }
 
+interface MealEntry {
+  id: string;
+  mealTime: string;
+  description: string;
+  calories?: number;
+  proteinGrams?: number;
+  carbsGrams?: number;
+  fatGrams?: number;
+}
+
 interface DietPlan {
   id: string;
   nutritionistName: string;
@@ -57,6 +67,7 @@ interface DietPlan {
   fatGrams: number;
   hydrationLiters: number;
   notes: string;
+  meals?: MealEntry[];
   lastUpdated: string;
 }
 
@@ -436,9 +447,40 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
                 </div>
               </div>
 
+              {dietPlan.meals && dietPlan.meals.length > 0 && (() => {
+                const mealOrder = ['Early Morning', 'Breakfast', 'Mid-Morning Snack', 'Pre-Workout', 'Lunch', 'Evening Snack', 'Pre-Dinner', 'Dinner', 'Post-Workout', 'Before Bed'];
+                const sortedMeals = [...dietPlan.meals].sort(
+                  (a, b) => mealOrder.indexOf(a.mealTime) - mealOrder.indexOf(b.mealTime)
+                );
+
+                return (
+                  <div className="space-y-2">
+                    <div className="text-[10px] text-white/40 uppercase font-semibold">Meals by Time</div>
+                    {sortedMeals.map((meal) => (
+                      <div key={meal.id} className="bg-white/[0.03] rounded-xl p-3 space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] font-semibold text-[#6ccbde] uppercase">{meal.mealTime}</span>
+                          {meal.calories !== undefined && (
+                            <span className="text-[10px] text-white/40 font-mono">{meal.calories} kcal</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-white/90 font-light">{meal.description}</p>
+                        {(meal.proteinGrams !== undefined || meal.carbsGrams !== undefined || meal.fatGrams !== undefined) && (
+                          <div className="flex items-center gap-3 text-[10px] text-white/40 font-mono">
+                            {meal.proteinGrams !== undefined && <span>P {meal.proteinGrams}g</span>}
+                            {meal.carbsGrams !== undefined && <span>C {meal.carbsGrams}g</span>}
+                            {meal.fatGrams !== undefined && <span>F {meal.fatGrams}g</span>}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               {dietPlan.notes && (
                 <div>
-                  <div className="text-[10px] text-white/40 uppercase font-semibold mb-1">Notes & Meal Protocol</div>
+                  <div className="text-[10px] text-white/40 uppercase font-semibold mb-1">Additional Notes</div>
                   <div className="text-xs text-white/70 font-light whitespace-pre-wrap leading-relaxed bg-white/[0.03] rounded-xl p-3">
                     {dietPlan.notes}
                   </div>
