@@ -322,15 +322,38 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
             </div>
           ) : (
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-4">
-              {/* Hero visual - a branded illustration, not a stock photo, so it stays consistent and license-free */}
+              {/* Hero visual - an illustrated healthy plate, not a stock photo, so it stays consistent and license-free */}
               <div
-                className="relative -mx-4 -mt-4 h-24 rounded-t-2xl overflow-hidden flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.25), rgba(28,28,28,0.9) 55%, rgba(108,203,222,0.25))' }}
+                className="relative -mx-4 -mt-4 h-28 rounded-t-2xl overflow-hidden flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.18), rgba(28,28,28,0.95) 55%, rgba(108,203,222,0.18))' }}
               >
-                <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                  <circle cx="32" cy="32" r="22" stroke="#6ccbde" strokeWidth="1.5" opacity="0.6" />
-                  <circle cx="32" cy="32" r="14" stroke="#ec2226" strokeWidth="1.5" opacity="0.8" />
-                  <path d="M32 18v28M18 32h28" stroke="white" strokeWidth="1.2" opacity="0.4" strokeLinecap="round" />
+                <svg width="88" height="88" viewBox="0 0 88 88" fill="none">
+                  {/* Plate */}
+                  <circle cx="44" cy="44" r="30" fill="#2c2c2e" stroke="white" strokeOpacity="0.15" strokeWidth="1.5" />
+                  <circle cx="44" cy="44" r="22" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
+
+                  {/* Leafy greens */}
+                  <path d="M30 38c-4-3-6-8-4-13 5 1 9 4 11 8 1 3 0 6-2 8-2 1-4 0-5-3z" fill="#4ade80" opacity="0.85" />
+                  <path d="M35 40c-2-5-1-10 3-14 4 3 6 8 5 12-1 3-3 5-5 5-2 0-3-1-3-3z" fill="#22c55e" opacity="0.85" />
+
+                  {/* Grilled protein */}
+                  <ellipse cx="53" cy="46" rx="11" ry="7" fill="#c2683a" opacity="0.9" />
+                  <path d="M44 43l6 6M47 42l6 6M50 41l5 5" stroke="#8a4423" strokeWidth="0.8" opacity="0.6" />
+
+                  {/* Cherry tomato / citrus accent */}
+                  <circle cx="35" cy="53" r="4.5" fill="#ec2226" />
+                  <path d="M35 49l1 -2" stroke="#4ade80" strokeWidth="1" strokeLinecap="round" />
+
+                  {/* Grain scoop */}
+                  <ellipse cx="52" cy="56" rx="7" ry="4.5" fill="#f5d59a" opacity="0.9" />
+
+                  {/* Fork and knife */}
+                  <g opacity="0.5" stroke="white" strokeWidth="1.3" strokeLinecap="round">
+                    <path d="M14 20v48" />
+                    <path d="M11 20v10M14 20v10M17 20v10" />
+                    <path d="M74 20v48" />
+                    <path d="M74 20c3 0 5 3 5 7s-2 7-5 7" fill="none" />
+                  </g>
                 </svg>
               </div>
 
