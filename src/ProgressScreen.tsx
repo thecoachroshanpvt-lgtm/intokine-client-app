@@ -11,11 +11,12 @@ import {
 import { MiniLineChart } from './MiniLineChart';
 import { MiniBarChart } from './MiniBarChart';
 
-interface AchievementEntry {
+interface GoalEntry {
   id: string;
-  category: 'Posture' | 'Flexibility & Mobility' | 'Balance' | 'Core Endurance & Stability' | 'Movement';
-  status: 'Pass' | 'AlreadyFit';
-  dateAchieved: string;
+  activityName: string;
+  status: 'Pending' | 'Pass' | 'AlreadyFit';
+  dateAdded: string;
+  dateAchieved?: string;
 }
 
 interface ProgressScreenProps {
@@ -102,11 +103,12 @@ type ProgressCategory =
   | 'muscular_strength'
   | 'saq'
   | 'skills'
-  | 'achievements';
+  | 'achievements'
+  | 'already_fit';
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [category, setCategory] = useState<ProgressCategory>('hub');
-  const [achievements, setAchievements] = useState<AchievementEntry[]>([]);
+  const [goals, setGoals] = useState<GoalEntry[]>([]);
   const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
 
@@ -144,18 +146,18 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     const { db } = initializeClientFirebaseApp();
     if (!db) return;
 
-    const fetchAchievements = async () => {
+    const fetchGoals = async () => {
       try {
         const clientDoc = await getDoc(doc(db, 'intokine_clients', clientId));
         if (clientDoc.exists()) {
-          setAchievements(clientDoc.data().achievements || []);
+          setGoals(clientDoc.data().goals || []);
         }
       } catch (e) {
-        console.warn('Could not load achievements:', e);
+        console.warn('Could not load goals:', e);
       }
     };
 
-    fetchAchievements();
+    fetchGoals();
   }, [clientId]);
 
   const chronological = [...assessments].reverse();
@@ -276,6 +278,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <span className="text-xl">🏅</span>
               <h3 className="text-sm font-bold text-white">Achievements</h3>
               <p className="text-[11px] text-white/40 font-light">Milestones reached in your journey.</p>
+            </button>
+            <button onClick={() => setCategory('already_fit')} className="bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
+              <span className="text-xl">🎓</span>
+              <h3 className="text-sm font-bold text-white">Already Fit</h3>
+              <p className="text-[11px] text-white/40 font-light">Areas you were already proficient in.</p>
             </button>
           </div>
         </div>
@@ -745,33 +752,54 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         <div>
           <BackButton />
           {(() => {
-            const categories: AchievementEntry['category'][] = [
-              'Posture',
-              'Flexibility & Mobility',
-              'Balance',
-              'Core Endurance & Stability',
-              'Movement',
-            ];
+            const passedGoals = goals.filter((g) => g.status === 'Pass');
+            if (passedGoals.length === 0) {
+              return (
+                <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+                  <p className="text-sm text-white/50 font-light leading-relaxed">No achievements passed yet.</p>
+                </div>
+              );
+            }
             return (
               <div className="space-y-2">
-                {categories.map((cat) => {
-                  const entry = achievements.find((a) => a.category === cat);
-                  return (
-                    <div key={cat} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                      <span className="text-sm text-white font-semibold">{cat}</span>
-                      {entry ? (
-                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
-                          entry.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
-                        }`}>
-                          {entry.status === 'AlreadyFit' ? '🎓 Already Fit' : '✓ Pass'}
-                          <span className="text-white/40 font-normal">{entry.dateAchieved}</span>
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-white/30">Not yet achieved</span>
-                      )}
-                    </div>
-                  );
-                })}
+                {passedGoals.map((goal) => (
+                  <div key={goal.id} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-sm text-white font-semibold">{goal.activityName}</span>
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300">
+                      ✓ Pass
+                      <span className="text-white/40 font-normal">{goal.dateAchieved}</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {category === 'already_fit' && (
+        <div>
+          <BackButton />
+          {(() => {
+            const alreadyFitGoals = goals.filter((g) => g.status === 'AlreadyFit');
+            if (alreadyFitGoals.length === 0) {
+              return (
+                <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+                  <p className="text-sm text-white/50 font-light leading-relaxed">Nothing marked Already Fit yet.</p>
+                </div>
+              );
+            }
+            return (
+              <div className="space-y-2">
+                {alreadyFitGoals.map((goal) => (
+                  <div key={goal.id} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-sm text-white font-semibold">{goal.activityName}</span>
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-amber-500/20 text-amber-300">
+                      🎓 Already Fit
+                      <span className="text-white/40 font-normal">{goal.dateAchieved}</span>
+                    </span>
+                  </div>
+                ))}
               </div>
             );
           })()}
