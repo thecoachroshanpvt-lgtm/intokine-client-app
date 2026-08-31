@@ -5,9 +5,18 @@ import {
   query,
   where,
   onSnapshot,
+  getDoc,
+  doc,
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
 import { MiniBarChart } from './MiniBarChart';
+
+interface AchievementEntry {
+  id: string;
+  category: 'Posture' | 'Flexibility & Mobility' | 'Balance' | 'Core Endurance & Stability' | 'Movement';
+  status: 'Pass' | 'AlreadyFit';
+  dateAchieved: string;
+}
 
 interface ProgressScreenProps {
   clientId: string;
@@ -92,10 +101,12 @@ type ProgressCategory =
   | 'dynamic_balance'
   | 'muscular_strength'
   | 'saq'
-  | 'skills';
+  | 'skills'
+  | 'achievements';
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [category, setCategory] = useState<ProgressCategory>('hub');
+  const [achievements, setAchievements] = useState<AchievementEntry[]>([]);
   const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
 
@@ -127,6 +138,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     );
 
     return () => unsubscribe();
+  }, [clientId]);
+
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+
+    const fetchAchievements = async () => {
+      try {
+        const clientDoc = await getDoc(doc(db, 'intokine_clients', clientId));
+        if (clientDoc.exists()) {
+          setAchievements(clientDoc.data().achievements || []);
+        }
+      } catch (e) {
+        console.warn('Could not load achievements:', e);
+      }
+    };
+
+    fetchAchievements();
   }, [clientId]);
 
   const chronological = [...assessments].reverse();
@@ -242,6 +271,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <span className="text-xl">🎯</span>
               <h3 className="text-sm font-bold text-white">Skill Progress</h3>
               <p className="text-[11px] text-white/40 font-light">New movements being learned.</p>
+            </button>
+            <button onClick={() => setCategory('achievements')} className="bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
+              <span className="text-xl">🏅</span>
+              <h3 className="text-sm font-bold text-white">Achievements</h3>
+              <p className="text-[11px] text-white/40 font-light">Milestones reached in your journey.</p>
             </button>
           </div>
         </div>
@@ -698,6 +732,43 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         <div className="text-[10px] text-white/40 font-light mb-2">{latest.benchmarkMetric}</div>
                       )}
                       <MiniLineChart data={points} color="#ec2226" unit="%" />
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {category === 'achievements' && (
+        <div>
+          <BackButton />
+          {(() => {
+            const categories: AchievementEntry['category'][] = [
+              'Posture',
+              'Flexibility & Mobility',
+              'Balance',
+              'Core Endurance & Stability',
+              'Movement',
+            ];
+            return (
+              <div className="space-y-2">
+                {categories.map((cat) => {
+                  const entry = achievements.find((a) => a.category === cat);
+                  return (
+                    <div key={cat} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                      <span className="text-sm text-white font-semibold">{cat}</span>
+                      {entry ? (
+                        <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
+                          entry.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'
+                        }`}>
+                          {entry.status === 'AlreadyFit' ? '🎓 Already Fit' : '✓ Pass'}
+                          <span className="text-white/40 font-normal">{entry.dateAchieved}</span>
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-white/30">Not yet achieved</span>
+                      )}
                     </div>
                   );
                 })}
