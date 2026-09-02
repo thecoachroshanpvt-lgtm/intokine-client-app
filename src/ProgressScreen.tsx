@@ -46,9 +46,9 @@ interface SkillProgressItem {
 interface AssessmentSnapshot {
   id: string;
   date: string;
-  weightKg: number;
-  bodyFatPercentage: number;
-  vo2Max: number;
+  weightKg?: number;
+  bodyFatPercentage?: number;
+  vo2Max?: number;
   muscleMassKg?: number;
   visceralFatLevel?: number;
   benchPress1RM?: number;
@@ -292,8 +292,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         <div>
           <BackButton />
           {(() => {
-            const weightData = chronological.map((a) => ({ date: a.date, value: a.weightKg }));
-            const bodyFatData = chronological.map((a) => ({ date: a.date, value: a.bodyFatPercentage }));
+            const weightData = chronological.filter((a) => a.weightKg != null).map((a) => ({ date: a.date, value: a.weightKg as number }));
+            const bodyFatData = chronological.filter((a) => a.bodyFatPercentage != null).map((a) => ({ date: a.date, value: a.bodyFatPercentage as number }));
             const muscleData = chronological
               .filter((a) => a.muscleMassKg != null)
               .map((a) => ({ date: a.date, value: a.muscleMassKg as number }));
@@ -593,7 +593,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         <div>
           <BackButton />
           {(() => {
-            const vo2Data = chronological.map((a) => ({ date: a.date, value: a.vo2Max }));
+            const vo2Data = chronological.filter((a) => a.vo2Max != null).map((a) => ({ date: a.date, value: a.vo2Max as number }));
             return (
               <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                 <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
