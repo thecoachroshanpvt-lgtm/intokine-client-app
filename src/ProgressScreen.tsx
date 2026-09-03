@@ -403,6 +403,210 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             </div>
           )}
 
+          {perfCategory === 'posture' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const scoreData = chronological.filter((a) => a.postureScore != null).map((a) => ({ date: a.date, value: a.postureScore as number }));
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Posture:') && g.activityName !== 'Posture: Postural Alignment Score');
+
+                return (
+                  <div className="space-y-3">
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Postural Alignment Score</span>
+                      <MiniLineChart data={scoreData} color="#6ccbde" unit="/10" />
+                    </div>
+
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 flex items-center justify-between">
+                            <div>
+                              <span className="text-sm text-white font-semibold block">{g.activityName.replace('Posture: ', '')}</span>
+                              {g.value && <span className="text-[11px] text-white/40 font-light">Score: {g.value}/10</span>}
+                            </div>
+                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                              g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
+                              g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
+                              'bg-white/10 text-white/50'
+                            }`}>
+                              {g.status === 'Pass' ? '✓ Pass' : g.status === 'AlreadyFit' ? '🎓 Already Fit' : 'In Progress'}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'flexibility' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const tests: { key: keyof AssessmentSnapshot; scoreKey: keyof AssessmentSnapshot; label: string; color: string }[] = [
+                  { key: 'thomasTestPass', scoreKey: 'thomasTestScore', label: 'Thomas Test', color: '#ec2226' },
+                  { key: 'passiveStraightLegRaisePass', scoreKey: 'passiveStraightLegRaiseScore', label: 'Passive Straight Leg Raise', color: '#f59e0b' },
+                  { key: 'shoulderFlexionTestPass', scoreKey: 'shoulderFlexionScore', label: 'Shoulder Flexion Test', color: '#6ccbde' },
+                  { key: 'shoulderExtensionTestPass', scoreKey: 'shoulderExtensionScore', label: 'Shoulder Extension Test', color: '#a78bfa' },
+                ];
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Flexibility & Mobility:') && !tests.some((t) => `Flexibility & Mobility: ${t.label}` === g.activityName));
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {tests.map((t) => {
+                      const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
+                      const latest = [...chronological].reverse().find((a) => a[t.key] != null);
+                      return (
+                        <div key={t.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
+                            {latest && (
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${latest[t.key] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                                {latest[t.key] ? 'Pass' : 'Needs Work'}
+                              </span>
+                            )}
+                          </div>
+                          <MiniLineChart data={scoreData} color={t.color} unit="/10" />
+                        </div>
+                      );
+                    })}
+                    {customGoals.map((g) => (
+                      <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                        <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
+                        {g.value && <span className="text-[11px] text-white/40 font-light">Score: {g.value}/10</span>}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'balance' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const leftData = chronological.filter((a) => a.unipedalStanceLeftSeconds != null).map((a) => ({ date: a.date, value: a.unipedalStanceLeftSeconds as number }));
+                const rightData = chronological.filter((a) => a.unipedalStanceRightSeconds != null).map((a) => ({ date: a.date, value: a.unipedalStanceRightSeconds as number }));
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Balance:') && g.activityName !== 'Balance: Unipedal Stance Test');
+                return (
+                  <div className="space-y-3">
+                    <div className="text-xs font-bold text-white/60">Unipedal Stance Test</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Leg</span>
+                        <MiniLineChart data={leftData} color="#ec2226" unit="s" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Leg</span>
+                        <MiniLineChart data={rightData} color="#6ccbde" unit="s" />
+                      </div>
+                    </div>
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Balance: ', '')}</span>
+                            {g.valueType === 'unilateral_time' ? (
+                              <span className="text-[11px] text-white/40 font-light">Left: {g.valueLeft || '—'}s · Right: {g.valueRight || '—'}s</span>
+                            ) : (
+                              g.value && <span className="text-[11px] text-white/40 font-light">Time: {g.value}s</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'core_endurance' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const flexorData = chronological.filter((a) => a.mcgillFlexorSeconds != null).map((a) => ({ date: a.date, value: a.mcgillFlexorSeconds as number }));
+                const extensorData = chronological.filter((a) => a.mcgillExtensorSeconds != null).map((a) => ({ date: a.date, value: a.mcgillExtensorSeconds as number }));
+                const rightData = chronological.filter((a) => a.mcgillRightSideBridgeSeconds != null).map((a) => ({ date: a.date, value: a.mcgillRightSideBridgeSeconds as number }));
+                const leftData = chronological.filter((a) => a.mcgillLeftSideBridgeSeconds != null).map((a) => ({ date: a.date, value: a.mcgillLeftSideBridgeSeconds as number }));
+                const latest = [...chronological].reverse().find((a) => a.mcgillFlexorExtensorRatio || a.mcgillRightLeftSideRatio || a.mcgillRightToExtensorRatio || a.mcgillLeftToExtensorRatio);
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Core Endurance & Stability:') && g.activityName !== "Core Endurance & Stability: McGill's Test");
+                return (
+                  <div className="space-y-3">
+                    <div className="text-xs font-bold text-white/60">McGill's Core Endurance Test</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Flexor Endurance</span>
+                        <MiniLineChart data={flexorData} color="#ec2226" unit="s" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Extensor Endurance</span>
+                        <MiniLineChart data={extensorData} color="#f59e0b" unit="s" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Side Bridge</span>
+                        <MiniLineChart data={rightData} color="#6ccbde" unit="s" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Side Bridge</span>
+                        <MiniLineChart data={leftData} color="#a78bfa" unit="s" />
+                      </div>
+                    </div>
+                    {latest && (
+                      <div className="grid grid-cols-2 gap-3">
+                        {latest.mcgillFlexorExtensorRatio && (
+                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
+                            <span className="text-[9px] text-white/40 uppercase font-bold block">Flexor-Extensor Ratio</span>
+                            <span className="text-sm text-white font-mono">{latest.mcgillFlexorExtensorRatio}</span>
+                          </div>
+                        )}
+                        {latest.mcgillRightLeftSideRatio && (
+                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
+                            <span className="text-[9px] text-white/40 uppercase font-bold block">Right-Left Side Ratio</span>
+                            <span className="text-sm text-white font-mono">{latest.mcgillRightLeftSideRatio}</span>
+                          </div>
+                        )}
+                        {latest.mcgillRightToExtensorRatio && (
+                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
+                            <span className="text-[9px] text-white/40 uppercase font-bold block">Right to Extensor Ratio</span>
+                            <span className="text-sm text-white font-mono">{latest.mcgillRightToExtensorRatio}</span>
+                          </div>
+                        )}
+                        {latest.mcgillLeftToExtensorRatio && (
+                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
+                            <span className="text-[9px] text-white/40 uppercase font-bold block">Left to Extensor Ratio</span>
+                            <span className="text-sm text-white font-mono">{latest.mcgillLeftToExtensorRatio}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Core Endurance & Stability: ', '')}</span>
+                            {g.value && <span className="text-[11px] text-white/40 font-light">Time: {g.value}s</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {perfCategory === 'achievements' && (
             <div>
               <BackButton />
