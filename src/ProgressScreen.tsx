@@ -607,6 +607,239 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             </div>
           )}
 
+          {perfCategory === 'movement' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const tests: { key: keyof AssessmentSnapshot; scoreKey: keyof AssessmentSnapshot; label: string; color: string }[] = [
+                  { key: 'bendAndLiftSquatPatternPass', scoreKey: 'bendAndLiftSquatPatternScore', label: 'Bend & Lift Squat Pattern', color: '#ec2226' },
+                  { key: 'singleLegStepUpPass', scoreKey: 'singleLegStepUpScore', label: 'Single Leg Step Up', color: '#f59e0b' },
+                  { key: 'shoulderPushStabilizationPass', scoreKey: 'shoulderPushStabilizationScore', label: 'Shoulder Push Stabilization', color: '#6ccbde' },
+                  { key: 'pullStabilityStandingRowPass', scoreKey: 'pullStabilityStandingRowScore', label: 'Pull Stability Standing Row', color: '#a78bfa' },
+                  { key: 'thoracicSpineMobilityPass', scoreKey: 'thoracicSpineMobilityScore', label: 'Thoracic Spine Mobility', color: '#34d399' },
+                  { key: 'overheadSquatTestPass', scoreKey: 'overheadSquatTestScore', label: 'Overhead Squat Test', color: '#fb923c' },
+                ];
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {tests.map((t) => {
+                      const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
+                      const latest = [...chronological].reverse().find((a) => a[t.key] != null);
+                      return (
+                        <div key={t.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
+                            {latest && (
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${latest[t.key] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                                {latest[t.key] ? 'Pass' : 'Needs Work'}
+                              </span>
+                            )}
+                          </div>
+                          <MiniLineChart data={scoreData} color={t.color} unit="/10" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'cardio' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const vo2Data = chronological.filter((a) => a.vo2Max != null).map((a) => ({ date: a.date, value: a.vo2Max as number }));
+                const bpData = chronological.filter((a) => a.bloodPressureSystolic != null).map((a) => ({ date: a.date, value: a.bloodPressureSystolic as number }));
+                const conditioningData = chronological.filter((a) => a.aerobicCapacityScore != null).map((a) => ({ date: a.date, value: a.aerobicCapacityScore as number }));
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Cardio:') && g.activityName !== 'Cardio: VO2 Max');
+                const unitFor = (vt?: string) => vt === 'distance_km' ? 'km' : vt === 'duration_minutes' ? 'min' : vt === 'steps' ? 'steps' : '';
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">VO2 Max</span>
+                        <MiniLineChart data={vo2Data} color="#ec2226" unit="ml/kg/min" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Systolic BP</span>
+                        <MiniLineChart data={bpData} color="#f59e0b" unit="mmHg" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Conditioning Score</span>
+                        <MiniLineChart data={conditioningData} color="#6ccbde" unit="/100" />
+                      </div>
+                    </div>
+
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Cardio: ', '')}</span>
+                            {g.valueType === 'circuits' && g.circuitRounds && g.circuitRounds.length > 0 ? (
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {g.circuitRounds.map((r, i) => (
+                                  <span key={i} className="text-[10px] text-white/50 bg-white/[0.06] rounded-lg px-2 py-1">
+                                    Round {r.round}: {r.timeSeconds}s
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              g.value && <span className="text-[11px] text-white/40 font-light">{g.value} {unitFor(g.valueType)}</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'muscular_endurance' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const pushUpsData = chronological.filter((a) => a.pushUpsReps != null).map((a) => ({ date: a.date, value: a.pushUpsReps as number }));
+                const pullUpsData = chronological.filter((a) => a.pullUpMaxReps != null).map((a) => ({ date: a.date, value: a.pullUpMaxReps as number }));
+                const squatsData = chronological.filter((a) => a.bodyweightSquatsReps != null).map((a) => ({ date: a.date, value: a.bodyweightSquatsReps as number }));
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Muscular Endurance:'));
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Push-Ups</span>
+                        <MiniLineChart data={pushUpsData} color="#ec2226" unit="reps" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Pull-Ups</span>
+                        <MiniLineChart data={pullUpsData} color="#f59e0b" unit="reps" />
+                      </div>
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Bodyweight Squats</span>
+                        <MiniLineChart data={squatsData} color="#6ccbde" unit="reps" />
+                      </div>
+                    </div>
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Muscular Endurance: ', '')}</span>
+                            {g.value && <span className="text-[11px] text-white/40 font-light">{g.value} reps</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'muscular_strength' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const lifts: { key: keyof AssessmentSnapshot; label: string; color: string }[] = [
+                  { key: 'benchPress1RM', label: 'Bench Press 1RM', color: '#ec2226' },
+                  { key: 'squat1RM', label: 'Squat 1RM', color: '#f59e0b' },
+                  { key: 'deadlift1RM', label: 'Deadlift 1RM', color: '#6ccbde' },
+                  { key: 'overheadPress1RM', label: 'Overhead Press 1RM', color: '#a78bfa' },
+                ];
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Muscular Strength:'));
+                return (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {lifts.map((l) => {
+                        const data = chronological.filter((a) => a[l.key] != null).map((a) => ({ date: a.date, value: a[l.key] as number }));
+                        return (
+                          <div key={l.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${l.color}, transparent)` }} />
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{l.label}</span>
+                            <MiniLineChart data={data} color={l.color} unit="kg" />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Muscular Strength: ', '')}</span>
+                            {g.value && <span className="text-[11px] text-white/40 font-light">{g.value} kg</span>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'saq' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const tTestData = chronological.filter((a) => a.tTestSeconds != null).map((a) => ({ date: a.date, value: a.tTestSeconds as number }));
+                const customGoals = goals.filter((g) => g.activityName.startsWith('SAQ:') && g.activityName !== 'SAQ: T Test');
+                return (
+                  <div className="space-y-3">
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">T Test</span>
+                      <MiniLineChart data={tTestData} color="#ec2226" unit="s" />
+                    </div>
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('SAQ: ', '')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {perfCategory === 'power' && (
+            <div>
+              <BackButton />
+              {(() => {
+                const jumpData = chronological.filter((a) => a.verticalJumpCm != null).map((a) => ({ date: a.date, value: a.verticalJumpCm as number }));
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Power:'));
+                return (
+                  <div className="space-y-3">
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Vertical Jump</span>
+                      <MiniLineChart data={jumpData} color="#a78bfa" unit="cm" />
+                    </div>
+                    {customGoals.length > 0 && (
+                      <div className="space-y-2">
+                        {customGoals.map((g) => (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Power: ', '')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {perfCategory === 'achievements' && (
             <div>
               <BackButton />
