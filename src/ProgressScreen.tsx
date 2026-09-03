@@ -335,7 +335,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         <div>
           {perfCategory === 'hub' && (
             <div className="space-y-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setPerfCategory('posture')} className="bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1">
                   <span className="text-xl">🧍</span>
                   <h3 className="text-sm font-bold text-white">Posture</h3>
