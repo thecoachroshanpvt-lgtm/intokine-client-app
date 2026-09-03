@@ -151,6 +151,141 @@ type PerformanceCategory =
 
 type TopTab = 'bca' | 'performance' | 'skills';
 
+type XRayType =
+  | 'posture'
+  | 'flexibility'
+  | 'balance'
+  | 'core_endurance'
+  | 'movement'
+  | 'cardio'
+  | 'muscular_endurance'
+  | 'muscular_strength'
+  | 'saq'
+  | 'power';
+
+// Subtle, glowing line-art X-ray illustrations, one per category, matched
+// to the body part or system that category actually assesses.
+const XRayBackground: React.FC<{ type: XRayType }> = ({ type }) => {
+  const common = {
+    fill: 'none',
+    stroke: '#6ccbde',
+    strokeWidth: 1.2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  };
+
+  const paths: Record<XRayType, React.ReactNode> = {
+    posture: (
+      <g {...common}>
+        <path d="M50 4 C 44 20, 56 30, 50 46 C 44 62, 56 72, 50 88 C 46 98, 54 108, 50 116" />
+        {[8, 18, 28, 38, 48, 58, 68, 78, 88, 98, 108].map((y, i) => (
+          <ellipse key={i} cx={50 + Math.sin(i) * 4} cy={y} rx="7" ry="3.2" />
+        ))}
+      </g>
+    ),
+    flexibility: (
+      <g {...common}>
+        <circle cx="50" cy="30" r="10" />
+        <path d="M50 40 L50 70" />
+        <path d="M50 45 L20 60" />
+        <path d="M50 45 L80 30" strokeDasharray="2 3" />
+        <path d="M35 52 A 20 20 0 0 0 65 37" strokeDasharray="1 3" strokeWidth="0.8" />
+        <path d="M50 70 L30 105" />
+        <path d="M50 70 L70 105" />
+      </g>
+    ),
+    balance: (
+      <g {...common}>
+        <ellipse cx="50" cy="18" rx="9" ry="10" />
+        <path d="M50 28 L50 55" />
+        <path d="M35 40 L65 40" />
+        <path d="M50 55 L50 82" />
+        <path d="M50 82 L38 118" />
+        <path d="M50 82 L58 100" strokeDasharray="2 4" opacity="0.4" />
+        <ellipse cx="35" cy="122" rx="10" ry="4" />
+      </g>
+    ),
+    core_endurance: (
+      <g {...common}>
+        <path d="M30 10 C 25 30, 25 55, 32 78" />
+        <path d="M70 10 C 75 30, 75 55, 68 78" />
+        {[18, 28, 38, 48, 58].map((y, i) => (
+          <path key={i} d={`M${32 - i * 0.5} ${y} C 50 ${y - 6}, 50 ${y + 6}, ${68 + i * 0.5} ${y}`} />
+        ))}
+        <path d="M50 78 L50 116" strokeDasharray="2 3" />
+      </g>
+    ),
+    movement: (
+      <g {...common}>
+        <circle cx="46" cy="14" r="8" />
+        <path d="M46 22 L52 50" />
+        <path d="M52 50 L30 46" />
+        <path d="M52 50 L74 60" />
+        <path d="M52 50 L44 82" />
+        <path d="M44 82 L26 110" />
+        <path d="M52 50 L68 88" />
+        <path d="M68 88 L80 112" strokeDasharray="2 3" />
+      </g>
+    ),
+    cardio: (
+      <g {...common}>
+        <path d="M30 14 C 20 14, 12 24, 12 36 C 12 55, 30 68, 50 88 C 70 68, 88 55, 88 36 C 88 24, 80 14, 70 14 C 60 14, 52 22, 50 30 C 48 22, 40 14, 30 14 Z" />
+        <path d="M20 40 L36 40 L42 26 L50 56 L58 34 L64 46 L80 46" strokeWidth="0.9" opacity="0.6" />
+      </g>
+    ),
+    muscular_endurance: (
+      <g {...common}>
+        <ellipse cx="30" cy="16" rx="9" ry="10" />
+        <path d="M30 26 L34 54" />
+        <path d="M34 54 C 44 60, 56 60, 66 50" />
+        <path d="M66 50 L82 40" />
+        <ellipse cx="86" cy="37" rx="5" ry="7" transform="rotate(-30 86 37)" />
+        <path d="M34 54 L28 90" strokeDasharray="2 3" opacity="0.4" />
+      </g>
+    ),
+    muscular_strength: (
+      <g {...common}>
+        <path d="M20 50 L80 50" strokeWidth="2" />
+        <rect x="12" y="42" width="10" height="16" rx="2" />
+        <rect x="78" y="42" width="10" height="16" rx="2" />
+        <path d="M50 50 L50 78" strokeDasharray="2 3" opacity="0.5" />
+        <ellipse cx="50" cy="18" rx="9" ry="10" />
+        <path d="M50 28 L50 44" />
+      </g>
+    ),
+    saq: (
+      <g {...common}>
+        <circle cx="34" cy="12" r="7" />
+        <path d="M34 19 L44 40" />
+        <path d="M44 40 L30 58" />
+        <path d="M30 58 L44 78" strokeDasharray="2 3" />
+        <path d="M44 40 L68 46" />
+        <path d="M68 46 L80 66" />
+        <path d="M44 40 L58 24" strokeWidth="0.8" opacity="0.5" />
+      </g>
+    ),
+    power: (
+      <g {...common}>
+        <circle cx="46" cy="16" r="8" />
+        <path d="M46 24 L50 46" />
+        <path d="M50 46 L30 58" />
+        <path d="M50 46 L70 58" />
+        <path d="M30 58 L26 40" strokeDasharray="2 3" opacity="0.4" />
+        <path d="M70 58 L76 40" strokeDasharray="2 3" opacity="0.4" />
+        <path d="M40 82 L36 100" />
+        <path d="M60 82 L64 100" />
+        <path d="M40 82 L60 82" strokeWidth="0.8" opacity="0.6" />
+      </g>
+    ),
+  };
+
+  return (
+    <svg viewBox="0 0 100 130" className="absolute -right-3 -bottom-2 w-20 h-24 opacity-[0.18] pointer-events-none">
+      {paths[type]}
+    </svg>
+  );
+};
+
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [topTab, setTopTab] = useState<TopTab>('bca');
   const [perfCategory, setPerfCategory] = useState<PerformanceCategory>('hub');
@@ -336,53 +471,53 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           {perfCategory === 'hub' && (
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setPerfCategory('posture')} className="bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🧍</span>
+                <button onClick={() => setPerfCategory('posture')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="posture" />
                   <h3 className="text-sm font-bold text-white">Posture</h3>
                   <p className="text-[11px] text-white/40 font-light">Postural alignment.</p>
                 </button>
-                <button onClick={() => setPerfCategory('flexibility')} className="bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🤸</span>
+                <button onClick={() => setPerfCategory('flexibility')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="flexibility" />
                   <h3 className="text-sm font-bold text-white">Flexibility & Mobility</h3>
                   <p className="text-[11px] text-white/40 font-light">Thomas, SLR, shoulder tests.</p>
                 </button>
-                <button onClick={() => setPerfCategory('balance')} className="bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🦵</span>
+                <button onClick={() => setPerfCategory('balance')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="balance" />
                   <h3 className="text-sm font-bold text-white">Balance</h3>
                   <p className="text-[11px] text-white/40 font-light">Unipedal Stance Test.</p>
                 </button>
-                <button onClick={() => setPerfCategory('core_endurance')} className="bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">💪</span>
+                <button onClick={() => setPerfCategory('core_endurance')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="core_endurance" />
                   <h3 className="text-sm font-bold text-white">Core Endurance & Stability</h3>
                   <p className="text-[11px] text-white/40 font-light">McGill's Core Endurance Test.</p>
                 </button>
-                <button onClick={() => setPerfCategory('movement')} className="bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🏃</span>
+                <button onClick={() => setPerfCategory('movement')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="movement" />
                   <h3 className="text-sm font-bold text-white">Movement</h3>
                   <p className="text-[11px] text-white/40 font-light">Movement pattern screens.</p>
                 </button>
-                <button onClick={() => setPerfCategory('cardio')} className="bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">❤️</span>
+                <button onClick={() => setPerfCategory('cardio')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="cardio" />
                   <h3 className="text-sm font-bold text-white">Cardio</h3>
                   <p className="text-[11px] text-white/40 font-light">VO2 Max & aerobic tests.</p>
                 </button>
-                <button onClick={() => setPerfCategory('muscular_endurance')} className="bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🏋️</span>
+                <button onClick={() => setPerfCategory('muscular_endurance')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="muscular_endurance" />
                   <h3 className="text-sm font-bold text-white">Muscular Endurance</h3>
                   <p className="text-[11px] text-white/40 font-light">Push-ups, pull-ups, squats.</p>
                 </button>
-                <button onClick={() => setPerfCategory('muscular_strength')} className="bg-[#242426] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🏆</span>
+                <button onClick={() => setPerfCategory('muscular_strength')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="muscular_strength" />
                   <h3 className="text-sm font-bold text-white">Muscular Strength</h3>
                   <p className="text-[11px] text-white/40 font-light">1RM bench, squat, deadlift, OHP.</p>
                 </button>
-                <button onClick={() => setPerfCategory('saq')} className="bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">⚡</span>
+                <button onClick={() => setPerfCategory('saq')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="saq" />
                   <h3 className="text-sm font-bold text-white">SAQ</h3>
                   <p className="text-[11px] text-white/40 font-light">Speed, Agility & Quickness.</p>
                 </button>
-                <button onClick={() => setPerfCategory('power')} className="bg-[#242426] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🚀</span>
+                <button onClick={() => setPerfCategory('power')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                  <XRayBackground type="power" />
                   <h3 className="text-sm font-bold text-white">Power</h3>
                   <p className="text-[11px] text-white/40 font-light">Vertical Jump.</p>
                 </button>
