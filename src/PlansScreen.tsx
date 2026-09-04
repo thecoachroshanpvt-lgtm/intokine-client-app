@@ -9,10 +9,37 @@ import {
   setDoc,
   getDoc,
 } from './firebase';
+import { TrainingScreen } from './TrainingScreen';
 
 interface PlansScreenProps {
   clientId: string;
   clientName: string;
+}
+
+interface TrainerizeSet {
+  id: string;
+  setNumber: number;
+  setType: 'Working' | 'Warmup' | 'Drop' | 'AMRAP' | 'Cooldown';
+  previousPerformance?: string;
+  previousWeightKg?: number;
+  previousReps?: number;
+  targetWeightKg: number;
+  targetReps: number;
+  rpe?: number;
+  restSeconds?: number;
+}
+
+interface TrainerizeExercise {
+  id: string;
+  name: string;
+  category: string;
+  equipment?: string;
+  targetMuscle?: string;
+  supersetTag?: string;
+  sets: TrainerizeSet[];
+  coachCues?: string;
+  previousBestPerformance?: string;
+  previousVolumeKg?: number;
 }
 
 interface VisiblePlan {
@@ -23,6 +50,12 @@ interface VisiblePlan {
   coachName: string;
   durationMinutes?: number;
   targetFocus?: string;
+  planDetails?: string;
+  rpeTarget?: number;
+  coachSessionNotes?: string;
+  structuredExercises?: TrainerizeExercise[];
+  isSuggestedWorkout?: boolean;
+  clientCompletedAt?: string;
 }
 
 interface TodaySession {
@@ -77,6 +110,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
+  const [selectedWorkout, setSelectedWorkout] = useState<VisiblePlan | null>(null);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -191,6 +225,31 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     return '#ec2226';
   };
 
+  if (selectedWorkout) {
+    return (
+      <TrainingScreen
+        workout={{
+          id: selectedWorkout.id,
+          date: selectedWorkout.date,
+          planTitle: selectedWorkout.planTitle,
+          category: selectedWorkout.category,
+          planDetails: selectedWorkout.planDetails || '',
+          targetFocus: selectedWorkout.targetFocus || '',
+          durationMinutes: selectedWorkout.durationMinutes || 0,
+          rpeTarget: selectedWorkout.rpeTarget || 0,
+          coachName: selectedWorkout.coachName,
+          coachSessionNotes: selectedWorkout.coachSessionNotes,
+          structuredExercises: selectedWorkout.structuredExercises,
+          clientCompletedAt: selectedWorkout.clientCompletedAt,
+        }}
+        onBack={() => setSelectedWorkout(null)}
+        onMarkedComplete={() => {
+          setPlans((prev) => prev.map((p) => (p.id === selectedWorkout.id ? { ...p, clientCompletedAt: new Date().toISOString() } : p)));
+        }}
+      />
+    );
+  }
+
   return (
     <div className="px-5 pb-8 pt-4 space-y-4 max-w-4xl mx-auto">
       {/* Profile photo */}
@@ -262,6 +321,35 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         )}
       </div>
 
+      {/* Today's suggested workout - self-guided, tap to open the training page */}
+      {(() => {
+        const todayKey = new Date().toISOString().split('T')[0];
+        const todaysSuggestedWorkout = plans.find((p) => p.isSuggestedWorkout && p.date === todayKey);
+        if (!todaysSuggestedWorkout) return null;
+        const done = !!todaysSuggestedWorkout.clientCompletedAt;
+        return (
+          <button
+            onClick={() => setSelectedWorkout(todaysSuggestedWorkout)}
+            className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 border border-white/[0.12] hover:border-white/25 rounded-2xl p-4 space-y-1.5 transition"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">
+                {done ? 'Suggested Workout · Done' : "Today's Suggested Workout"}
+              </span>
+              <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full">
+                {done ? '✓' : 'Tap to start →'}
+              </span>
+            </div>
+            <p className="text-sm font-bold text-white">{todaysSuggestedWorkout.planTitle}</p>
+            <p className="text-[11px] text-white/50 font-light">
+              {todaysSuggestedWorkout.category}
+              {todaysSuggestedWorkout.durationMinutes ? ` · ${todaysSuggestedWorkout.durationMinutes} mins` : ''}
+              {' · Do this on your own today'}
+            </p>
+          </button>
+        );
+      })()}
+
       {/* Training plans */}
       {plansLoading ? (
         <div className="text-center py-12 text-white/40 text-sm font-light">Loading your plans...</div>
@@ -273,30 +361,53 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {plans.map((plan) => (
-            <div key={plan.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-white">{plan.planTitle}</span>
-                <span className="text-[10px] font-semibold text-[#ec2226] bg-[#ec2226]/10 px-2 py-0.5 rounded-full border border-[#ec2226]/25 whitespace-nowrap">
-                  {plan.date}
-                </span>
-              </div>
-              <div className="text-xs text-white/50 font-light flex items-center gap-2 flex-wrap">
-                <span>{plan.category}</span>
-                {plan.durationMinutes && (
-                  <>
-                    <span>·</span>
-                    <span>{plan.durationMinutes} mins</span>
-                  </>
+          {plans.map((plan) => {
+            const isSuggested = !!plan.isSuggestedWorkout;
+            const done = !!plan.clientCompletedAt;
+            const CardTag = isSuggested ? 'button' : 'div';
+            return (
+              <CardTag
+                key={plan.id}
+                onClick={isSuggested ? () => setSelectedWorkout(plan) : undefined}
+                className={`text-left rounded-2xl p-4 space-y-2 transition ${
+                  isSuggested
+                    ? 'bg-gradient-to-br from-[#ec2226]/15 to-[#6ccbde]/10 border border-white/[0.12] hover:border-white/25'
+                    : 'bg-white/[0.05] border border-white/[0.08]'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-white">{plan.planTitle}</span>
+                  <span className="text-[10px] font-semibold text-[#ec2226] bg-[#ec2226]/10 px-2 py-0.5 rounded-full border border-[#ec2226]/25 whitespace-nowrap">
+                    {plan.date}
+                  </span>
+                </div>
+                <div className="text-xs text-white/50 font-light flex items-center gap-2 flex-wrap">
+                  <span>{plan.category}</span>
+                  {plan.durationMinutes && (
+                    <>
+                      <span>·</span>
+                      <span>{plan.durationMinutes} mins</span>
+                    </>
+                  )}
+                  <span>·</span>
+                  <span>Coach {plan.coachName}</span>
+                </div>
+                {plan.targetFocus && (
+                  <p className="text-xs text-white/70 font-light">{plan.targetFocus}</p>
                 )}
-                <span>·</span>
-                <span>Coach {plan.coachName}</span>
-              </div>
-              {plan.targetFocus && (
-                <p className="text-xs text-white/70 font-light">{plan.targetFocus}</p>
-              )}
-            </div>
-          ))}
+                {isSuggested && (
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">
+                      Self-Guided Workout
+                    </span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${done ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white'}`}>
+                      {done ? '✓ Done' : 'Tap to start →'}
+                    </span>
+                  </div>
+                )}
+              </CardTag>
+            );
+          })}
         </div>
       )}
     </div>
