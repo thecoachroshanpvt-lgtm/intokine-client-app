@@ -364,14 +364,16 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           {plans.map((plan) => {
             const isSuggested = !!plan.isSuggestedWorkout;
             const done = !!plan.clientCompletedAt;
-            const CardTag = isSuggested ? 'button' : 'div';
             return (
-              <CardTag
+              <div
                 key={plan.id}
                 onClick={isSuggested ? () => setSelectedWorkout(plan) : undefined}
+                role={isSuggested ? 'button' : undefined}
+                tabIndex={isSuggested ? 0 : undefined}
+                onKeyDown={isSuggested ? (e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedWorkout(plan); } : undefined}
                 className={`text-left rounded-2xl p-4 space-y-2 transition ${
                   isSuggested
-                    ? 'bg-gradient-to-br from-[#ec2226]/15 to-[#6ccbde]/10 border border-white/[0.12] hover:border-white/25'
+                    ? 'bg-gradient-to-br from-[#ec2226]/15 to-[#6ccbde]/10 border border-white/[0.12] hover:border-white/25 cursor-pointer'
                     : 'bg-white/[0.05] border border-white/[0.08]'
                 }`}
               >
@@ -405,7 +407,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                     </span>
                   </div>
                 )}
-              </CardTag>
+              </div>
             );
           })}
         </div>
