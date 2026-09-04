@@ -9,11 +9,10 @@ import {
 import { WelcomeScreen } from './WelcomeScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
 import { ProgramHomeScreen } from './ProgramHomeScreen';
-import { CurriculumScreen } from './CurriculumScreen';
 import { ClientDashboard } from './ClientDashboard';
 
-type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training' | 'KATBA' | 'ZAKI';
-type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Recorded Session' | 'Couple Training' | 'Diet Program' | 'Psychology Consultation';
+type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training';
+type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Couple Training' | 'Online Batch Training' | 'Offline Batch Training';
 
 function App() {
   // Both photo screens are meant to show every time the app opens,
@@ -119,8 +118,8 @@ function App() {
 
   // 3. Their own program card - the second of exactly 2 photo
   // screens, showing both their Program and Service together (e.g.
-  // "KATBA - Personal Training"), and also where the "welcome back"
-  // greeting lives now.
+  // "Weight Training - Personal Training"), and also where the
+  // "welcome back" greeting lives now.
   if (showProgramHome) {
     return (
       <ProgramHomeScreen
@@ -130,15 +129,6 @@ function App() {
         onEnter={() => setShowProgramHome(false)}
       />
     );
-  }
-
-  // 4. What "Enter" leads to depends on the combination. Recorded
-  // Session clients on ZAKI, KATBA, or Calisthenics see their own
-  // individualized episodes, built specifically for them by their
-  // coach. Everything else is the existing coach-and-client
-  // relationship, which the current dashboard already represents.
-  if (service === 'Recorded Session' && (programType === 'ZAKI' || programType === 'KATBA' || programType === 'Calisthenics')) {
-    return <CurriculumScreen clientId={clientInfo.clientId} programType={programType} />;
   }
 
   return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} />;

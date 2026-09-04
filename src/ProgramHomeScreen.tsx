@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
-type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training' | 'KATBA' | 'ZAKI';
-type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Recorded Session' | 'Couple Training' | 'Diet Program' | 'Psychology Consultation';
+type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training';
+type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Couple Training' | 'Online Batch Training' | 'Offline Batch Training';
 
 interface ProgramHomeScreenProps {
   clientName: string;
@@ -10,12 +10,10 @@ interface ProgramHomeScreenProps {
   onEnter: () => void;
 }
 
-// A simple accent rule rather than a lookup sized for every one of
-// the 9x6 possible combinations - ZAKI and KATBA get their brand
-// colors, everything else uses the standard crimson/cyan mix.
+// A simple accent rule rather than a lookup sized for every
+// combination - all program types currently use the standard
+// crimson accent.
 function getAccent(programType: ProgramType): string {
-  if (programType === 'ZAKI') return '#6ccbde';
-  if (programType === 'KATBA') return '#ec2226';
   return '#ec2226';
 }
 
