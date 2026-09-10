@@ -10,6 +10,7 @@ import { WelcomeScreen } from './WelcomeScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
 import { ProgramHomeScreen } from './ProgramHomeScreen';
 import { ClientDashboard } from './ClientDashboard';
+import { PrqScreen } from './PrqScreen';
 
 type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training';
 type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Couple Training' | 'Online Batch Training' | 'Offline Batch Training';
@@ -23,7 +24,8 @@ function App() {
 
   const [authChecked, setAuthChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [clientInfo, setClientInfo] = useState<{ clientId: string; name: string } | null>(null);
+  const [clientInfo, setClientInfo] = useState<{ clientId: string; name: string; email: string } | null>(null);
+  const [prqCompleted, setPrqCompleted] = useState<boolean | null>(null);
   const [programType, setProgramType] = useState<ProgramType | null>(null);
   const [service, setService] = useState<ServiceType | null>(null);
   const [lookupError, setLookupError] = useState('');
@@ -48,7 +50,7 @@ function App() {
             const accountDoc = await getDoc(doc(db, 'intokine_client_accounts', user.uid));
             if (accountDoc.exists()) {
               const data = accountDoc.data();
-              setClientInfo({ clientId: data.clientId, name: data.name });
+              setClientInfo({ clientId: data.clientId, name: data.name, email: data.email || '' });
               setLookupError('');
 
               // Also fetch their real client record, to get their
@@ -60,6 +62,12 @@ function App() {
                 setProgramType((clientData.programType as ProgramType) || 'Weight Training');
                 setService((clientData.service as ServiceType) || 'Offline Personal Training');
               }
+
+              // Check whether this client has already completed their
+              // Health Screening Questionnaire (PRQ) - one record per
+              // client, keyed by their clientId.
+              const prqDoc = await getDoc(doc(db, 'intokine_prq_records', `PRQ-${data.clientId}`));
+              setPrqCompleted(prqDoc.exists());
             } else {
               setLookupError('This login is not linked to a client account. Please contact your coach.');
             }
@@ -71,6 +79,7 @@ function App() {
         setClientInfo(null);
         setProgramType(null);
         setService(null);
+        setPrqCompleted(null);
       }
 
       setAuthChecked(true);
@@ -108,11 +117,26 @@ function App() {
     );
   }
 
-  if (!clientInfo || !programType || !service) {
+  if (!clientInfo || !programType || !service || prqCompleted === null) {
     return (
       <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
         <div className="text-white/40 text-sm font-light">Loading your account...</div>
       </div>
+    );
+  }
+
+  // 2.5. Health Screening Questionnaire (PRQ) - required once, before
+  // a client can see anything else. Everything downstream (their
+  // program home, their progress, their training and diet plans)
+  // depends on this being filled in first.
+  if (!prqCompleted) {
+    return (
+      <PrqScreen
+        clientId={clientInfo.clientId}
+        clientName={clientInfo.name}
+        clientEmail={clientInfo.email}
+        onComplete={() => setPrqCompleted(true)}
+      />
     );
   }
 
