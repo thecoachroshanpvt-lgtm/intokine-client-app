@@ -232,6 +232,92 @@ const emptyForm = (name: string, email: string): PrqFormData => ({
   consentConfirmed: false,
 });
 
+// Defined at module level, outside PrqScreen, and deliberately not
+// inline inside it. A component defined inside another component's
+// body gets recreated as a brand-new function on every re-render -
+// React then treats it as an entirely new component type, unmounting
+// and remounting the actual <input> DOM node on every keystroke. On
+// mobile that closes the keyboard after each letter, forcing a fresh
+// tap for every character typed.
+const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <label className="text-xs font-semibold text-white/70 block mb-1.5">{children}</label>
+);
+
+const TextInput: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string; type?: string }> = ({ value, onChange, placeholder, type = 'text' }) => (
+  <input
+    type={type}
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder={placeholder}
+    className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#6ccbde]"
+  />
+);
+
+const TextArea: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string }> = ({ value, onChange, placeholder }) => (
+  <textarea
+    value={value}
+    onChange={(e) => onChange(e.target.value)}
+    placeholder={placeholder}
+    rows={3}
+    className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#6ccbde] resize-none"
+  />
+);
+
+const YesNo: React.FC<{ value: boolean | null; onChange: (v: boolean) => void; thirdOption?: { label: string; onSelect: () => void } }> = ({ value, onChange, thirdOption }) => (
+  <div className="flex gap-2">
+    <button type="button" onClick={() => onChange(true)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${value === true ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}>Yes</button>
+    <button type="button" onClick={() => onChange(false)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${value === false ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}>No</button>
+    {thirdOption && (
+      <button type="button" onClick={thirdOption.onSelect} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition bg-white/[0.06] text-white/60">{thirdOption.label}</button>
+    )}
+  </div>
+);
+
+const ChipGroup: React.FC<{ options: string[]; selected: string[]; onToggle: (v: string) => void }> = ({ options, selected, onToggle }) => (
+  <div className="flex flex-wrap gap-2">
+    {options.map((opt) => (
+      <button
+        key={opt}
+        type="button"
+        onClick={() => onToggle(opt)}
+        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${selected.includes(opt) ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
+      >
+        {opt}
+      </button>
+    ))}
+  </div>
+);
+
+const SingleSelect: React.FC<{ options: string[]; value: string; onChange: (v: string) => void }> = ({ options, value, onChange }) => (
+  <div className="flex flex-wrap gap-2">
+    {options.map((opt) => (
+      <button
+        key={opt}
+        type="button"
+        onClick={() => onChange(opt)}
+        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${value === opt ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
+      >
+        {opt}
+      </button>
+    ))}
+  </div>
+);
+
+const Scale1to10: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
+  <div className="grid grid-cols-5 gap-1.5">
+    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+      <button
+        key={n}
+        type="button"
+        onClick={() => onChange(String(n))}
+        className={`py-2 rounded-lg text-xs font-bold transition ${value === String(n) ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
+      >
+        {n}
+      </button>
+    ))}
+  </div>
+);
+
 export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clientEmail, onComplete }) => {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<PrqFormData>(() => emptyForm(clientName, clientEmail));
@@ -253,85 +339,6 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
   };
 
   const TOTAL_STEPS = 16;
-
-  const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <label className="text-xs font-semibold text-white/70 block mb-1.5">{children}</label>
-  );
-
-  const TextInput: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string; type?: string }> = ({ value, onChange, placeholder, type = 'text' }) => (
-    <input
-      type={type}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#6ccbde]"
-    />
-  );
-
-  const TextArea: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string }> = ({ value, onChange, placeholder }) => (
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      rows={3}
-      className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#6ccbde] resize-none"
-    />
-  );
-
-  const YesNo: React.FC<{ value: boolean | null; onChange: (v: boolean) => void; thirdOption?: { label: string; onSelect: () => void } }> = ({ value, onChange, thirdOption }) => (
-    <div className="flex gap-2">
-      <button type="button" onClick={() => onChange(true)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${value === true ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}>Yes</button>
-      <button type="button" onClick={() => onChange(false)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${value === false ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}>No</button>
-      {thirdOption && (
-        <button type="button" onClick={thirdOption.onSelect} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition bg-white/[0.06] text-white/60">{thirdOption.label}</button>
-      )}
-    </div>
-  );
-
-  const ChipGroup: React.FC<{ options: string[]; selected: string[]; onToggle: (v: string) => void }> = ({ options, selected, onToggle }) => (
-    <div className="flex flex-wrap gap-2">
-      {options.map((opt) => (
-        <button
-          key={opt}
-          type="button"
-          onClick={() => onToggle(opt)}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${selected.includes(opt) ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
-        >
-          {opt}
-        </button>
-      ))}
-    </div>
-  );
-
-  const SingleSelect: React.FC<{ options: string[]; value: string; onChange: (v: string) => void }> = ({ options, value, onChange }) => (
-    <div className="flex flex-wrap gap-2">
-      {options.map((opt) => (
-        <button
-          key={opt}
-          type="button"
-          onClick={() => onChange(opt)}
-          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${value === opt ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
-        >
-          {opt}
-        </button>
-      ))}
-    </div>
-  );
-
-  const Scale1to10: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-    <div className="grid grid-cols-5 gap-1.5">
-      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-        <button
-          key={n}
-          type="button"
-          onClick={() => onChange(String(n))}
-          className={`py-2 rounded-lg text-xs font-bold transition ${value === String(n) ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
-        >
-          {n}
-        </button>
-      ))}
-    </div>
-  );
 
   const stepTitles = [
     'Personal Details', 'Medical Information', 'Surgery & Injury History', 'Family History',
