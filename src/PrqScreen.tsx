@@ -1,10 +1,65 @@
 import React, { useMemo, useState } from 'react';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
-import {
-  User, HeartPulse, Bandage, Users, Wine, Dumbbell, Briefcase, Moon,
-  Scale, Ruler, Activity, Target, Shield, Apple, TriangleAlert, Flag,
-  ChevronLeft,
-} from 'lucide-react';
+
+// Lightweight inline icons - lucide-react isn't a dependency in this
+// project (it's only installed in the separate main INTOKINE app),
+// so these are simple, dependency-free SVGs instead.
+const IconWrap: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {children}
+  </svg>
+);
+const IconUser: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" /></IconWrap>
+);
+const IconHeartPulse: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M19 14c1.5-1.5 3-3.2 3-5.5A4.5 4.5 0 0 0 17.5 4c-1.7 0-3 .8-4 2-1-1.2-2.3-2-4-2A4.5 4.5 0 0 0 5 4.5C5 6.8 6.5 8.5 8 10l4 4" /><path d="M3.5 12h2.5l1.5 3 2.5-6 1.5 3h9" /></IconWrap>
+);
+const IconBandage: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><rect x="3" y="9" width="18" height="6" rx="3" transform="rotate(-45 12 12)" /><circle cx="9" cy="9" r="0.8" fill="currentColor" /><circle cx="15" cy="15" r="0.8" fill="currentColor" /></IconWrap>
+);
+const IconUsers: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><circle cx="9" cy="7" r="3.2" /><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" /><path d="M16.5 8a2.8 2.8 0 1 1 0-5.6" /><path d="M21.5 21c0-3-1.9-5.5-4.5-6.3" /></IconWrap>
+);
+const IconWine: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M7 3h10l-1 6a4 4 0 0 1-8 0Z" /><path d="M12 13v6M9 21h6" /></IconWrap>
+);
+const IconDumbbell: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M4 8v8M2 10v4M20 8v8M22 10v4M7 12h10" /></IconWrap>
+);
+const IconBriefcase: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><rect x="2.5" y="7" width="19" height="13" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7" /></IconWrap>
+);
+const IconMoon: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" /></IconWrap>
+);
+const IconScale: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M12 3v18M7 21h10M12 3l-6 4M12 3l6 4" /><path d="M3 11l3-4 3 4a3 3 0 0 1-6 0ZM15 11l3-4 3 4a3 3 0 0 1-6 0Z" /></IconWrap>
+);
+const IconRuler: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><rect x="2.5" y="7" width="19" height="10" rx="1.5" transform="rotate(0 12 12)" /><path d="M7 7v3M11 7v3M15 7v3M19 7v3" /></IconWrap>
+);
+const IconActivity: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M3 12h4l2-7 4 14 2-7h6" /></IconWrap>
+);
+const IconTarget: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></IconWrap>
+);
+const IconShield: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6Z" /></IconWrap>
+);
+const IconApple: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M12 8c-3 0-5.5 2.5-5.5 6.5S9 21 12 21s5.5-2.5 5.5-6.5S15 8 12 8Z" /><path d="M12 8c0-2 1-3.5 2.5-4M10 5c.5.5.8 1.2 1 2" /></IconWrap>
+);
+const IconTriangleAlert: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M12 3 2 20h20L12 3Z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.8" fill="currentColor" /></IconWrap>
+);
+const IconFlag: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M5 3v18" /><path d="M5 4h13l-3 4 3 4H5" /></IconWrap>
+);
+const IconChevronLeft: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}><path d="M15 5l-7 7 7 7" /></IconWrap>
+);
 
 interface PrqScreenProps {
   clientId: string;
@@ -45,22 +100,22 @@ const MEAL_TIMING_OPTIONS = ['Big breakfast', 'Big lunch', 'Big dinner', 'Small 
 // Each section gets its own gradient + icon, giving every question a
 // distinct visual identity instead of a flat, uniform form.
 const SECTION_THEME: Record<string, { gradient: string; icon: React.ElementType }> = {
-  'Personal Details': { gradient: 'from-[#4f46e5] via-[#7c3aed] to-[#1e1b4b]', icon: User },
-  'Medical Information': { gradient: 'from-[#dc2626] via-[#be123c] to-[#1c0a0a]', icon: HeartPulse },
-  'Surgery & Injury History': { gradient: 'from-[#ea580c] via-[#c2410c] to-[#1c0f0a]', icon: Bandage },
-  'Family History': { gradient: 'from-[#4338ca] via-[#3730a3] to-[#0f0a2e]', icon: Users },
-  'Substance-Related Habits': { gradient: 'from-[#b45309] via-[#78350f] to-[#1c1206]', icon: Wine },
-  'Physical Activity': { gradient: 'from-[#0891b2] via-[#0e7490] to-[#052e2e]', icon: Dumbbell },
-  'Occupational': { gradient: 'from-[#475569] via-[#334155] to-[#0f172a]', icon: Briefcase },
-  'Sleep & Stress': { gradient: 'from-[#7c3aed] via-[#6d28d9] to-[#1e1033]', icon: Moon },
-  'Weight History': { gradient: 'from-[#0d9488] via-[#0f766e] to-[#042f2c]', icon: Scale },
-  'Circumferences': { gradient: 'from-[#db2777] via-[#be185d] to-[#2e0a1c]', icon: Ruler },
-  'Body Composition': { gradient: 'from-[#059669] via-[#047857] to-[#022c22]', icon: Activity },
-  'Goals & Readiness': { gradient: 'from-[#d97706] via-[#b45309] to-[#271707]', icon: Target },
-  'COVID History': { gradient: 'from-[#334155] via-[#1e293b] to-[#020617]', icon: Shield },
-  'Nutrition': { gradient: 'from-[#65a30d] via-[#4d7c0f] to-[#1a2e05]', icon: Apple },
-  'Food & Medical Considerations': { gradient: 'from-[#e11d48] via-[#be123c] to-[#1c0a0f]', icon: TriangleAlert },
-  'Fitness Goal': { gradient: 'from-[#ec2226] via-[#a5194c] to-[#0e2a3a]', icon: Flag },
+  'Personal Details': { gradient: 'from-[#4f46e5] via-[#7c3aed] to-[#1e1b4b]', icon: IconUser },
+  'Medical Information': { gradient: 'from-[#dc2626] via-[#be123c] to-[#1c0a0a]', icon: IconHeartPulse },
+  'Surgery & Injury History': { gradient: 'from-[#ea580c] via-[#c2410c] to-[#1c0f0a]', icon: IconBandage },
+  'Family History': { gradient: 'from-[#4338ca] via-[#3730a3] to-[#0f0a2e]', icon: IconUsers },
+  'Substance-Related Habits': { gradient: 'from-[#b45309] via-[#78350f] to-[#1c1206]', icon: IconWine },
+  'Physical Activity': { gradient: 'from-[#0891b2] via-[#0e7490] to-[#052e2e]', icon: IconDumbbell },
+  'Occupational': { gradient: 'from-[#475569] via-[#334155] to-[#0f172a]', icon: IconBriefcase },
+  'Sleep & Stress': { gradient: 'from-[#7c3aed] via-[#6d28d9] to-[#1e1033]', icon: IconMoon },
+  'Weight History': { gradient: 'from-[#0d9488] via-[#0f766e] to-[#042f2c]', icon: IconScale },
+  'Circumferences': { gradient: 'from-[#db2777] via-[#be185d] to-[#2e0a1c]', icon: IconRuler },
+  'Body Composition': { gradient: 'from-[#059669] via-[#047857] to-[#022c22]', icon: IconActivity },
+  'Goals & Readiness': { gradient: 'from-[#d97706] via-[#b45309] to-[#271707]', icon: IconTarget },
+  'COVID History': { gradient: 'from-[#334155] via-[#1e293b] to-[#020617]', icon: IconShield },
+  'Nutrition': { gradient: 'from-[#65a30d] via-[#4d7c0f] to-[#1a2e05]', icon: IconApple },
+  'Food & Medical Considerations': { gradient: 'from-[#e11d48] via-[#be123c] to-[#1c0a0f]', icon: IconTriangleAlert },
+  'Fitness Goal': { gradient: 'from-[#ec2226] via-[#a5194c] to-[#0e2a3a]', icon: IconFlag },
 };
 
 const questions: QuestionConfig[] = [
@@ -535,7 +590,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             onClick={goBack}
             className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white flex items-center justify-center shrink-0"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <IconChevronLeft className="w-5 h-5" />
           </button>
         )}
         {!isAutoAdvance && (
