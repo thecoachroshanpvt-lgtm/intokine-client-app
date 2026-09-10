@@ -65,9 +65,19 @@ function App() {
 
               // Check whether this client has already completed their
               // Health Screening Questionnaire (PRQ) - one record per
-              // client, keyed by their clientId.
-              const prqDoc = await getDoc(doc(db, 'intokine_prq_records', `PRQ-${data.clientId}`));
-              setPrqCompleted(prqDoc.exists());
+              // client, keyed by their clientId. Isolated in its own
+              // try/catch: a problem with this one new lookup (rules
+              // not yet deployed, network blip, etc.) must never take
+              // down the entire login flow the way a shared catch
+              // block would. Defaults to "not completed" on failure,
+              // which just means showing the PRQ screen again rather
+              // than silently skipping it.
+              try {
+                const prqDoc = await getDoc(doc(db, 'intokine_prq_records', `PRQ-${data.clientId}`));
+                setPrqCompleted(prqDoc.exists());
+              } catch (prqError) {
+                setPrqCompleted(false);
+              }
             } else {
               setLookupError('This login is not linked to a client account. Please contact your coach.');
             }
