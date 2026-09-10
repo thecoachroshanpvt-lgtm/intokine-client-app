@@ -1,64 +1,36 @@
 import React, { useMemo, useState } from 'react';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
 
-// Lightweight inline icons - lucide-react isn't a dependency in this
-// project (it's only installed in the separate main INTOKINE app),
-// so these are simple, dependency-free SVGs instead.
+// Shadow/silhouette figures representing the person filling out the
+// form - neutral by default, switching to reflect their selected
+// gender once that question is answered.
 const IconWrap: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className={className}>
+  <svg viewBox="0 0 200 400" fill="currentColor" className={className}>
     {children}
   </svg>
 );
-const IconUser: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8" /></IconWrap>
+const SilhouetteNeutral: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}>
+    <circle cx="100" cy="55" r="42" />
+    <path d="M100 105c-48 0-82 32-88 82-3 28-3 90-3 150 0 20 16 36 36 36h110c20 0 36-16 36-36 0-60 0-122-3-150-6-50-40-82-88-82Z" />
+  </IconWrap>
 );
-const IconHeartPulse: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M19 14c1.5-1.5 3-3.2 3-5.5A4.5 4.5 0 0 0 17.5 4c-1.7 0-3 .8-4 2-1-1.2-2.3-2-4-2A4.5 4.5 0 0 0 5 4.5C5 6.8 6.5 8.5 8 10l4 4" /><path d="M3.5 12h2.5l1.5 3 2.5-6 1.5 3h9" /></IconWrap>
+const SilhouetteMale: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}>
+    <circle cx="100" cy="52" r="40" />
+    <path d="M100 98c-32 0-55 8-65 26-8 14-9 34-9 34l14 6-4 60 10 138c1 14 12 24 26 24h56c14 0 25-10 26-24l10-138-4-60 14-6s-1-20-9-34c-10-18-33-26-65-26Z" />
+  </IconWrap>
 );
-const IconBandage: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><rect x="3" y="9" width="18" height="6" rx="3" transform="rotate(-45 12 12)" /><circle cx="9" cy="9" r="0.8" fill="currentColor" /><circle cx="15" cy="15" r="0.8" fill="currentColor" /></IconWrap>
-);
-const IconUsers: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><circle cx="9" cy="7" r="3.2" /><path d="M2.5 21c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5" /><path d="M16.5 8a2.8 2.8 0 1 1 0-5.6" /><path d="M21.5 21c0-3-1.9-5.5-4.5-6.3" /></IconWrap>
-);
-const IconWine: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M7 3h10l-1 6a4 4 0 0 1-8 0Z" /><path d="M12 13v6M9 21h6" /></IconWrap>
-);
-const IconDumbbell: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M4 8v8M2 10v4M20 8v8M22 10v4M7 12h10" /></IconWrap>
-);
-const IconBriefcase: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><rect x="2.5" y="7" width="19" height="13" rx="2" /><path d="M8 7V5.5A1.5 1.5 0 0 1 9.5 4h5A1.5 1.5 0 0 1 16 5.5V7" /></IconWrap>
-);
-const IconMoon: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" /></IconWrap>
-);
-const IconScale: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M12 3v18M7 21h10M12 3l-6 4M12 3l6 4" /><path d="M3 11l3-4 3 4a3 3 0 0 1-6 0ZM15 11l3-4 3 4a3 3 0 0 1-6 0Z" /></IconWrap>
-);
-const IconRuler: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><rect x="2.5" y="7" width="19" height="10" rx="1.5" transform="rotate(0 12 12)" /><path d="M7 7v3M11 7v3M15 7v3M19 7v3" /></IconWrap>
-);
-const IconActivity: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M3 12h4l2-7 4 14 2-7h6" /></IconWrap>
-);
-const IconTarget: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" fill="currentColor" /></IconWrap>
-);
-const IconShield: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M12 3l7 3v6c0 5-3.5 8-7 9-3.5-1-7-4-7-9V6Z" /></IconWrap>
-);
-const IconApple: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M12 8c-3 0-5.5 2.5-5.5 6.5S9 21 12 21s5.5-2.5 5.5-6.5S15 8 12 8Z" /><path d="M12 8c0-2 1-3.5 2.5-4M10 5c.5.5.8 1.2 1 2" /></IconWrap>
-);
-const IconTriangleAlert: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M12 3 2 20h20L12 3Z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.8" fill="currentColor" /></IconWrap>
-);
-const IconFlag: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M5 3v18" /><path d="M5 4h13l-3 4 3 4H5" /></IconWrap>
+const SilhouetteFemale: React.FC<{ className?: string }> = ({ className }) => (
+  <IconWrap className={className}>
+    <circle cx="100" cy="50" r="38" />
+    <path d="M100 94c-26 0-44 10-52 28-7 15-6 34 4 46l-10 34c-6 20 4 40 22 46l-4 40c-2 18 12 34 30 34h20c18 0 32-16 30-34l-4-40c18-6 28-26 22-46l-10-34c10-12 11-31 4-46-8-18-26-28-52-28Z" />
+  </IconWrap>
 );
 const IconChevronLeft: React.FC<{ className?: string }> = ({ className }) => (
-  <IconWrap className={className}><path d="M15 5l-7 7 7 7" /></IconWrap>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M15 5l-7 7 7 7" />
+  </svg>
 );
 
 interface PrqScreenProps {
@@ -99,24 +71,10 @@ const MEAL_TIMING_OPTIONS = ['Big breakfast', 'Big lunch', 'Big dinner', 'Small 
 
 // Each section gets its own gradient + icon, giving every question a
 // distinct visual identity instead of a flat, uniform form.
-const SECTION_THEME: Record<string, { gradient: string; icon: React.ElementType }> = {
-  'Personal Details': { gradient: 'from-[#4f46e5] via-[#7c3aed] to-[#1e1b4b]', icon: IconUser },
-  'Medical Information': { gradient: 'from-[#dc2626] via-[#be123c] to-[#1c0a0a]', icon: IconHeartPulse },
-  'Surgery & Injury History': { gradient: 'from-[#ea580c] via-[#c2410c] to-[#1c0f0a]', icon: IconBandage },
-  'Family History': { gradient: 'from-[#4338ca] via-[#3730a3] to-[#0f0a2e]', icon: IconUsers },
-  'Substance-Related Habits': { gradient: 'from-[#b45309] via-[#78350f] to-[#1c1206]', icon: IconWine },
-  'Physical Activity': { gradient: 'from-[#0891b2] via-[#0e7490] to-[#052e2e]', icon: IconDumbbell },
-  'Occupational': { gradient: 'from-[#475569] via-[#334155] to-[#0f172a]', icon: IconBriefcase },
-  'Sleep & Stress': { gradient: 'from-[#7c3aed] via-[#6d28d9] to-[#1e1033]', icon: IconMoon },
-  'Weight History': { gradient: 'from-[#0d9488] via-[#0f766e] to-[#042f2c]', icon: IconScale },
-  'Circumferences': { gradient: 'from-[#db2777] via-[#be185d] to-[#2e0a1c]', icon: IconRuler },
-  'Body Composition': { gradient: 'from-[#059669] via-[#047857] to-[#022c22]', icon: IconActivity },
-  'Goals & Readiness': { gradient: 'from-[#d97706] via-[#b45309] to-[#271707]', icon: IconTarget },
-  'COVID History': { gradient: 'from-[#334155] via-[#1e293b] to-[#020617]', icon: IconShield },
-  'Nutrition': { gradient: 'from-[#65a30d] via-[#4d7c0f] to-[#1a2e05]', icon: IconApple },
-  'Food & Medical Considerations': { gradient: 'from-[#e11d48] via-[#be123c] to-[#1c0a0f]', icon: IconTriangleAlert },
-  'Fitness Goal': { gradient: 'from-[#ec2226] via-[#a5194c] to-[#0e2a3a]', icon: IconFlag },
-};
+// Single, consistent brand background for every question - the
+// app's actual red-to-cyan identity, not a different color per topic.
+const BRAND_BG = 'bg-[#0c0d10]';
+const BRAND_GRADIENT_OVERLAY = 'from-[#ec2226]/25 via-transparent to-[#6ccbde]/20';
 
 const questions: QuestionConfig[] = [
   // Section 1 - Personal Details
@@ -259,8 +217,9 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
   );
 
   const current = visibleQuestions[index];
-  const theme = SECTION_THEME[current.section];
-  const Icon = theme.icon;
+  // Neutral silhouette until the client answers the sex question,
+  // then it reflects their answer for every question after that.
+  const Silhouette = form.sex === 'Male' ? SilhouetteMale : form.sex === 'Female' ? SilhouetteFemale : SilhouetteNeutral;
   const isLast = index === visibleQuestions.length - 1;
 
   const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
@@ -473,14 +432,14 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             <button
               type="button"
               onClick={() => { set(current.key, true); setTimeout(goNext, 150); }}
-              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition ${value === true ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition ${value === true ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
             >
               Yes
             </button>
             <button
               type="button"
               onClick={() => { set(current.key, false); setTimeout(goNext, 150); }}
-              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition ${value === false ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition ${value === false ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
             >
               No
             </button>
@@ -494,7 +453,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
                 key={opt}
                 type="button"
                 onClick={() => { set(current.key, opt); setTimeout(goNext, 150); }}
-                className={`px-4 py-3 rounded-2xl text-sm font-bold transition ${value === opt ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+                className={`px-4 py-3 rounded-2xl text-sm font-bold transition ${value === opt ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
               >
                 {opt}
               </button>
@@ -511,7 +470,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
                   key={opt}
                   type="button"
                   onClick={() => toggleChip(current.key, opt)}
-                  className={`px-4 py-2.5 rounded-full text-xs font-bold transition ${list.includes(opt) ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+                  className={`px-4 py-2.5 rounded-full text-xs font-bold transition ${list.includes(opt) ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
                 >
                   {opt}
                 </button>
@@ -527,7 +486,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
                 key={n}
                 type="button"
                 onClick={() => { set(current.key, String(n)); setTimeout(goNext, 150); }}
-                className={`py-3.5 rounded-xl text-base font-bold transition ${value === String(n) ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+                className={`py-3.5 rounded-xl text-base font-bold transition ${value === String(n) ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
               >
                 {n}
               </button>
@@ -556,21 +515,25 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
   const isAutoAdvance = ['yesno', 'single', 'scale'].includes(current.type);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${theme.gradient} flex flex-col relative overflow-hidden transition-colors duration-500`}>
-      {/* Decorative large icon, faint, in the background */}
-      <Icon className="absolute -right-10 -bottom-10 w-72 h-72 text-white/[0.06] pointer-events-none" strokeWidth={1} />
-      <Icon className="absolute -left-16 top-1/3 w-56 h-56 text-white/[0.04] pointer-events-none" strokeWidth={1} />
+    <div className={`min-h-screen ${BRAND_BG} flex flex-col relative overflow-hidden`}>
+      {/* Brand-colored ambient glow, consistent across every question */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${BRAND_GRADIENT_OVERLAY} pointer-events-none`} />
+
+      {/* Large shadow figure of the client - neutral until their sex
+          is known, then reflects it for the rest of the form */}
+      <Silhouette className="absolute -right-8 bottom-0 h-[85%] w-auto text-black/40 pointer-events-none" />
+      <Silhouette className="absolute -right-8 bottom-0 h-[85%] w-auto text-[#ec2226]/[0.07] pointer-events-none blur-sm" />
 
       <div className="relative z-10 px-6 pt-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center">
-            <Icon className="w-4.5 h-4.5 text-white" />
+          <div className="w-9 h-9 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 flex items-center justify-center">
+            <Silhouette className="w-4 h-4 text-[#6ccbde]" />
           </div>
           <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">{current.section}</span>
         </div>
-        <div className="h-1 bg-white/15 rounded-full overflow-hidden">
+        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
           <div
-            className="h-full bg-white transition-all duration-300"
+            className="h-full bg-gradient-to-r from-[#ec2226] to-[#6ccbde] transition-all duration-300"
             style={{ width: `${((index + 1) / visibleQuestions.length) * 100}%` }}
           />
         </div>
@@ -598,7 +561,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             type="button"
             onClick={goNext}
             disabled={submitting}
-            className="flex-1 py-4 rounded-2xl bg-white text-black text-base font-black disabled:opacity-50"
+            className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white text-base font-black disabled:opacity-50"
           >
             {submitting ? 'Saving...' : isLast ? 'Finish & Submit' : 'Continue'}
           </button>
