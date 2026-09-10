@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
+import {
+  User, HeartPulse, Bandage, Users, Wine, Dumbbell, Briefcase, Moon,
+  Scale, Ruler, Activity, Target, Shield, Apple, TriangleAlert, Flag,
+  ChevronLeft,
+} from 'lucide-react';
 
 interface PrqScreenProps {
   clientId: string;
@@ -9,116 +14,19 @@ interface PrqScreenProps {
 }
 
 interface PrqFormData {
-  submissionDate: string;
-  fullName: string;
-  email: string;
-  address: string;
-  contactNumber: string;
-  emergencyContactNumber: string;
-  dateOfBirth: string;
-  age: string;
-  maritalStatus: string;
-  sex: string;
+  [key: string]: string | string[] | boolean | null;
+}
 
-  weightKg: string;
-  heightCm: string;
-  presentHealthState: string;
-  currentMedications: string;
-  takesMedicationsAsPrescribed: string;
-  reasonNotTakingAsPrescribed: string;
-  takesSupplements: boolean | null;
-  supplementDetails: string;
-  lastPhysicianVisit: string;
-  totalCholesterol: string;
-  hdl: string;
-  ldl: string;
-  hasCheckedBloodSugar: boolean | null;
-  bloodSugarResults: string;
-  medicalConditions: string[];
-  medicalConditionsNotes: string;
-  pregnancyWeeksAlong: string;
+type FieldType = 'text' | 'number' | 'textarea' | 'date' | 'yesno' | 'chips' | 'single' | 'scale' | 'consent';
 
-  hadMajorSurgery: boolean | null;
-  majorSurgeryDetails: string;
-  hadPastInjuries: boolean | null;
-  pastInjuryDetails: string;
-  hasActivityLimitingInjuries: boolean | null;
-  activityLimitingInjuryDetails: string;
-  hasCurrentInjuries: boolean | null;
-  currentInjuryDetails: string;
-
-  familyMedicalHistory: string[];
-
-  drinksAlcohol: boolean | null;
-  alcoholFrequency: string;
-  alcoholTimesPerWeek: string;
-  alcoholAverageAmount: string;
-  drinksCaffeine: boolean | null;
-  caffeinePerDay: string;
-  usesTobacco: boolean | null;
-  tobaccoAmount: string;
-
-  doesStructuredActivity: boolean | null;
-  structuredActivityDescription: string;
-  cardioMinutesPerSession: string;
-  cardioTimesPerWeek: string;
-  muscularTrainingSessionsPerWeek: string;
-  flexibilitySessionsPerWeek: string;
-  doesSportsOrRecreation: boolean | null;
-  sportsDetails: string;
-  feelingsAboutExercise: string;
-  favoritePhysicalActivities: string;
-  trainingExperienceLevel: string;
-
-  works: boolean | null;
-  occupation: string;
-  workSchedule: string;
-  workActivityLevelDescription: string;
-  dailyActivityLevel: string;
-
-  sleepHoursPerNight: string;
-  mostStressfulThing: string;
-  stressLevel: string;
-  appetiteUnderStress: string;
-
-  weightGoalDirection: string;
-  lowestWeightPast5Years: string;
-  highestWeightPast5Years: string;
-  idealWeight: string;
-
-  abdomenCircumferenceCm: string;
-  waistCircumferenceCm: string;
-  upperArmCircumferenceCm: string;
-  midThighCircumferenceCm: string;
-
-  bmi: string;
-  fatMassKg: string;
-  skeletalMuscleMassKg: string;
-
-  readinessToAdoptHealthyLifestyle: string;
-  hasSpecificHealthGoals: boolean | null;
-  healthGoalsPrioritized: string;
-
-  diagnosedWithCovidBefore: boolean | null;
-
-  followingADiet: boolean | null;
-  dietDescription: string;
-  tastePreferences: string[];
-  texturePreferences: string[];
-  temperaturePreference: string;
-  mealTimingPreferences: string[];
-  dietaryLifestyle: string;
-  dietaryLifestyleOtherNote: string;
-
-  hasSpecificIllness: boolean | null;
-  illnessDetails: string;
-  hasFoodAllergy: boolean | null;
-  foodAllergyDetails: string;
-  foodsNeverEaten: string;
-
-  fitnessGoal: string;
-
-  consentConfirmed: boolean;
+interface QuestionConfig {
+  key: string;
+  type: FieldType;
+  label: string;
+  placeholder?: string;
+  options?: string[];
+  section: string;
+  showIf?: (form: PrqFormData) => boolean;
 }
 
 const MEDICAL_CONDITIONS = [
@@ -129,486 +37,225 @@ const MEDICAL_CONDITIONS = [
   'Irritable bowel syndrome (IBS)', 'Menopausal symptoms', 'Osteoporosis',
   'Premenstrual syndrome (PMS)', 'Polycystic ovary syndrome (PCOS)', 'Pregnant', 'Skin problems', 'Ulcer',
 ];
-
 const FAMILY_HISTORY_OPTIONS = ['Heart disease', 'High cholesterol', 'High blood pressure', 'Cancer', 'Diabetes', 'Osteoporosis'];
 const TASTE_OPTIONS = ['Sweet', 'Salty', 'Spicy', 'Savoury', 'Bitter', 'Umami'];
 const TEXTURE_OPTIONS = ['Mild / Neutral', 'Crunchy', 'Soft', 'Creamy', 'Chewy'];
 const MEAL_TIMING_OPTIONS = ['Big breakfast', 'Big lunch', 'Big dinner', 'Small frequent meals', 'Large meals', '3 standard meals'];
 
-const emptyForm = (name: string, email: string): PrqFormData => ({
-  submissionDate: new Date().toISOString().split('T')[0],
-  fullName: name,
-  email,
-  address: '',
-  contactNumber: '',
-  emergencyContactNumber: '',
-  dateOfBirth: '',
-  age: '',
-  maritalStatus: '',
-  sex: '',
-  weightKg: '',
-  heightCm: '',
-  presentHealthState: '',
-  currentMedications: '',
-  takesMedicationsAsPrescribed: '',
-  reasonNotTakingAsPrescribed: '',
-  takesSupplements: null,
-  supplementDetails: '',
-  lastPhysicianVisit: '',
-  totalCholesterol: '',
-  hdl: '',
-  ldl: '',
-  hasCheckedBloodSugar: null,
-  bloodSugarResults: '',
-  medicalConditions: [],
-  medicalConditionsNotes: '',
-  pregnancyWeeksAlong: '',
-  hadMajorSurgery: null,
-  majorSurgeryDetails: '',
-  hadPastInjuries: null,
-  pastInjuryDetails: '',
-  hasActivityLimitingInjuries: null,
-  activityLimitingInjuryDetails: '',
-  hasCurrentInjuries: null,
-  currentInjuryDetails: '',
-  familyMedicalHistory: [],
-  drinksAlcohol: null,
-  alcoholFrequency: '',
-  alcoholTimesPerWeek: '',
-  alcoholAverageAmount: '',
-  drinksCaffeine: null,
-  caffeinePerDay: '',
-  usesTobacco: null,
-  tobaccoAmount: '',
-  doesStructuredActivity: null,
-  structuredActivityDescription: '',
-  cardioMinutesPerSession: '',
-  cardioTimesPerWeek: '',
-  muscularTrainingSessionsPerWeek: '',
-  flexibilitySessionsPerWeek: '',
-  doesSportsOrRecreation: null,
-  sportsDetails: '',
-  feelingsAboutExercise: '',
-  favoritePhysicalActivities: '',
-  trainingExperienceLevel: '',
-  works: null,
-  occupation: '',
-  workSchedule: '',
-  workActivityLevelDescription: '',
-  dailyActivityLevel: '',
-  sleepHoursPerNight: '',
-  mostStressfulThing: '',
-  stressLevel: '',
-  appetiteUnderStress: '',
-  weightGoalDirection: '',
-  lowestWeightPast5Years: '',
-  highestWeightPast5Years: '',
-  idealWeight: '',
-  abdomenCircumferenceCm: '',
-  waistCircumferenceCm: '',
-  upperArmCircumferenceCm: '',
-  midThighCircumferenceCm: '',
-  bmi: '',
-  fatMassKg: '',
-  skeletalMuscleMassKg: '',
-  readinessToAdoptHealthyLifestyle: '',
-  hasSpecificHealthGoals: null,
-  healthGoalsPrioritized: '',
-  diagnosedWithCovidBefore: null,
-  followingADiet: null,
-  dietDescription: '',
-  tastePreferences: [],
-  texturePreferences: [],
-  temperaturePreference: '',
-  mealTimingPreferences: [],
-  dietaryLifestyle: '',
-  dietaryLifestyleOtherNote: '',
-  hasSpecificIllness: null,
-  illnessDetails: '',
-  hasFoodAllergy: null,
-  foodAllergyDetails: '',
-  foodsNeverEaten: '',
-  fitnessGoal: '',
-  consentConfirmed: false,
-});
+// Each section gets its own gradient + icon, giving every question a
+// distinct visual identity instead of a flat, uniform form.
+const SECTION_THEME: Record<string, { gradient: string; icon: React.ElementType }> = {
+  'Personal Details': { gradient: 'from-[#4f46e5] via-[#7c3aed] to-[#1e1b4b]', icon: User },
+  'Medical Information': { gradient: 'from-[#dc2626] via-[#be123c] to-[#1c0a0a]', icon: HeartPulse },
+  'Surgery & Injury History': { gradient: 'from-[#ea580c] via-[#c2410c] to-[#1c0f0a]', icon: Bandage },
+  'Family History': { gradient: 'from-[#4338ca] via-[#3730a3] to-[#0f0a2e]', icon: Users },
+  'Substance-Related Habits': { gradient: 'from-[#b45309] via-[#78350f] to-[#1c1206]', icon: Wine },
+  'Physical Activity': { gradient: 'from-[#0891b2] via-[#0e7490] to-[#052e2e]', icon: Dumbbell },
+  'Occupational': { gradient: 'from-[#475569] via-[#334155] to-[#0f172a]', icon: Briefcase },
+  'Sleep & Stress': { gradient: 'from-[#7c3aed] via-[#6d28d9] to-[#1e1033]', icon: Moon },
+  'Weight History': { gradient: 'from-[#0d9488] via-[#0f766e] to-[#042f2c]', icon: Scale },
+  'Circumferences': { gradient: 'from-[#db2777] via-[#be185d] to-[#2e0a1c]', icon: Ruler },
+  'Body Composition': { gradient: 'from-[#059669] via-[#047857] to-[#022c22]', icon: Activity },
+  'Goals & Readiness': { gradient: 'from-[#d97706] via-[#b45309] to-[#271707]', icon: Target },
+  'COVID History': { gradient: 'from-[#334155] via-[#1e293b] to-[#020617]', icon: Shield },
+  'Nutrition': { gradient: 'from-[#65a30d] via-[#4d7c0f] to-[#1a2e05]', icon: Apple },
+  'Food & Medical Considerations': { gradient: 'from-[#e11d48] via-[#be123c] to-[#1c0a0f]', icon: TriangleAlert },
+  'Fitness Goal': { gradient: 'from-[#ec2226] via-[#a5194c] to-[#0e2a3a]', icon: Flag },
+};
 
-// Defined at module level, outside PrqScreen, and deliberately not
-// inline inside it. A component defined inside another component's
-// body gets recreated as a brand-new function on every re-render -
-// React then treats it as an entirely new component type, unmounting
-// and remounting the actual <input> DOM node on every keystroke. On
-// mobile that closes the keyboard after each letter, forcing a fresh
-// tap for every character typed.
-const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <label className="text-xs font-semibold text-white/70 block mb-1.5">{children}</label>
-);
+const questions: QuestionConfig[] = [
+  // Section 1 - Personal Details
+  { key: 'fullName', type: 'text', label: "What's your full name?", section: 'Personal Details' },
+  { key: 'sex', type: 'single', label: 'What is your sex?', options: ['Male', 'Female'], section: 'Personal Details' },
+  { key: 'dateOfBirth', type: 'date', label: "When's your date of birth?", section: 'Personal Details' },
+  { key: 'age', type: 'number', label: 'How old are you?', section: 'Personal Details' },
+  { key: 'maritalStatus', type: 'text', label: "What's your marital status?", section: 'Personal Details' },
+  { key: 'contactNumber', type: 'text', label: "What's the best number to reach you?", section: 'Personal Details' },
+  { key: 'emergencyContactNumber', type: 'text', label: "Who should we call in an emergency, and what's their number?", section: 'Personal Details' },
+  { key: 'address', type: 'textarea', label: "What's your home address?", section: 'Personal Details' },
 
-const TextInput: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string; type?: string }> = ({ value, onChange, placeholder, type = 'text' }) => (
-  <input
-    type={type}
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    placeholder={placeholder}
-    className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#6ccbde]"
-  />
-);
+  // Section 2 - Medical Information
+  { key: 'weightKg', type: 'number', label: "What's your current weight? (kg)", section: 'Medical Information' },
+  { key: 'heightCm', type: 'number', label: "What's your height? (cm)", section: 'Medical Information' },
+  { key: 'presentHealthState', type: 'single', label: 'How would you describe your present state of health?', options: ['Very healthy', 'Healthy', 'Unhealthy', 'Unwell'], section: 'Medical Information' },
+  { key: 'currentMedications', type: 'textarea', label: 'List any current medications, how often you take them, and dosages.', section: 'Medical Information' },
+  { key: 'takesMedicationsAsPrescribed', type: 'single', label: 'Do you take all your medications exactly as prescribed?', options: ['Yes', 'No', 'N/A'], section: 'Medical Information' },
+  { key: 'reasonNotTakingAsPrescribed', type: 'textarea', label: "If not, what's the reason?", section: 'Medical Information', showIf: (f) => f.takesMedicationsAsPrescribed === 'No' },
+  { key: 'takesSupplements', type: 'yesno', label: 'Do you take any vitamin, mineral, or herbal supplements?', section: 'Medical Information' },
+  { key: 'supplementDetails', type: 'textarea', label: 'What type, and how much per day?', section: 'Medical Information', showIf: (f) => f.takesSupplements === true },
+  { key: 'lastPhysicianVisit', type: 'text', label: 'When did you last visit your physician?', section: 'Medical Information' },
+  { key: 'totalCholesterol', type: 'number', label: 'Do you know your total cholesterol? (leave blank if unsure)', section: 'Medical Information' },
+  { key: 'hdl', type: 'number', label: 'And your HDL?', section: 'Medical Information' },
+  { key: 'ldl', type: 'number', label: 'And your LDL?', section: 'Medical Information' },
+  { key: 'hasCheckedBloodSugar', type: 'yesno', label: 'Have you ever had your blood sugar checked?', section: 'Medical Information' },
+  { key: 'bloodSugarResults', type: 'textarea', label: 'What were the results?', section: 'Medical Information', showIf: (f) => f.hasCheckedBloodSugar === true },
+  { key: 'medicalConditions', type: 'chips', label: 'Do any of these apply to you? Select all that do.', options: MEDICAL_CONDITIONS, section: 'Medical Information' },
+  { key: 'pregnancyWeeksAlong', type: 'number', label: 'How many weeks along are you?', section: 'Medical Information', showIf: (f) => Array.isArray(f.medicalConditions) && f.medicalConditions.includes('Pregnant') },
+  { key: 'medicalConditionsNotes', type: 'textarea', label: 'Anything important we should know about the condition(s) you selected?', section: 'Medical Information' },
 
-const TextArea: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string }> = ({ value, onChange, placeholder }) => (
-  <textarea
-    value={value}
-    onChange={(e) => onChange(e.target.value)}
-    placeholder={placeholder}
-    rows={3}
-    className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#6ccbde] resize-none"
-  />
-);
+  // Section 3 - Surgery & Injury History
+  { key: 'hadMajorSurgery', type: 'yesno', label: 'Have you had any major surgery?', section: 'Surgery & Injury History' },
+  { key: 'majorSurgeryDetails', type: 'textarea', label: 'Please describe.', section: 'Surgery & Injury History', showIf: (f) => f.hadMajorSurgery === true },
+  { key: 'hadPastInjuries', type: 'yesno', label: 'Have you had any past injuries?', section: 'Surgery & Injury History' },
+  { key: 'pastInjuryDetails', type: 'textarea', label: 'What was the injury?', section: 'Surgery & Injury History', showIf: (f) => f.hadPastInjuries === true },
+  { key: 'hasActivityLimitingInjuries', type: 'yesno', label: 'Have you experienced any injuries that may limit your physical activity?', section: 'Surgery & Injury History' },
+  { key: 'activityLimitingInjuryDetails', type: 'textarea', label: 'What was the injury?', section: 'Surgery & Injury History', showIf: (f) => f.hasActivityLimitingInjuries === true },
+  { key: 'hasCurrentInjuries', type: 'yesno', label: 'Do you currently have any injuries?', section: 'Surgery & Injury History' },
+  { key: 'currentInjuryDetails', type: 'textarea', label: 'Please describe.', section: 'Surgery & Injury History', showIf: (f) => f.hasCurrentInjuries === true },
 
-const YesNo: React.FC<{ value: boolean | null; onChange: (v: boolean) => void; thirdOption?: { label: string; onSelect: () => void } }> = ({ value, onChange, thirdOption }) => (
-  <div className="flex gap-2">
-    <button type="button" onClick={() => onChange(true)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${value === true ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}>Yes</button>
-    <button type="button" onClick={() => onChange(false)} className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition ${value === false ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}>No</button>
-    {thirdOption && (
-      <button type="button" onClick={thirdOption.onSelect} className="flex-1 py-2.5 rounded-xl text-sm font-bold transition bg-white/[0.06] text-white/60">{thirdOption.label}</button>
-    )}
-  </div>
-);
+  // Section 4 - Family History
+  { key: 'familyMedicalHistory', type: 'chips', label: 'Has anyone in your immediate family been diagnosed with any of these?', options: FAMILY_HISTORY_OPTIONS, section: 'Family History' },
 
-const ChipGroup: React.FC<{ options: string[]; selected: string[]; onToggle: (v: string) => void }> = ({ options, selected, onToggle }) => (
-  <div className="flex flex-wrap gap-2">
-    {options.map((opt) => (
-      <button
-        key={opt}
-        type="button"
-        onClick={() => onToggle(opt)}
-        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${selected.includes(opt) ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
-      >
-        {opt}
-      </button>
-    ))}
-  </div>
-);
+  // Section 5 - Substance-Related Habits
+  { key: 'drinksAlcohol', type: 'yesno', label: 'Do you drink alcohol?', section: 'Substance-Related Habits' },
+  { key: 'alcoholFrequency', type: 'text', label: 'How often?', section: 'Substance-Related Habits', showIf: (f) => f.drinksAlcohol === true },
+  { key: 'alcoholTimesPerWeek', type: 'number', label: 'How many times per week?', section: 'Substance-Related Habits', showIf: (f) => f.drinksAlcohol === true },
+  { key: 'alcoholAverageAmount', type: 'text', label: "What's your average amount?", section: 'Substance-Related Habits', showIf: (f) => f.drinksAlcohol === true },
+  { key: 'drinksCaffeine', type: 'yesno', label: 'Do you drink caffeinated beverages?', section: 'Substance-Related Habits' },
+  { key: 'caffeinePerDay', type: 'number', label: 'How many per day?', section: 'Substance-Related Habits', showIf: (f) => f.drinksCaffeine === true },
+  { key: 'usesTobacco', type: 'yesno', label: 'Do you use tobacco?', section: 'Substance-Related Habits' },
+  { key: 'tobaccoAmount', type: 'text', label: 'How much, per day?', section: 'Substance-Related Habits', showIf: (f) => f.usesTobacco === true },
 
-const SingleSelect: React.FC<{ options: string[]; value: string; onChange: (v: string) => void }> = ({ options, value, onChange }) => (
-  <div className="flex flex-wrap gap-2">
-    {options.map((opt) => (
-      <button
-        key={opt}
-        type="button"
-        onClick={() => onChange(opt)}
-        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition ${value === opt ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
-      >
-        {opt}
-      </button>
-    ))}
-  </div>
-);
+  // Section 6 - Physical Activity
+  { key: 'doesStructuredActivity', type: 'yesno', label: 'Do you currently participate in any structured physical activity?', section: 'Physical Activity' },
+  { key: 'structuredActivityDescription', type: 'textarea', label: 'Please describe.', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
+  { key: 'cardioMinutesPerSession', type: 'number', label: 'How many minutes of cardio, per session?', section: 'Physical Activity' },
+  { key: 'cardioTimesPerWeek', type: 'number', label: 'And how many cardio sessions per week?', section: 'Physical Activity' },
+  { key: 'muscularTrainingSessionsPerWeek', type: 'number', label: 'How many muscular training sessions per week?', section: 'Physical Activity' },
+  { key: 'flexibilitySessionsPerWeek', type: 'number', label: 'And flexibility or mobility sessions per week?', section: 'Physical Activity' },
+  { key: 'doesSportsOrRecreation', type: 'yesno', label: 'Do you play any sports or do recreational activities?', section: 'Physical Activity' },
+  { key: 'sportsDetails', type: 'textarea', label: 'Which ones, and how many days a week?', section: 'Physical Activity', showIf: (f) => f.doesSportsOrRecreation === true },
+  { key: 'trainingExperienceLevel', type: 'single', label: "What's your training experience level?", options: ['Beginner', 'Intermediate', 'Advanced'], section: 'Physical Activity' },
+  { key: 'feelingsAboutExercise', type: 'textarea', label: 'Honestly, how do you feel about exercise?', section: 'Physical Activity' },
+  { key: 'favoritePhysicalActivities', type: 'textarea', label: 'What are some of your favorite physical activities?', section: 'Physical Activity' },
 
-const Scale1to10: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <div className="grid grid-cols-5 gap-1.5">
-    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-      <button
-        key={n}
-        type="button"
-        onClick={() => onChange(String(n))}
-        className={`py-2 rounded-lg text-xs font-bold transition ${value === String(n) ? 'bg-[#6ccbde] text-black' : 'bg-white/[0.06] text-white/60'}`}
-      >
-        {n}
-      </button>
-    ))}
-  </div>
-);
+  // Section 7 - Occupational
+  { key: 'works', type: 'yesno', label: 'Do you currently work?', section: 'Occupational' },
+  { key: 'occupation', type: 'text', label: "What's your occupation?", section: 'Occupational', showIf: (f) => f.works === true },
+  { key: 'workSchedule', type: 'text', label: "What's your work schedule like?", section: 'Occupational', showIf: (f) => f.works === true },
+  { key: 'workActivityLevelDescription', type: 'textarea', label: 'How would you describe your activity level during the work day?', section: 'Occupational' },
+  { key: 'dailyActivityLevel', type: 'single', label: 'Overall, how active is your day-to-day?', options: ['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active'], section: 'Occupational' },
+
+  // Section 8 - Sleep & Stress
+  { key: 'sleepHoursPerNight', type: 'number', label: 'How many hours of sleep do you get at night?', section: 'Sleep & Stress' },
+  { key: 'mostStressfulThing', type: 'textarea', label: "What's most stressful to you right now?", section: 'Sleep & Stress' },
+  { key: 'stressLevel', type: 'scale', label: 'On a scale of 1 to 10, how stressed do you feel? (1 = none, 10 = constant)', section: 'Sleep & Stress' },
+  { key: 'appetiteUnderStress', type: 'single', label: 'How is your appetite affected by stress?', options: ['Increased', 'Not affected', 'Decreased'], section: 'Sleep & Stress' },
+
+  // Section 9 - Weight History
+  { key: 'weightGoalDirection', type: 'single', label: 'What would you like to do with your weight?', options: ['Lose weight', 'Gain weight', 'Maintain weight'], section: 'Weight History' },
+  { key: 'lowestWeightPast5Years', type: 'number', label: "What's the lowest you've weighed in the past 5 years? (kg)", section: 'Weight History' },
+  { key: 'highestWeightPast5Years', type: 'number', label: 'And the highest, in the past 5 years? (kg)', section: 'Weight History' },
+  { key: 'idealWeight', type: 'number', label: "What's your ideal, sustainable weight? (kg)", section: 'Weight History' },
+
+  // Section 10 - Circumferences
+  { key: 'abdomenCircumferenceCm', type: 'number', label: 'Abdomen circumference, if known (cm)', section: 'Circumferences' },
+  { key: 'waistCircumferenceCm', type: 'number', label: 'Waist circumference, if known (cm)', section: 'Circumferences' },
+  { key: 'upperArmCircumferenceCm', type: 'number', label: 'Upper arm circumference, if known (cm)', section: 'Circumferences' },
+  { key: 'midThighCircumferenceCm', type: 'number', label: 'Mid-thigh circumference, if known (cm)', section: 'Circumferences' },
+
+  // Section 11 - Body Composition
+  { key: 'bmi', type: 'number', label: 'BMI, if you know it from a recent scan', section: 'Body Composition' },
+  { key: 'fatMassKg', type: 'number', label: 'Fat mass, if known (kg)', section: 'Body Composition' },
+  { key: 'skeletalMuscleMassKg', type: 'number', label: 'Skeletal muscle mass, if known (kg)', section: 'Body Composition' },
+
+  // Section 12 - Goals & Readiness
+  { key: 'readinessToAdoptHealthyLifestyle', type: 'scale', label: 'How likely are you to adopt a healthier lifestyle? (1 = very unlikely, 10 = very likely)', section: 'Goals & Readiness' },
+  { key: 'hasSpecificHealthGoals', type: 'yesno', label: 'Do you have specific goals for improving your health?', section: 'Goals & Readiness' },
+  { key: 'healthGoalsPrioritized', type: 'textarea', label: 'List them in order of importance to you.', section: 'Goals & Readiness', showIf: (f) => f.hasSpecificHealthGoals === true },
+
+  // Section 13 - COVID History
+  { key: 'diagnosedWithCovidBefore', type: 'yesno', label: 'Have you been diagnosed with COVID before?', section: 'COVID History' },
+
+  // Section 14 - Nutrition
+  { key: 'followingADiet', type: 'yesno', label: 'Are you currently following any diet?', section: 'Nutrition' },
+  { key: 'dietDescription', type: 'textarea', label: 'Please describe it.', section: 'Nutrition', showIf: (f) => f.followingADiet === true },
+  { key: 'dietaryLifestyle', type: 'single', label: 'Do you follow a particular dietary lifestyle?', options: ['None', 'Halal', 'Vegetarian', 'Vegan', 'Kosher', 'Pescatarian', 'Other'], section: 'Nutrition' },
+  { key: 'dietaryLifestyleOtherNote', type: 'text', label: 'Please specify.', section: 'Nutrition', showIf: (f) => f.dietaryLifestyle === 'Other' },
+  { key: 'tastePreferences', type: 'chips', label: 'What flavors do you enjoy most?', options: TASTE_OPTIONS, section: 'Nutrition' },
+  { key: 'texturePreferences', type: 'chips', label: 'And what textures?', options: TEXTURE_OPTIONS, section: 'Nutrition' },
+  { key: 'temperaturePreference', type: 'single', label: 'Hot meals, cold meals, or no preference?', options: ['Hot meals', 'Cold meals', 'No preference'], section: 'Nutrition' },
+  { key: 'mealTimingPreferences', type: 'chips', label: 'How do you like to structure your meals?', options: MEAL_TIMING_OPTIONS, section: 'Nutrition' },
+
+  // Section 15 - Food & Medical Considerations
+  { key: 'hasSpecificIllness', type: 'yesno', label: 'Do you have any specific illness we should factor in?', section: 'Food & Medical Considerations' },
+  { key: 'illnessDetails', type: 'textarea', label: 'Please explain.', section: 'Food & Medical Considerations', showIf: (f) => f.hasSpecificIllness === true },
+  { key: 'hasFoodAllergy', type: 'yesno', label: 'Do you have any food allergies?', section: 'Food & Medical Considerations' },
+  { key: 'foodAllergyDetails', type: 'textarea', label: 'Please describe.', section: 'Food & Medical Considerations', showIf: (f) => f.hasFoodAllergy === true },
+  { key: 'foodsNeverEaten', type: 'textarea', label: "Any food or drink you avoid entirely? (e.g. milk, fish)", section: 'Food & Medical Considerations' },
+
+  // Section 16 - Fitness Goal
+  { key: 'fitnessGoal', type: 'textarea', label: "Last one - what's your fitness goal? Tell your coach what you're really working toward.", section: 'Fitness Goal' },
+  { key: 'consentConfirmed', type: 'consent', label: 'Almost done.', section: 'Fitness Goal' },
+];
 
 export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clientEmail, onComplete }) => {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState<PrqFormData>(() => emptyForm(clientName, clientEmail));
+  const [form, setForm] = useState<PrqFormData>({ fullName: clientName, email: clientEmail });
+  const [index, setIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  const set = <K extends keyof PrqFormData>(key: K, value: PrqFormData[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  };
+  const visibleQuestions = useMemo(
+    () => questions.filter((q) => !q.showIf || q.showIf(form)),
+    // Re-filter whenever an answer changes, since a later question's
+    // visibility can depend on an earlier one (e.g. "Pregnant" reveals
+    // a weeks-along question further down the list).
+    [form]
+  );
 
-  const toggleInList = (key: 'medicalConditions' | 'familyMedicalHistory' | 'tastePreferences' | 'texturePreferences' | 'mealTimingPreferences', value: string) => {
+  const current = visibleQuestions[index];
+  const theme = SECTION_THEME[current.section];
+  const Icon = theme.icon;
+  const isLast = index === visibleQuestions.length - 1;
+
+  const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const toggleChip = (key: string, value: string) => {
     setForm((prev) => {
-      const list = prev[key];
-      return {
-        ...prev,
-        [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value],
-      };
+      const list = (prev[key] as string[]) || [];
+      return { ...prev, [key]: list.includes(value) ? list.filter((v) => v !== value) : [...list, value] };
     });
   };
 
-  const TOTAL_STEPS = 16;
-
-  const stepTitles = [
-    'Personal Details', 'Medical Information', 'Surgery & Injury History', 'Family History',
-    'Substance-Related Habits', 'Physical Activity', 'Occupational', 'Sleep & Stress',
-    'Weight History', 'Circumferences', 'Body Composition', 'Goals & Readiness',
-    'COVID History', 'Nutrition Preferences', 'Food & Medical Considerations', 'Your Fitness Goal',
-  ];
-
-  const renderStep = () => {
-    switch (step) {
-      case 0:
-        return (
-          <div className="space-y-4">
-            <div><Label>Full Name</Label><TextInput value={form.fullName} onChange={(v) => set('fullName', v)} /></div>
-            <div><Label>Email</Label><TextInput type="email" value={form.email} onChange={(v) => set('email', v)} /></div>
-            <div><Label>Address</Label><TextArea value={form.address} onChange={(v) => set('address', v)} /></div>
-            <div><Label>Contact Number</Label><TextInput type="tel" value={form.contactNumber} onChange={(v) => set('contactNumber', v)} /></div>
-            <div><Label>Emergency Contact Number</Label><TextInput type="tel" value={form.emergencyContactNumber} onChange={(v) => set('emergencyContactNumber', v)} /></div>
-            <div><Label>Date of Birth</Label><TextInput type="date" value={form.dateOfBirth} onChange={(v) => set('dateOfBirth', v)} /></div>
-            <div><Label>Age</Label><TextInput type="number" value={form.age} onChange={(v) => set('age', v)} /></div>
-            <div><Label>Sex</Label><SingleSelect options={['Male', 'Female']} value={form.sex} onChange={(v) => set('sex', v)} /></div>
-            <div><Label>Marital Status</Label><TextInput value={form.maritalStatus} onChange={(v) => set('maritalStatus', v)} /></div>
-          </div>
-        );
-
-      case 1:
-        return (
-          <div className="space-y-4">
-            <div><Label>Weight (kg)</Label><TextInput type="number" value={form.weightKg} onChange={(v) => set('weightKg', v)} /></div>
-            <div><Label>Height (cm)</Label><TextInput type="number" value={form.heightCm} onChange={(v) => set('heightCm', v)} /></div>
-            <div><Label>How would you describe your present state of health?</Label><SingleSelect options={['Very healthy', 'Healthy', 'Unhealthy', 'Unwell']} value={form.presentHealthState} onChange={(v) => set('presentHealthState', v)} /></div>
-            <div><Label>List current medications, how often you take them and dosages</Label><TextArea value={form.currentMedications} onChange={(v) => set('currentMedications', v)} /></div>
-            <div><Label>Do you take all your medications as prescribed?</Label><SingleSelect options={['Yes', 'No', 'N/A']} value={form.takesMedicationsAsPrescribed} onChange={(v) => set('takesMedicationsAsPrescribed', v)} /></div>
-            {form.takesMedicationsAsPrescribed === 'No' && (
-              <div><Label>If not, please share why</Label><TextArea value={form.reasonNotTakingAsPrescribed} onChange={(v) => set('reasonNotTakingAsPrescribed', v)} /></div>
-            )}
-            <div><Label>Do you take any vitamin, mineral, or herbal supplements?</Label><YesNo value={form.takesSupplements} onChange={(v) => set('takesSupplements', v)} /></div>
-            {form.takesSupplements && (
-              <div><Label>List type and amount per day</Label><TextArea value={form.supplementDetails} onChange={(v) => set('supplementDetails', v)} /></div>
-            )}
-            <div><Label>When was the last time you visited your physician?</Label><TextInput value={form.lastPhysicianVisit} onChange={(v) => set('lastPhysicianVisit', v)} /></div>
-            <div><Label>Total Cholesterol</Label><TextInput type="number" value={form.totalCholesterol} onChange={(v) => set('totalCholesterol', v)} /></div>
-            <div><Label>HDL</Label><TextInput type="number" value={form.hdl} onChange={(v) => set('hdl', v)} /></div>
-            <div><Label>LDL</Label><TextInput type="number" value={form.ldl} onChange={(v) => set('ldl', v)} /></div>
-            <div><Label>Have you ever had your blood sugar checked?</Label><YesNo value={form.hasCheckedBloodSugar} onChange={(v) => set('hasCheckedBloodSugar', v)} /></div>
-            {form.hasCheckedBloodSugar && (
-              <div><Label>What were the results?</Label><TextArea value={form.bloodSugarResults} onChange={(v) => set('bloodSugarResults', v)} /></div>
-            )}
-            <div>
-              <Label>Please check any that apply to you</Label>
-              <ChipGroup options={MEDICAL_CONDITIONS} selected={form.medicalConditions} onToggle={(v) => toggleInList('medicalConditions', v)} />
-            </div>
-            {form.medicalConditions.includes('Pregnant') && (
-              <div><Label>How many weeks along?</Label><TextInput type="number" value={form.pregnancyWeeksAlong} onChange={(v) => set('pregnancyWeeksAlong', v)} /></div>
-            )}
-            <div><Label>Any important information about your condition(s)?</Label><TextArea value={form.medicalConditionsNotes} onChange={(v) => set('medicalConditionsNotes', v)} /></div>
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-4">
-            <div><Label>Have you had major surgery?</Label><YesNo value={form.hadMajorSurgery} onChange={(v) => set('hadMajorSurgery', v)} /></div>
-            {form.hadMajorSurgery && <div><Label>Please describe</Label><TextArea value={form.majorSurgeryDetails} onChange={(v) => set('majorSurgeryDetails', v)} /></div>}
-            <div><Label>Have you had any past injuries?</Label><YesNo value={form.hadPastInjuries} onChange={(v) => set('hadPastInjuries', v)} /></div>
-            {form.hadPastInjuries && <div><Label>What was the injury?</Label><TextArea value={form.pastInjuryDetails} onChange={(v) => set('pastInjuryDetails', v)} /></div>}
-            <div><Label>Have you experienced any injuries that may limit your physical activity?</Label><YesNo value={form.hasActivityLimitingInjuries} onChange={(v) => set('hasActivityLimitingInjuries', v)} /></div>
-            {form.hasActivityLimitingInjuries && <div><Label>What was the injury?</Label><TextArea value={form.activityLimitingInjuryDetails} onChange={(v) => set('activityLimitingInjuryDetails', v)} /></div>}
-            <div><Label>Do you currently have any injuries?</Label><YesNo value={form.hasCurrentInjuries} onChange={(v) => set('hasCurrentInjuries', v)} /></div>
-            {form.hasCurrentInjuries && <div><Label>Please describe</Label><TextArea value={form.currentInjuryDetails} onChange={(v) => set('currentInjuryDetails', v)} /></div>}
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-4">
-            <div>
-              <Label>Has anyone in your immediate family been diagnosed with the following?</Label>
-              <ChipGroup options={FAMILY_HISTORY_OPTIONS} selected={form.familyMedicalHistory} onToggle={(v) => toggleInList('familyMedicalHistory', v)} />
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-4">
-            <div><Label>Do you drink alcohol?</Label><YesNo value={form.drinksAlcohol} onChange={(v) => set('drinksAlcohol', v)} /></div>
-            {form.drinksAlcohol && (
-              <>
-                <div><Label>How often?</Label><TextInput value={form.alcoholFrequency} onChange={(v) => set('alcoholFrequency', v)} /></div>
-                <div><Label>Times per week?</Label><TextInput type="number" value={form.alcoholTimesPerWeek} onChange={(v) => set('alcoholTimesPerWeek', v)} /></div>
-                <div><Label>Average amount?</Label><TextInput value={form.alcoholAverageAmount} onChange={(v) => set('alcoholAverageAmount', v)} /></div>
-              </>
-            )}
-            <div><Label>Do you drink caffeinated beverages?</Label><YesNo value={form.drinksCaffeine} onChange={(v) => set('drinksCaffeine', v)} /></div>
-            {form.drinksCaffeine && <div><Label>Number per day?</Label><TextInput type="number" value={form.caffeinePerDay} onChange={(v) => set('caffeinePerDay', v)} /></div>}
-            <div><Label>Do you use tobacco?</Label><YesNo value={form.usesTobacco} onChange={(v) => set('usesTobacco', v)} /></div>
-            {form.usesTobacco && <div><Label>How much per day?</Label><TextInput value={form.tobaccoAmount} onChange={(v) => set('tobaccoAmount', v)} /></div>}
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-4">
-            <div><Label>Do you currently participate in any structured physical activity?</Label><YesNo value={form.doesStructuredActivity} onChange={(v) => set('doesStructuredActivity', v)} /></div>
-            {form.doesStructuredActivity && <div><Label>Please describe</Label><TextArea value={form.structuredActivityDescription} onChange={(v) => set('structuredActivityDescription', v)} /></div>}
-            <div><Label>Minutes of cardio per session</Label><TextInput type="number" value={form.cardioMinutesPerSession} onChange={(v) => set('cardioMinutesPerSession', v)} /></div>
-            <div><Label>Cardio sessions per week</Label><TextInput type="number" value={form.cardioTimesPerWeek} onChange={(v) => set('cardioTimesPerWeek', v)} /></div>
-            <div><Label>Muscular training sessions per week</Label><TextInput type="number" value={form.muscularTrainingSessionsPerWeek} onChange={(v) => set('muscularTrainingSessionsPerWeek', v)} /></div>
-            <div><Label>Flexibility and mobility sessions per week</Label><TextInput type="number" value={form.flexibilitySessionsPerWeek} onChange={(v) => set('flexibilitySessionsPerWeek', v)} /></div>
-            <div><Label>Do you engage in any sports or recreational activities?</Label><YesNo value={form.doesSportsOrRecreation} onChange={(v) => set('doesSportsOrRecreation', v)} /></div>
-            {form.doesSportsOrRecreation && <div><Label>Which activities, and how many days a week?</Label><TextArea value={form.sportsDetails} onChange={(v) => set('sportsDetails', v)} /></div>}
-            <div><Label>Your training experience level</Label><SingleSelect options={['Beginner', 'Intermediate', 'Advanced']} value={form.trainingExperienceLevel} onChange={(v) => set('trainingExperienceLevel', v)} /></div>
-            <div><Label>What are your honest feelings about exercise?</Label><TextArea value={form.feelingsAboutExercise} onChange={(v) => set('feelingsAboutExercise', v)} /></div>
-            <div><Label>Favorite physical activities</Label><TextArea value={form.favoritePhysicalActivities} onChange={(v) => set('favoritePhysicalActivities', v)} /></div>
-          </div>
-        );
-
-      case 6:
-        return (
-          <div className="space-y-4">
-            <div><Label>Do you work?</Label><YesNo value={form.works} onChange={(v) => set('works', v)} /></div>
-            {form.works && (
-              <>
-                <div><Label>What is your occupation?</Label><TextInput value={form.occupation} onChange={(v) => set('occupation', v)} /></div>
-                <div><Label>Work schedule</Label><TextInput value={form.workSchedule} onChange={(v) => set('workSchedule', v)} /></div>
-              </>
-            )}
-            <div><Label>Describe your activity level during the work day</Label><TextArea value={form.workActivityLevelDescription} onChange={(v) => set('workActivityLevelDescription', v)} /></div>
-            <div><Label>Your overall daily activity level</Label><SingleSelect options={['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active']} value={form.dailyActivityLevel} onChange={(v) => set('dailyActivityLevel', v)} /></div>
-          </div>
-        );
-
-      case 7:
-        return (
-          <div className="space-y-4">
-            <div><Label>How many hours of sleep do you get at night?</Label><TextInput type="number" value={form.sleepHoursPerNight} onChange={(v) => set('sleepHoursPerNight', v)} /></div>
-            <div><Label>What is most stressful to you?</Label><TextArea value={form.mostStressfulThing} onChange={(v) => set('mostStressfulThing', v)} /></div>
-            <div><Label>Rate your stress level (1 = no stress, 10 = constant stress)</Label><Scale1to10 value={form.stressLevel} onChange={(v) => set('stressLevel', v)} /></div>
-            <div><Label>How is your appetite affected by stress?</Label><SingleSelect options={['Increased', 'Not affected', 'Decreased']} value={form.appetiteUnderStress} onChange={(v) => set('appetiteUnderStress', v)} /></div>
-          </div>
-        );
-
-      case 8:
-        return (
-          <div className="space-y-4">
-            <div><Label>What would you like to do with your weight?</Label><SingleSelect options={['Lose weight', 'Gain weight', 'Maintain weight']} value={form.weightGoalDirection} onChange={(v) => set('weightGoalDirection', v)} /></div>
-            <div><Label>Lowest weight in the past 5 years (kg)</Label><TextInput type="number" value={form.lowestWeightPast5Years} onChange={(v) => set('lowestWeightPast5Years', v)} /></div>
-            <div><Label>Highest weight in the past 5 years (kg)</Label><TextInput type="number" value={form.highestWeightPast5Years} onChange={(v) => set('highestWeightPast5Years', v)} /></div>
-            <div><Label>Your ideal, sustainable weight (kg)</Label><TextInput type="number" value={form.idealWeight} onChange={(v) => set('idealWeight', v)} /></div>
-          </div>
-        );
-
-      case 9:
-        return (
-          <div className="space-y-4">
-            <p className="text-xs text-white/40">These can be measured by your coach - fill in if you already know them.</p>
-            <div><Label>Abdomen circumference (cm)</Label><TextInput type="number" value={form.abdomenCircumferenceCm} onChange={(v) => set('abdomenCircumferenceCm', v)} /></div>
-            <div><Label>Waist circumference (cm)</Label><TextInput type="number" value={form.waistCircumferenceCm} onChange={(v) => set('waistCircumferenceCm', v)} /></div>
-            <div><Label>Upper arm circumference (cm)</Label><TextInput type="number" value={form.upperArmCircumferenceCm} onChange={(v) => set('upperArmCircumferenceCm', v)} /></div>
-            <div><Label>Mid-thigh circumference (cm)</Label><TextInput type="number" value={form.midThighCircumferenceCm} onChange={(v) => set('midThighCircumferenceCm', v)} /></div>
-          </div>
-        );
-
-      case 10:
-        return (
-          <div className="space-y-4">
-            <p className="text-xs text-white/40">If you already know these from a body composition scan, add them here.</p>
-            <div><Label>BMI</Label><TextInput type="number" value={form.bmi} onChange={(v) => set('bmi', v)} /></div>
-            <div><Label>Fat mass (kg)</Label><TextInput type="number" value={form.fatMassKg} onChange={(v) => set('fatMassKg', v)} /></div>
-            <div><Label>Skeletal muscle mass (kg)</Label><TextInput type="number" value={form.skeletalMuscleMassKg} onChange={(v) => set('skeletalMuscleMassKg', v)} /></div>
-          </div>
-        );
-
-      case 11:
-        return (
-          <div className="space-y-4">
-            <div><Label>How likely are you to adopt a healthier lifestyle? (1 = very unlikely, 10 = very likely)</Label><Scale1to10 value={form.readinessToAdoptHealthyLifestyle} onChange={(v) => set('readinessToAdoptHealthyLifestyle', v)} /></div>
-            <div><Label>Do you have any specific goals for improving your health?</Label><YesNo value={form.hasSpecificHealthGoals} onChange={(v) => set('hasSpecificHealthGoals', v)} /></div>
-            {form.hasSpecificHealthGoals && <div><Label>List them in order of importance</Label><TextArea value={form.healthGoalsPrioritized} onChange={(v) => set('healthGoalsPrioritized', v)} /></div>}
-          </div>
-        );
-
-      case 12:
-        return (
-          <div className="space-y-4">
-            <div><Label>Have you been diagnosed with COVID before?</Label><YesNo value={form.diagnosedWithCovidBefore} onChange={(v) => set('diagnosedWithCovidBefore', v)} /></div>
-          </div>
-        );
-
-      case 13:
-        return (
-          <div className="space-y-4">
-            <div><Label>Are you currently following any diet?</Label><YesNo value={form.followingADiet} onChange={(v) => set('followingADiet', v)} /></div>
-            {form.followingADiet && <div><Label>Please describe the diet</Label><TextArea value={form.dietDescription} onChange={(v) => set('dietDescription', v)} /></div>}
-            <div><Label>Dietary lifestyle</Label><SingleSelect options={['None', 'Halal', 'Vegetarian', 'Vegan', 'Kosher', 'Pescatarian', 'Other']} value={form.dietaryLifestyle} onChange={(v) => set('dietaryLifestyle', v)} /></div>
-            {form.dietaryLifestyle === 'Other' && <div><Label>Please specify</Label><TextInput value={form.dietaryLifestyleOtherNote} onChange={(v) => set('dietaryLifestyleOtherNote', v)} /></div>}
-            <div><Label>Food preferences by taste</Label><ChipGroup options={TASTE_OPTIONS} selected={form.tastePreferences} onToggle={(v) => toggleInList('tastePreferences', v)} /></div>
-            <div><Label>Food preferences by texture</Label><ChipGroup options={TEXTURE_OPTIONS} selected={form.texturePreferences} onToggle={(v) => toggleInList('texturePreferences', v)} /></div>
-            <div><Label>Temperature preference</Label><SingleSelect options={['Hot meals', 'Cold meals', 'No preference']} value={form.temperaturePreference} onChange={(v) => set('temperaturePreference', v)} /></div>
-            <div><Label>Meal timing preferences</Label><ChipGroup options={MEAL_TIMING_OPTIONS} selected={form.mealTimingPreferences} onToggle={(v) => toggleInList('mealTimingPreferences', v)} /></div>
-          </div>
-        );
-
-      case 14:
-        return (
-          <div className="space-y-4">
-            <div><Label>Do you have any specific illness?</Label><YesNo value={form.hasSpecificIllness} onChange={(v) => set('hasSpecificIllness', v)} /></div>
-            {form.hasSpecificIllness && <div><Label>Please explain</Label><TextArea value={form.illnessDetails} onChange={(v) => set('illnessDetails', v)} /></div>}
-            <div><Label>Do you have any food allergy?</Label><YesNo value={form.hasFoodAllergy} onChange={(v) => set('hasFoodAllergy', v)} /></div>
-            {form.hasFoodAllergy && <div><Label>Please describe</Label><TextArea value={form.foodAllergyDetails} onChange={(v) => set('foodAllergyDetails', v)} /></div>}
-            <div><Label>Any food or drink you avoid entirely? (e.g. milk, fish)</Label><TextArea value={form.foodsNeverEaten} onChange={(v) => set('foodsNeverEaten', v)} /></div>
-          </div>
-        );
-
-      case 15:
-        return (
-          <div className="space-y-4">
-            <div><Label>What is your fitness goal?</Label><TextArea value={form.fitnessGoal} onChange={(v) => set('fitnessGoal', v)} placeholder="Tell your coach what you're working toward..." /></div>
-            <label className="flex items-start gap-2.5 bg-white/[0.05] border border-white/[0.1] rounded-xl p-3.5 mt-4">
-              <input
-                type="checkbox"
-                checked={form.consentConfirmed}
-                onChange={(e) => set('consentConfirmed', e.target.checked)}
-                className="mt-0.5 w-4 h-4 accent-[#6ccbde]"
-              />
-              <span className="text-xs text-white/70">
-                I confirm the information above is accurate to the best of my knowledge, and I consent to participate in a supervised exercise and nutrition program based on it.
-              </span>
-            </label>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const isLastStep = step === TOTAL_STEPS - 1;
-
-  const handleNext = () => {
-    if (isLastStep) {
+  const goNext = () => {
+    if (isLast) {
       handleSubmit();
     } else {
-      setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
+      setIndex((i) => Math.min(i + 1, visibleQuestions.length - 1));
       setError('');
     }
   };
 
+  const goBack = () => {
+    setIndex((i) => Math.max(i - 1, 0));
+    setError('');
+  };
+
   const handleSubmit = async () => {
     if (!form.consentConfirmed) {
-      setError('Please confirm the consent statement to finish.');
+      setError('Please confirm to finish.');
       return;
     }
     setSubmitting(true);
     setError('');
-
     try {
       const { db } = initializeClientFirebaseApp();
       if (!db) throw new Error('Could not connect.');
 
-      const toNum = (v: string): number | undefined => (v.trim() === '' ? undefined : Number(v));
+      const toNum = (v: any): number | undefined => {
+        if (v === undefined || v === null || v === '') return undefined;
+        const n = Number(v);
+        return isNaN(n) ? undefined : n;
+      };
+      const toBool = (v: any) => !!v;
 
       const record: any = {
         id: `PRQ-${clientId}`,
         clientId,
         completedAt: new Date().toISOString(),
-        submissionDate: form.submissionDate,
-        fullName: form.fullName,
-        email: form.email,
+        submissionDate: new Date().toISOString().split('T')[0],
+        fullName: form.fullName || clientName,
+        email: form.email || clientEmail,
         address: form.address,
         contactNumber: form.contactNumber,
         emergencyContactNumber: form.emergencyContactNumber,
@@ -622,46 +269,46 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         currentMedications: form.currentMedications,
         takesMedicationsAsPrescribed: form.takesMedicationsAsPrescribed || 'N/A',
         reasonNotTakingAsPrescribed: form.reasonNotTakingAsPrescribed || undefined,
-        takesSupplements: !!form.takesSupplements,
+        takesSupplements: toBool(form.takesSupplements),
         supplementDetails: form.supplementDetails || undefined,
         lastPhysicianVisit: form.lastPhysicianVisit,
         totalCholesterol: toNum(form.totalCholesterol),
         hdl: toNum(form.hdl),
         ldl: toNum(form.ldl),
-        hasCheckedBloodSugar: !!form.hasCheckedBloodSugar,
+        hasCheckedBloodSugar: toBool(form.hasCheckedBloodSugar),
         bloodSugarResults: form.bloodSugarResults || undefined,
-        medicalConditions: form.medicalConditions,
+        medicalConditions: form.medicalConditions || [],
         medicalConditionsNotes: form.medicalConditionsNotes || undefined,
         pregnancyWeeksAlong: toNum(form.pregnancyWeeksAlong),
-        hadMajorSurgery: !!form.hadMajorSurgery,
+        hadMajorSurgery: toBool(form.hadMajorSurgery),
         majorSurgeryDetails: form.majorSurgeryDetails || undefined,
-        hadPastInjuries: !!form.hadPastInjuries,
+        hadPastInjuries: toBool(form.hadPastInjuries),
         pastInjuryDetails: form.pastInjuryDetails || undefined,
-        hasActivityLimitingInjuries: !!form.hasActivityLimitingInjuries,
+        hasActivityLimitingInjuries: toBool(form.hasActivityLimitingInjuries),
         activityLimitingInjuryDetails: form.activityLimitingInjuryDetails || undefined,
-        hasCurrentInjuries: !!form.hasCurrentInjuries,
+        hasCurrentInjuries: toBool(form.hasCurrentInjuries),
         currentInjuryDetails: form.currentInjuryDetails || undefined,
-        familyMedicalHistory: form.familyMedicalHistory,
-        drinksAlcohol: !!form.drinksAlcohol,
+        familyMedicalHistory: form.familyMedicalHistory || [],
+        drinksAlcohol: toBool(form.drinksAlcohol),
         alcoholFrequency: form.alcoholFrequency || undefined,
         alcoholTimesPerWeek: toNum(form.alcoholTimesPerWeek),
         alcoholAverageAmount: form.alcoholAverageAmount || undefined,
-        drinksCaffeine: !!form.drinksCaffeine,
+        drinksCaffeine: toBool(form.drinksCaffeine),
         caffeinePerDay: toNum(form.caffeinePerDay),
-        usesTobacco: !!form.usesTobacco,
+        usesTobacco: toBool(form.usesTobacco),
         tobaccoAmount: form.tobaccoAmount || undefined,
-        doesStructuredActivity: !!form.doesStructuredActivity,
+        doesStructuredActivity: toBool(form.doesStructuredActivity),
         structuredActivityDescription: form.structuredActivityDescription || undefined,
         cardioMinutesPerSession: toNum(form.cardioMinutesPerSession),
         cardioTimesPerWeek: toNum(form.cardioTimesPerWeek),
         muscularTrainingSessionsPerWeek: toNum(form.muscularTrainingSessionsPerWeek),
         flexibilitySessionsPerWeek: toNum(form.flexibilitySessionsPerWeek),
-        doesSportsOrRecreation: !!form.doesSportsOrRecreation,
+        doesSportsOrRecreation: toBool(form.doesSportsOrRecreation),
         sportsDetails: form.sportsDetails || undefined,
         feelingsAboutExercise: form.feelingsAboutExercise,
         favoritePhysicalActivities: form.favoritePhysicalActivities,
         trainingExperienceLevel: form.trainingExperienceLevel || undefined,
-        works: !!form.works,
+        works: toBool(form.works),
         occupation: form.occupation || undefined,
         workSchedule: form.workSchedule || undefined,
         workActivityLevelDescription: form.workActivityLevelDescription,
@@ -682,28 +329,27 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         fatMassKg: toNum(form.fatMassKg),
         skeletalMuscleMassKg: toNum(form.skeletalMuscleMassKg),
         readinessToAdoptHealthyLifestyle: toNum(form.readinessToAdoptHealthyLifestyle) || 5,
-        hasSpecificHealthGoals: !!form.hasSpecificHealthGoals,
+        hasSpecificHealthGoals: toBool(form.hasSpecificHealthGoals),
         healthGoalsPrioritized: form.healthGoalsPrioritized || undefined,
-        diagnosedWithCovidBefore: !!form.diagnosedWithCovidBefore,
-        followingADiet: !!form.followingADiet,
+        diagnosedWithCovidBefore: toBool(form.diagnosedWithCovidBefore),
+        followingADiet: toBool(form.followingADiet),
         dietDescription: form.dietDescription || undefined,
-        tastePreferences: form.tastePreferences,
-        texturePreferences: form.texturePreferences,
+        tastePreferences: form.tastePreferences || [],
+        texturePreferences: form.texturePreferences || [],
         temperaturePreference: form.temperaturePreference || 'No preference',
-        mealTimingPreferences: form.mealTimingPreferences,
+        mealTimingPreferences: form.mealTimingPreferences || [],
         dietaryLifestyle: form.dietaryLifestyle || undefined,
         dietaryLifestyleOtherNote: form.dietaryLifestyleOtherNote || undefined,
-        hasSpecificIllness: !!form.hasSpecificIllness,
+        hasSpecificIllness: toBool(form.hasSpecificIllness),
         illnessDetails: form.illnessDetails || undefined,
-        hasFoodAllergy: !!form.hasFoodAllergy,
+        hasFoodAllergy: toBool(form.hasFoodAllergy),
         foodAllergyDetails: form.foodAllergyDetails || undefined,
         foodsNeverEaten: form.foodsNeverEaten || undefined,
         fitnessGoal: form.fitnessGoal,
-        consentConfirmed: form.consentConfirmed,
+        consentConfirmed: toBool(form.consentConfirmed),
         consentDate: new Date().toISOString().split('T')[0],
       };
 
-      // Firestore rejects undefined values - strip them before saving.
       const clean: any = {};
       Object.keys(record).forEach((key) => {
         if (record[key] !== undefined) clean[key] = record[key];
@@ -718,48 +364,190 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
     }
   };
 
+  const renderInput = () => {
+    const value = form[current.key];
+    switch (current.type) {
+      case 'text':
+        return (
+          <input
+            autoFocus
+            type="text"
+            value={(value as string) || ''}
+            onChange={(e) => set(current.key, e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && goNext()}
+            className="w-full bg-transparent border-b-2 border-white/30 focus:border-white text-white text-2xl font-semibold py-3 focus:outline-none placeholder:text-white/30"
+            placeholder="Type your answer..."
+          />
+        );
+      case 'number':
+        return (
+          <input
+            autoFocus
+            type="number"
+            value={(value as string) || ''}
+            onChange={(e) => set(current.key, e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && goNext()}
+            className="w-full bg-transparent border-b-2 border-white/30 focus:border-white text-white text-2xl font-semibold py-3 focus:outline-none placeholder:text-white/30"
+            placeholder="0"
+          />
+        );
+      case 'date':
+        return (
+          <input
+            autoFocus
+            type="date"
+            value={(value as string) || ''}
+            onChange={(e) => set(current.key, e.target.value)}
+            className="w-full bg-transparent border-b-2 border-white/30 focus:border-white text-white text-xl font-semibold py-3 focus:outline-none [color-scheme:dark]"
+          />
+        );
+      case 'textarea':
+        return (
+          <textarea
+            autoFocus
+            value={(value as string) || ''}
+            onChange={(e) => set(current.key, e.target.value)}
+            rows={4}
+            className="w-full bg-white/10 backdrop-blur-sm border border-white/20 focus:border-white rounded-2xl text-white text-lg p-4 focus:outline-none placeholder:text-white/30 resize-none"
+            placeholder="Type your answer..."
+          />
+        );
+      case 'yesno':
+        return (
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => { set(current.key, true); setTimeout(goNext, 150); }}
+              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition ${value === true ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={() => { set(current.key, false); setTimeout(goNext, 150); }}
+              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition ${value === false ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+            >
+              No
+            </button>
+          </div>
+        );
+      case 'single':
+        return (
+          <div className="flex flex-wrap gap-2.5">
+            {current.options!.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => { set(current.key, opt); setTimeout(goNext, 150); }}
+                className={`px-4 py-3 rounded-2xl text-sm font-bold transition ${value === opt ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+        );
+      case 'chips':
+        return (
+          <div className="flex flex-wrap gap-2.5">
+            {current.options!.map((opt) => {
+              const list = (value as string[]) || [];
+              return (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => toggleChip(current.key, opt)}
+                  className={`px-4 py-2.5 rounded-full text-xs font-bold transition ${list.includes(opt) ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+                >
+                  {opt}
+                </button>
+              );
+            })}
+          </div>
+        );
+      case 'scale':
+        return (
+          <div className="grid grid-cols-5 gap-2">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => { set(current.key, String(n)); setTimeout(goNext, 150); }}
+                className={`py-3.5 rounded-xl text-base font-bold transition ${value === String(n) ? 'bg-white text-black' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white'}`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        );
+      case 'consent':
+        return (
+          <label className="flex items-start gap-3 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!form.consentConfirmed}
+              onChange={(e) => set('consentConfirmed', e.target.checked)}
+              className="mt-0.5 w-5 h-5 accent-white shrink-0"
+            />
+            <span className="text-sm text-white/90">
+              I confirm the information I've given is accurate to the best of my knowledge, and I consent to participate in a supervised exercise and nutrition program based on it.
+            </span>
+          </label>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const isAutoAdvance = ['yesno', 'single', 'scale'].includes(current.type);
+
   return (
-    <div className="min-h-screen bg-[#1c1c1c] flex flex-col">
-      <div className="px-5 pt-6 pb-3">
-        <h1 className="text-lg font-bold text-white mb-1">Health Screening</h1>
-        <p className="text-xs text-white/40 mb-3">
-          A few minutes now helps your coach build a program that's actually right for you.
-        </p>
-        <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+    <div className={`min-h-screen bg-gradient-to-br ${theme.gradient} flex flex-col relative overflow-hidden transition-colors duration-500`}>
+      {/* Decorative large icon, faint, in the background */}
+      <Icon className="absolute -right-10 -bottom-10 w-72 h-72 text-white/[0.06] pointer-events-none" strokeWidth={1} />
+      <Icon className="absolute -left-16 top-1/3 w-56 h-56 text-white/[0.04] pointer-events-none" strokeWidth={1} />
+
+      <div className="relative z-10 px-6 pt-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="w-9 h-9 rounded-full bg-white/15 backdrop-blur-sm flex items-center justify-center">
+            <Icon className="w-4.5 h-4.5 text-white" />
+          </div>
+          <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">{current.section}</span>
+        </div>
+        <div className="h-1 bg-white/15 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-[#ec2226] to-[#6ccbde] transition-all duration-300"
-            style={{ width: `${((step + 1) / TOTAL_STEPS) * 100}%` }}
+            className="h-full bg-white transition-all duration-300"
+            style={{ width: `${((index + 1) / visibleQuestions.length) * 100}%` }}
           />
         </div>
-        <p className="text-[10px] text-white/30 mt-1.5">
-          Step {step + 1} of {TOTAL_STEPS} · {stepTitles[step]}
-        </p>
+        <p className="text-[10px] text-white/40 mt-1.5">{index + 1} / {visibleQuestions.length}</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-4">
-        {renderStep()}
-        {error && <p className="text-xs text-[#ec2226] mt-4">{error}</p>}
+      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 py-8">
+        <h1 className="text-2xl font-black text-white leading-snug mb-6">{current.label}</h1>
+        {renderInput()}
+        {error && <p className="text-sm text-red-200 mt-4 bg-red-900/30 rounded-xl px-3 py-2">{error}</p>}
       </div>
 
-      <div className="px-5 py-4 border-t border-white/[0.08] flex gap-3">
-        {step > 0 && (
+      <div className="relative z-10 px-6 pb-6 flex items-center gap-3">
+        {index > 0 && (
           <button
             type="button"
-            onClick={() => setStep((s) => Math.max(s - 1, 0))}
-            className="px-5 py-3 rounded-xl bg-white/[0.06] text-white/70 text-sm font-bold"
+            onClick={goBack}
+            className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 text-white flex items-center justify-center shrink-0"
           >
-            Back
+            <ChevronLeft className="w-5 h-5" />
           </button>
         )}
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={submitting}
-          className="flex-1 py-3 rounded-xl text-white text-sm font-bold disabled:opacity-50"
-          style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
-        >
-          {submitting ? 'Saving...' : isLastStep ? 'Finish & Submit' : 'Next'}
-        </button>
+        {!isAutoAdvance && (
+          <button
+            type="button"
+            onClick={goNext}
+            disabled={submitting}
+            className="flex-1 py-4 rounded-2xl bg-white text-black text-base font-black disabled:opacity-50"
+          >
+            {submitting ? 'Saving...' : isLast ? 'Finish & Submit' : 'Continue'}
+          </button>
+        )}
       </div>
     </div>
   );
