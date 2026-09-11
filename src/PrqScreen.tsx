@@ -103,6 +103,102 @@ const DateWheelPicker: React.FC<{ value: string; onChange: (isoDate: string) => 
   );
 };
 
+// Single-column number wheel picker for age, weight, height, etc. -
+// reuses the same scroll-snap column as the date picker.
+const NumberWheelPicker: React.FC<{
+  value: string;
+  onChange: (v: string) => void;
+  min: number;
+  max: number;
+  unit?: string;
+}> = ({ value, onChange, min, max, unit }) => {
+  const current = value ? Number(value) : Math.round((min + max) / 2);
+  const options = Array.from({ length: max - min + 1 }, (_, i) => ({
+    label: unit ? `${min + i} ${unit}` : String(min + i),
+    value: min + i,
+  }));
+
+  return (
+    <ScrollWheelColumn
+      options={options}
+      selected={Math.max(min, Math.min(max, current))}
+      onSelect={(v) => onChange(String(v))}
+    />
+  );
+};
+
+// Country codes, most relevant for a UAE-based fitness business first,
+// then other commonly-needed ones.
+const COUNTRY_CODES = [
+  { name: 'UAE', code: '+971', flag: '🇦🇪' },
+  { name: 'Saudi Arabia', code: '+966', flag: '🇸🇦' },
+  { name: 'Qatar', code: '+974', flag: '🇶🇦' },
+  { name: 'Kuwait', code: '+965', flag: '🇰🇼' },
+  { name: 'Bahrain', code: '+973', flag: '🇧🇭' },
+  { name: 'Oman', code: '+968', flag: '🇴🇲' },
+  { name: 'India', code: '+91', flag: '🇮🇳' },
+  { name: 'Pakistan', code: '+92', flag: '🇵🇰' },
+  { name: 'Philippines', code: '+63', flag: '🇵🇭' },
+  { name: 'Egypt', code: '+20', flag: '🇪🇬' },
+  { name: 'Jordan', code: '+962', flag: '🇯🇴' },
+  { name: 'Lebanon', code: '+961', flag: '🇱🇧' },
+  { name: 'UK', code: '+44', flag: '🇬🇧' },
+  { name: 'USA/Canada', code: '+1', flag: '🇺🇸' },
+  { name: 'Australia', code: '+61', flag: '🇦🇺' },
+  { name: 'South Africa', code: '+27', flag: '🇿🇦' },
+  { name: 'Nigeria', code: '+234', flag: '🇳🇬' },
+  { name: 'Germany', code: '+49', flag: '🇩🇪' },
+  { name: 'France', code: '+33', flag: '🇫🇷' },
+  { name: 'Other', code: '', flag: '🌐' },
+];
+
+// Phone number field: pick a country first (its code then shows next
+// to the input), then type just the local number - the number
+// keyboard opens automatically since this uses type="tel".
+const PhoneNumberInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => {
+  // Try to detect an existing country code prefix already in the value
+  const existingMatch = COUNTRY_CODES.find((c) => c.code && value.startsWith(c.code));
+  const [countryCode, setCountryCode] = useState(existingMatch?.code ?? '+971');
+  const localNumber = existingMatch ? value.slice(existingMatch.code.length).trim() : value;
+
+  const updateNumber = (local: string) => {
+    onChange(countryCode ? `${countryCode} ${local}`.trim() : local);
+  };
+
+  const updateCountry = (code: string) => {
+    setCountryCode(code);
+    onChange(code ? `${code} ${localNumber}`.trim() : localNumber);
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <select
+        value={countryCode}
+        onChange={(e) => updateCountry(e.target.value)}
+        className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none"
+      >
+        {COUNTRY_CODES.map((c) => (
+          <option key={c.name} value={c.code} className="bg-[#1c1c1c]">
+            {c.flag} {c.name} {c.code && `(${c.code})`}
+          </option>
+        ))}
+      </select>
+      <div className="flex items-center gap-2 border-b-2 border-white/30 focus-within:border-white">
+        {countryCode && <span className="text-white text-xl font-semibold py-3">{countryCode}</span>}
+        <input
+          autoFocus
+          type="tel"
+          inputMode="numeric"
+          value={localNumber}
+          onChange={(e) => updateNumber(e.target.value)}
+          placeholder="50 123 4567"
+          className="flex-1 bg-transparent text-white text-2xl font-semibold py-3 focus:outline-none placeholder:text-white/30 min-w-0"
+        />
+      </div>
+    </div>
+  );
+};
+
 interface PrqScreenProps {
   clientId: string;
   clientName: string;
@@ -114,7 +210,7 @@ interface PrqFormData {
   [key: string]: string | string[] | boolean | null;
 }
 
-type FieldType = 'text' | 'number' | 'textarea' | 'date' | 'yesno' | 'chips' | 'single' | 'scale' | 'consent';
+type FieldType = 'text' | 'number' | 'wheelNumber' | 'textarea' | 'date' | 'yesno' | 'chips' | 'single' | 'scale' | 'consent' | 'phone';
 
 interface QuestionConfig {
   key: string;
@@ -124,6 +220,9 @@ interface QuestionConfig {
   options?: string[];
   section: string;
   showIf?: (form: PrqFormData) => boolean;
+  min?: number;
+  max?: number;
+  unit?: string;
 }
 
 const MEDICAL_CONDITIONS = [
@@ -150,15 +249,15 @@ const questions: QuestionConfig[] = [
   { key: 'fullName', type: 'text', label: "What's your full name?", section: 'Personal Details' },
   { key: 'sex', type: 'single', label: 'What is your sex?', options: ['Male', 'Female'], section: 'Personal Details' },
   { key: 'dateOfBirth', type: 'date', label: "When's your date of birth?", section: 'Personal Details' },
-  { key: 'age', type: 'number', label: 'How old are you?', section: 'Personal Details' },
-  { key: 'maritalStatus', type: 'text', label: "What's your marital status?", section: 'Personal Details' },
-  { key: 'contactNumber', type: 'text', label: "What's the best number to reach you?", section: 'Personal Details' },
-  { key: 'emergencyContactNumber', type: 'text', label: "Who should we call in an emergency, and what's their number?", section: 'Personal Details' },
+  { key: 'age', type: 'wheelNumber', label: 'How old are you?', section: 'Personal Details', min: 10, max: 100 },
+  { key: 'maritalStatus', type: 'yesno', label: 'Are you married?', section: 'Personal Details' },
+  { key: 'contactNumber', type: 'phone', label: "What's the best number to reach you?", section: 'Personal Details' },
+  { key: 'emergencyContactNumber', type: 'phone', label: "Who should we call in an emergency, and what's their number?", section: 'Personal Details' },
   { key: 'address', type: 'textarea', label: "What's your home address?", section: 'Personal Details' },
 
   // Section 2 - Medical Information
-  { key: 'weightKg', type: 'number', label: "What's your current weight? (kg)", section: 'Medical Information' },
-  { key: 'heightCm', type: 'number', label: "What's your height? (cm)", section: 'Medical Information' },
+  { key: 'weightKg', type: 'wheelNumber', label: "What's your current weight? (kg)", section: 'Medical Information', min: 30, max: 200, unit: 'kg' },
+  { key: 'heightCm', type: 'wheelNumber', label: "What's your height? (cm)", section: 'Medical Information', min: 100, max: 220, unit: 'cm' },
   { key: 'presentHealthState', type: 'single', label: 'How would you describe your present state of health?', options: ['Very healthy', 'Healthy', 'Unhealthy', 'Unwell'], section: 'Medical Information' },
   { key: 'currentMedications', type: 'textarea', label: 'List any current medications, how often you take them, and dosages.', section: 'Medical Information' },
   { key: 'takesMedicationsAsPrescribed', type: 'single', label: 'Do you take all your medications exactly as prescribed?', options: ['Yes', 'No', 'N/A'], section: 'Medical Information' },
@@ -341,7 +440,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         emergencyContactNumber: form.emergencyContactNumber,
         dateOfBirth: form.dateOfBirth,
         age: toNum(form.age) || 0,
-        maritalStatus: form.maritalStatus,
+        maritalStatus: form.maritalStatus === true ? 'Married' : form.maritalStatus === false ? 'Single' : '',
         sex: form.sex || undefined,
         weightKg: toNum(form.weightKg) || 0,
         heightCm: toNum(form.heightCm) || 0,
@@ -459,6 +558,13 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             placeholder="Type your answer..."
           />
         );
+      case 'phone':
+        return (
+          <PhoneNumberInput
+            value={(value as string) || ''}
+            onChange={(v) => set(current.key, v)}
+          />
+        );
       case 'number':
         return (
           <input
@@ -469,6 +575,16 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             onKeyDown={(e) => e.key === 'Enter' && goNext()}
             className="w-full bg-transparent border-b-2 border-white/30 focus:border-white text-white text-2xl font-semibold py-3 focus:outline-none placeholder:text-white/30"
             placeholder="0"
+          />
+        );
+      case 'wheelNumber':
+        return (
+          <NumberWheelPicker
+            value={(value as string) || ''}
+            onChange={(v) => set(current.key, v)}
+            min={current.min ?? 0}
+            max={current.max ?? 100}
+            unit={current.unit}
           />
         );
       case 'date':
