@@ -61,7 +61,7 @@ const ScrollWheelColumn: React.FC<{
         ref={ref}
         onScroll={handleScroll}
         onScrollEnd={handleScrollEnd}
-        className="h-[176px] overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+        className="h-[220px] overflow-y-scroll snap-y snap-mandatory no-scrollbar"
         style={{
           scrollbarWidth: 'none',
           // Fades items out near the top/bottom of the visible area -
