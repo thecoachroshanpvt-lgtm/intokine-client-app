@@ -243,7 +243,12 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
   // answered sex - neutral until that question is answered.
   const poseName = SECTION_POSE[current.section] || 'standing';
   const genderSuffix = form.sex === 'Male' ? 'male' : form.sex === 'Female' ? 'female' : 'male';
-  const poseImageSrc = `${POSE_IMAGE_BASE}/${poseName}-${genderSuffix}.png`;
+  // The actual uploaded files on disk have a leading space in their
+  // filename (e.g. " standing-male.png") that couldn't be reliably
+  // fixed through GitHub's mobile file editor after two attempts, so
+  // this matches what's really there (%20 = a URL-encoded space)
+  // rather than depending on a rename that keeps not sticking.
+  const poseImageSrc = `${POSE_IMAGE_BASE}/%20${poseName}-${genderSuffix}.png`;
   const isLast = index === visibleQuestions.length - 1;
 
   const set = (key: string, value: any) => setForm((prev) => ({ ...prev, [key]: value }));
