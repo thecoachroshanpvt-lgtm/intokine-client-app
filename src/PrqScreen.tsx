@@ -275,7 +275,7 @@ const BRAND_BG = 'bg-[#1c1c1c]';
 const questions: QuestionConfig[] = [
   // Section 1 - Personal Details
   { key: 'fullName', type: 'text', label: "What's your full name?", section: 'Personal Details' },
-  { key: 'sex', type: 'single', label: 'What is your sex?', options: ['Male', 'Female'], section: 'Personal Details' },
+  { key: 'sex', type: 'single', label: 'What is your gender?', options: ['Male', 'Female'], section: 'Personal Details' },
   { key: 'dateOfBirth', type: 'date', label: "When's your date of birth?", section: 'Personal Details' },
   { key: 'age', type: 'wheelNumber', label: 'How old are you?', section: 'Personal Details', min: 10, max: 100 },
   { key: 'maritalStatus', type: 'yesno', label: 'Are you married?', section: 'Personal Details' },
@@ -332,9 +332,9 @@ const questions: QuestionConfig[] = [
   { key: 'doesStructuredActivity', type: 'yesno', label: 'Do you currently participate in any structured physical activity?', section: 'Physical Activity' },
   { key: 'structuredActivityDescription', type: 'textarea', label: 'Please describe.', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
   { key: 'cardioMinutesPerSession', type: 'number', label: 'How many minutes of cardio, per session?', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
-  { key: 'cardioTimesPerWeek', type: 'number', label: 'And how many cardio sessions per week?', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
+  { key: 'cardioTimesPerWeek', type: 'number', label: 'How many cardio sessions per week?', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
   { key: 'muscularTrainingSessionsPerWeek', type: 'number', label: 'How many muscular training sessions per week?', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
-  { key: 'flexibilitySessionsPerWeek', type: 'number', label: 'And flexibility or mobility sessions per week?', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
+  { key: 'flexibilitySessionsPerWeek', type: 'number', label: 'Flexibility or mobility sessions per week?', section: 'Physical Activity', showIf: (f) => f.doesStructuredActivity === true },
   { key: 'doesSportsOrRecreation', type: 'yesno', label: 'Do you play any sports or do recreational activities?', section: 'Physical Activity' },
   { key: 'sportsDetails', type: 'textarea', label: 'Which ones, and how many days a week?', section: 'Physical Activity', showIf: (f) => f.doesSportsOrRecreation === true },
   { key: 'trainingExperienceLevel', type: 'single', label: "What's your training experience level?", options: ['Beginner', 'Intermediate', 'Advanced'], section: 'Physical Activity' },
@@ -358,7 +358,6 @@ const questions: QuestionConfig[] = [
   { key: 'weightGoalDirection', type: 'single', label: 'What would you like to do with your weight?', options: ['Lose weight', 'Gain weight', 'Maintain weight'], section: 'Weight History' },
   { key: 'lowestWeightPast5Years', type: 'wheelNumber', label: "What's the lowest you've weighed in the past 5 years? (kg)", section: 'Weight History', min: 30, max: 200, unit: 'kg' },
   { key: 'highestWeightPast5Years', type: 'wheelNumber', label: 'And the highest, in the past 5 years? (kg)', section: 'Weight History', min: 30, max: 200, unit: 'kg' },
-  { key: 'idealWeight', type: 'wheelNumber', label: "Here's a suggested ideal weight based on your height - adjust it if you'd like. (kg)", section: 'Weight History', min: 30, max: 200, unit: 'kg' },
 
   // Section 10 - Circumferences
   { key: 'abdomenCircumferenceCm', type: 'number', label: 'Abdomen circumference, if known (cm)', section: 'Circumferences' },
@@ -400,17 +399,6 @@ const questions: QuestionConfig[] = [
   { key: 'fitnessGoal', type: 'textarea', label: "Last one - what's your fitness goal? Tell your coach what you're really working toward.", section: 'Fitness Goal' },
   { key: 'consentConfirmed', type: 'consent', label: 'Almost done.', section: 'Fitness Goal' },
 ];
-
-// Suggests an ideal weight using the Devine formula, the standard
-// medical estimate based on height and sex - used as a data-driven
-// starting point on the wheel picker, which the client can still
-// adjust rather than guessing entirely from scratch.
-function calculateSuggestedIdealWeight(heightCm: number, sex: string): number {
-  const heightInches = heightCm / 2.54;
-  const base = sex === 'Female' ? 45.5 : 50;
-  const perInchOverFiveFeet = 2.3 * Math.max(0, heightInches - 60);
-  return Math.round(base + perInchOverFiveFeet);
-}
 
 export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clientEmail, onComplete }) => {
   const [form, setForm] = useState<PrqFormData>({ fullName: clientName, email: clientEmail });
@@ -628,11 +616,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             placeholder="0"
           />
         );
-      case 'wheelNumber': {
-        const suggestedDefault =
-          current.key === 'idealWeight' && form.heightCm
-            ? calculateSuggestedIdealWeight(Number(form.heightCm), (form.sex as string) || '')
-            : undefined;
+      case 'wheelNumber':
         return (
           <NumberWheelPicker
             value={(value as string) || ''}
@@ -640,10 +624,8 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             min={current.min ?? 0}
             max={current.max ?? 100}
             unit={current.unit}
-            defaultValue={suggestedDefault}
           />
         );
-      }
       case 'date':
         return (
           <DateWheelPicker
