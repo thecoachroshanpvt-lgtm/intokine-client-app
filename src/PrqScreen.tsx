@@ -650,13 +650,13 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         );
       case 'single':
         return (
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-3">
             {current.options!.map((opt) => (
               <button
                 key={opt}
                 type="button"
                 onClick={() => { set(current.key, opt); setTimeout(goNext, 150); }}
-                className={`px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200 ease-out active:scale-95 ${value === opt ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+                className={`flex-1 min-w-[45%] py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === opt ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
               >
                 {opt}
               </button>
