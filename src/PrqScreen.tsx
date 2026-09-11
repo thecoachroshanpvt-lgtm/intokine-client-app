@@ -36,9 +36,9 @@ const SECTION_POSE: Record<string, string> = {
 // each one shifts emphasis and direction slightly, so moving through
 // the form still feels like it's progressing subject by subject
 // rather than one flat, unchanging background throughout.
-// One single, consistent gradient on the dark brand background,
-// the same for every question - not varying per section.
-const SINGLE_GRADIENT = 'from-[#ec2226]/25 via-transparent to-[#6ccbde]/25';
+// One single, solid color tint on the dark background - no gradient,
+// no mixing two colors, just one consistent brand-red shade.
+const SINGLE_TINT = 'bg-[#ec2226]/10';
 
 interface PrqScreenProps {
   clientId: string;
@@ -527,22 +527,24 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
   };
 
   const isAutoAdvance = ['yesno', 'single', 'scale'].includes(current.type);
-  const sectionGradient = SINGLE_GRADIENT;
 
   return (
-    <div className={`min-h-screen ${BRAND_BG} flex flex-col relative overflow-hidden transition-all duration-500`}>
-      {/* Brand-colored ambient glow, shifting emphasis per subject
-          while staying within the red-to-cyan brand identity */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${sectionGradient} pointer-events-none transition-all duration-500`} />
+    <div className={`min-h-screen ${BRAND_BG} flex flex-col relative overflow-hidden`}>
+      {/* One single, solid brand-red tint over the dark background -
+          no gradient, same for every question */}
+      <div className={`absolute inset-0 ${SINGLE_TINT} pointer-events-none`} />
 
       {/* Real pose image matching this question's topic and the
-          client's answered gender. Falls back to nothing (just the
-          gradient) if the image file hasn't been added yet, rather
+          client's answered gender. Fixed size and position in pixels
+          so it never shifts or resizes between questions, regardless
+          of each image's own natural dimensions. Falls back to
+          nothing if the image file hasn't been added yet, rather
           than showing a broken image icon. */}
       <img
         src={poseImageSrc}
         alt=""
-        className="absolute -right-4 bottom-0 h-[80%] w-auto object-contain opacity-[0.12] pointer-events-none"
+        style={{ width: '320px', height: '420px', right: '-24px', bottom: '0px' }}
+        className="absolute object-contain opacity-40 pointer-events-none"
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
 
