@@ -135,8 +135,9 @@ const NumberWheelPicker: React.FC<{
   min: number;
   max: number;
   unit?: string;
-}> = ({ value, onChange, min, max, unit }) => {
-  const current = value ? Number(value) : Math.round((min + max) / 2);
+  defaultValue?: number;
+}> = ({ value, onChange, min, max, unit, defaultValue }) => {
+  const current = value ? Number(value) : (defaultValue ?? Math.round((min + max) / 2));
   const options = Array.from({ length: max - min + 1 }, (_, i) => ({
     label: String(min + i),
     value: min + i,
@@ -357,7 +358,7 @@ const questions: QuestionConfig[] = [
   { key: 'weightGoalDirection', type: 'single', label: 'What would you like to do with your weight?', options: ['Lose weight', 'Gain weight', 'Maintain weight'], section: 'Weight History' },
   { key: 'lowestWeightPast5Years', type: 'wheelNumber', label: "What's the lowest you've weighed in the past 5 years? (kg)", section: 'Weight History', min: 30, max: 200, unit: 'kg' },
   { key: 'highestWeightPast5Years', type: 'wheelNumber', label: 'And the highest, in the past 5 years? (kg)', section: 'Weight History', min: 30, max: 200, unit: 'kg' },
-  { key: 'idealWeight', type: 'number', label: "What's your ideal, sustainable weight? (kg)", section: 'Weight History' },
+  { key: 'idealWeight', type: 'wheelNumber', label: "Here's a suggested ideal weight based on your height - adjust it if you'd like. (kg)", section: 'Weight History', min: 30, max: 200, unit: 'kg' },
 
   // Section 10 - Circumferences
   { key: 'abdomenCircumferenceCm', type: 'number', label: 'Abdomen circumference, if known (cm)', section: 'Circumferences' },
@@ -399,6 +400,17 @@ const questions: QuestionConfig[] = [
   { key: 'fitnessGoal', type: 'textarea', label: "Last one - what's your fitness goal? Tell your coach what you're really working toward.", section: 'Fitness Goal' },
   { key: 'consentConfirmed', type: 'consent', label: 'Almost done.', section: 'Fitness Goal' },
 ];
+
+// Suggests an ideal weight using the Devine formula, the standard
+// medical estimate based on height and sex - used as a data-driven
+// starting point on the wheel picker, which the client can still
+// adjust rather than guessing entirely from scratch.
+function calculateSuggestedIdealWeight(heightCm: number, sex: string): number {
+  const heightInches = heightCm / 2.54;
+  const base = sex === 'Female' ? 45.5 : 50;
+  const perInchOverFiveFeet = 2.3 * Math.max(0, heightInches - 60);
+  return Math.round(base + perInchOverFiveFeet);
+}
 
 export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clientEmail, onComplete }) => {
   const [form, setForm] = useState<PrqFormData>({ fullName: clientName, email: clientEmail });
@@ -616,7 +628,11 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             placeholder="0"
           />
         );
-      case 'wheelNumber':
+      case 'wheelNumber': {
+        const suggestedDefault =
+          current.key === 'idealWeight' && form.heightCm
+            ? calculateSuggestedIdealWeight(Number(form.heightCm), (form.sex as string) || '')
+            : undefined;
         return (
           <NumberWheelPicker
             value={(value as string) || ''}
@@ -624,8 +640,10 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             min={current.min ?? 0}
             max={current.max ?? 100}
             unit={current.unit}
+            defaultValue={suggestedDefault}
           />
         );
+      }
       case 'date':
         return (
           <DateWheelPicker
