@@ -4,3 +4,10 @@ html, body {
   margin: 0;
   padding: 0;
 }
+
+/* Hides the scrollbar on the PRQ date wheel picker columns, while
+   keeping the actual scroll/snap behavior fully intact - Firefox is
+   handled inline via scrollbarWidth, this covers Safari and Chrome. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
