@@ -348,15 +348,15 @@ const questions: QuestionConfig[] = [
   { key: 'dailyActivityLevel', type: 'single', label: 'Overall, how active is your day-to-day?', options: ['Sedentary', 'Lightly Active', 'Moderately Active', 'Very Active'], section: 'Occupational' },
 
   // Section 8 - Sleep & Stress
-  { key: 'sleepHoursPerNight', type: 'number', label: 'How many hours of sleep do you get at night?', section: 'Sleep & Stress' },
+  { key: 'sleepHoursPerNight', type: 'scale', label: 'How many hours of sleep do you get at night?', section: 'Sleep & Stress', options: ['<2', '3', '4', '5', '6', '7', '8', '9', '>10'] },
   { key: 'mostStressfulThing', type: 'textarea', label: "What's most stressful to you right now?", section: 'Sleep & Stress' },
   { key: 'stressLevel', type: 'scale', label: 'On a scale of 1 to 10, how stressed do you feel? (1 = none, 10 = constant)', section: 'Sleep & Stress' },
   { key: 'appetiteUnderStress', type: 'single', label: 'How is your appetite affected by stress?', options: ['Increased', 'Not affected', 'Decreased'], section: 'Sleep & Stress' },
 
   // Section 9 - Weight History
   { key: 'weightGoalDirection', type: 'single', label: 'What would you like to do with your weight?', options: ['Lose weight', 'Gain weight', 'Maintain weight'], section: 'Weight History' },
-  { key: 'lowestWeightPast5Years', type: 'number', label: "What's the lowest you've weighed in the past 5 years? (kg)", section: 'Weight History' },
-  { key: 'highestWeightPast5Years', type: 'number', label: 'And the highest, in the past 5 years? (kg)', section: 'Weight History' },
+  { key: 'lowestWeightPast5Years', type: 'wheelNumber', label: "What's the lowest you've weighed in the past 5 years? (kg)", section: 'Weight History', min: 30, max: 200, unit: 'kg' },
+  { key: 'highestWeightPast5Years', type: 'wheelNumber', label: 'And the highest, in the past 5 years? (kg)', section: 'Weight History', min: 30, max: 200, unit: 'kg' },
   { key: 'idealWeight', type: 'number', label: "What's your ideal, sustainable weight? (kg)", section: 'Weight History' },
 
   // Section 10 - Circumferences
@@ -457,6 +457,14 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         return isNaN(n) ? undefined : n;
       };
       const toBool = (v: any) => !!v;
+      // Sleep hours uses bucketed labels ("<2", ">10") for the two
+      // edge options, which toNum can't parse directly - map them to
+      // representative numbers just outside the plain 3-9 range.
+      const toSleepHours = (v: any): number => {
+        if (v === '<2') return 1;
+        if (v === '>10') return 11;
+        return toNum(v) || 0;
+      };
 
       const record: any = {
         id: `PRQ-${clientId}`,
@@ -525,7 +533,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         workSchedule: form.workSchedule || undefined,
         workActivityLevelDescription: form.workActivityLevelDescription,
         dailyActivityLevel: form.dailyActivityLevel || undefined,
-        sleepHoursPerNight: toNum(form.sleepHoursPerNight) || 0,
+        sleepHoursPerNight: toSleepHours(form.sleepHoursPerNight),
         mostStressfulThing: form.mostStressfulThing,
         stressLevel: toNum(form.stressLevel) || 5,
         appetiteUnderStress: form.appetiteUnderStress || 'Not affected',
@@ -695,14 +703,14 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
       case 'scale':
         return (
           <div className="grid grid-cols-5 gap-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+            {(current.options || ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']).map((label) => (
               <button
-                key={n}
+                key={label}
                 type="button"
-                onClick={() => { set(current.key, String(n)); setTimeout(goNext, 150); }}
-                className={`py-3.5 rounded-xl text-base font-bold transition-all duration-200 ease-out active:scale-95 ${value === String(n) ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+                onClick={() => { set(current.key, label); setTimeout(goNext, 150); }}
+                className={`py-3.5 rounded-xl text-base font-bold transition-all duration-200 ease-out active:scale-95 ${value === label ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
               >
-                {n}
+                {label}
               </button>
             ))}
           </div>
