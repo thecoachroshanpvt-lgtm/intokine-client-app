@@ -47,7 +47,7 @@ const MEAL_TIMING_OPTIONS = ['Big breakfast', 'Big lunch', 'Big dinner', 'Small 
 // distinct visual identity instead of a flat, uniform form.
 // Single, consistent brand background for every question - the
 // app's actual red-to-cyan identity, not a different color per topic.
-const BRAND_BG = 'bg-[#0c0d10]';
+const BRAND_BG = 'bg-[#1c1c1c]';
 
 const questions: QuestionConfig[] = [
   // Section 1 - Personal Details
@@ -402,14 +402,14 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
             <button
               type="button"
               onClick={() => { set(current.key, true); setTimeout(goNext, 150); }}
-              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === true ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white shadow-lg shadow-[#ec2226]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === true ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
             >
               Yes
             </button>
             <button
               type="button"
               onClick={() => { set(current.key, false); setTimeout(goNext, 150); }}
-              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === false ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white shadow-lg shadow-[#ec2226]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+              className={`flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === false ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
             >
               No
             </button>
@@ -423,7 +423,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
                 key={opt}
                 type="button"
                 onClick={() => { set(current.key, opt); setTimeout(goNext, 150); }}
-                className={`px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200 ease-out active:scale-95 ${value === opt ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white shadow-lg shadow-[#ec2226]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+                className={`px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-200 ease-out active:scale-95 ${value === opt ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
               >
                 {opt}
               </button>
@@ -440,7 +440,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
                   key={opt}
                   type="button"
                   onClick={() => toggleChip(current.key, opt)}
-                  className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ease-out active:scale-95 ${list.includes(opt) ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white shadow-lg shadow-[#ec2226]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+                  className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ease-out active:scale-95 ${list.includes(opt) ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
                 >
                   {opt}
                 </button>
@@ -456,7 +456,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
                 key={n}
                 type="button"
                 onClick={() => { set(current.key, String(n)); setTimeout(goNext, 150); }}
-                className={`py-3.5 rounded-xl text-base font-bold transition-all duration-200 ease-out active:scale-95 ${value === String(n) ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white shadow-lg shadow-[#ec2226]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+                className={`py-3.5 rounded-xl text-base font-bold transition-all duration-200 ease-out active:scale-95 ${value === String(n) ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
               >
                 {n}
               </button>
@@ -486,10 +486,6 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
 
   return (
     <div className={`min-h-screen ${BRAND_BG} flex flex-col relative overflow-hidden`}>
-      {/* Brand identity gradient - red to cyan, consistent on every
-          question, no images or icons needed */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#ec2226]/25 via-[#0c0d10] to-[#6ccbde]/20 pointer-events-none" />
-
       <div className="relative z-10 px-6 pt-6">
         <div className="mb-4">
           <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">{current.section}</span>
