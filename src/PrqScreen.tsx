@@ -45,15 +45,21 @@ const ScrollWheelColumn: React.FC<{
         ref={ref}
         onScroll={handleScroll}
         className="h-[176px] overflow-y-scroll snap-y snap-mandatory no-scrollbar"
-        style={{ scrollbarWidth: 'none' }}
+        style={{
+          scrollbarWidth: 'none',
+          // Fades items out near the top/bottom of the visible area -
+          // pure CSS, so it's always perfectly in sync with the real
+          // scroll position, unlike a React-state-driven highlight
+          // which lags behind by the debounce delay.
+          maskImage: 'linear-gradient(to bottom, transparent, black 35%, black 65%, transparent)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 35%, black 65%, transparent)',
+        }}
       >
         <div style={{ height: `${ITEM_HEIGHT * 2}px` }} />
         {options.map((opt) => (
           <div
             key={opt.value}
-            className={`snap-center flex items-center justify-center text-base font-bold transition-colors ${
-              opt.value === selected ? 'text-white' : 'text-white/30'
-            }`}
+            className="snap-center flex items-center justify-center text-base font-bold text-white"
             style={{ height: `${ITEM_HEIGHT}px` }}
           >
             {opt.label}
@@ -61,9 +67,10 @@ const ScrollWheelColumn: React.FC<{
         ))}
         <div style={{ height: `${ITEM_HEIGHT * 2}px` }} />
       </div>
-      {/* Highlight band showing the centered, selected row */}
+      {/* Single highlight band at the exact center - the only visual
+          indicator of the selected row, nothing else competes with it */}
       <div
-        className="absolute left-0 right-0 border-y border-white/20 pointer-events-none"
+        className="absolute left-0 right-0 bg-white/10 rounded-lg pointer-events-none"
         style={{ top: `${ITEM_HEIGHT * 2}px`, height: `${ITEM_HEIGHT}px` }}
       />
     </div>
