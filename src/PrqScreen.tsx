@@ -138,16 +138,20 @@ const NumberWheelPicker: React.FC<{
 }> = ({ value, onChange, min, max, unit }) => {
   const current = value ? Number(value) : Math.round((min + max) / 2);
   const options = Array.from({ length: max - min + 1 }, (_, i) => ({
-    label: unit ? `${min + i} ${unit}` : String(min + i),
+    label: String(min + i),
     value: min + i,
   }));
 
   return (
-    <ScrollWheelColumn
-      options={options}
-      selected={Math.max(min, Math.min(max, current))}
-      onSelect={(v) => onChange(String(v))}
-    />
+    <div className="flex gap-2">
+      <div className="flex-1" />
+      <ScrollWheelColumn
+        options={options}
+        selected={Math.max(min, Math.min(max, current))}
+        onSelect={(v) => onChange(String(v))}
+      />
+      <div className="flex-1" />
+    </div>
   );
 };
 
