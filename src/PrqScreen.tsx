@@ -577,8 +577,20 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
 
       await setDoc(doc(db, 'intokine_prq_records', `PRQ-${clientId}`), clean);
       onComplete();
-    } catch (e) {
-      setError('This could not be saved. Please check your connection and try again.');
+    } catch (e: any) {
+      // Log the real error so it's visible in the browser console -
+      // the UI message alone was hiding whether this is a permissions
+      // problem, a network issue, or something else entirely.
+      console.error('PRQ submission failed:', e);
+      // Temporarily surfacing the actual error code/message directly
+      // in the UI too, since checking a browser console on a phone
+      // isn't always practical - remove once the real cause is found.
+      const details = e?.code || e?.message || 'unknown error';
+      if (e?.code === 'permission-denied') {
+        setError(`Your account does not have permission to save this. Please contact your coach. (${details})`);
+      } else {
+        setError(`This could not be saved. Please check your connection and try again. (${details})`);
+      }
     } finally {
       setSubmitting(false);
     }
