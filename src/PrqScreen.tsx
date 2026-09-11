@@ -301,7 +301,8 @@ const questions: QuestionConfig[] = [
   { key: 'bloodSugarResults', type: 'textarea', label: 'What were the results?', section: 'Medical Information', showIf: (f) => f.hasCheckedBloodSugar === true },
   { key: 'medicalConditions', type: 'chips', label: 'Do any of these apply to you? Select all that do.', options: MEDICAL_CONDITIONS, section: 'Medical Information' },
   { key: 'pregnancyWeeksAlong', type: 'number', label: 'How many weeks along are you?', section: 'Medical Information', showIf: (f) => Array.isArray(f.medicalConditions) && f.medicalConditions.includes('Pregnant') },
-  { key: 'medicalConditionsNotes', type: 'textarea', label: 'Anything important we should know about the condition(s) you selected?', section: 'Medical Information' },
+  { key: 'otherMedicalConditions', type: 'textarea', label: 'Do you have any other conditions we should know about?', section: 'Medical Information', showIf: (f) => !Array.isArray(f.medicalConditions) || f.medicalConditions.length === 0 },
+  { key: 'medicalConditionsNotes', type: 'textarea', label: 'Anything important we should know about the condition(s) you selected?', section: 'Medical Information', showIf: (f) => Array.isArray(f.medicalConditions) && f.medicalConditions.length > 0 },
 
   // Section 3 - Surgery & Injury History
   { key: 'hadMajorSurgery', type: 'yesno', label: 'Have you had any major surgery?', section: 'Surgery & Injury History' },
@@ -489,6 +490,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         bloodSugarResults: form.bloodSugarResults || undefined,
         medicalConditions: form.medicalConditions || [],
         medicalConditionsNotes: form.medicalConditionsNotes || undefined,
+        otherMedicalConditions: form.otherMedicalConditions || undefined,
         pregnancyWeeksAlong: toNum(form.pregnancyWeeksAlong),
         hadMajorSurgery: toBool(form.hadMajorSurgery),
         majorSurgeryDetails: form.majorSurgeryDetails || undefined,
