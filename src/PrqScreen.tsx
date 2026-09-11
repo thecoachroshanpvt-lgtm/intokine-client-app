@@ -7,6 +7,102 @@ const IconChevronLeft: React.FC<{ className?: string; style?: React.CSSPropertie
   </svg>
 );
 
+// A single scrollable, snapping wheel column - the browser's native
+// scroll-snap handles the physics and momentum, so this stays smooth
+// and consistent across devices instead of a hand-rolled drag handler.
+const ITEM_HEIGHT = 44;
+const ScrollWheelColumn: React.FC<{
+  options: { label: string; value: number }[];
+  selected: number;
+  onSelect: (value: number) => void;
+}> = ({ options, selected, onSelect }) => {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const scrollTimeout = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    const idx = options.findIndex((o) => o.value === selected);
+    if (ref.current && idx >= 0) {
+      ref.current.scrollTop = idx * ITEM_HEIGHT;
+    }
+    // Only run once on mount - scroll position afterward is driven by
+    // the user's own scrolling, not by re-syncing to `selected`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleScroll = () => {
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      if (!ref.current) return;
+      const idx = Math.round(ref.current.scrollTop / ITEM_HEIGHT);
+      const clamped = Math.max(0, Math.min(options.length - 1, idx));
+      onSelect(options[clamped].value);
+    }, 100);
+  };
+
+  return (
+    <div className="relative flex-1">
+      <div
+        ref={ref}
+        onScroll={handleScroll}
+        className="h-[176px] overflow-y-scroll snap-y snap-mandatory no-scrollbar"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        <div style={{ height: `${ITEM_HEIGHT * 2}px` }} />
+        {options.map((opt) => (
+          <div
+            key={opt.value}
+            className={`snap-center flex items-center justify-center text-base font-bold transition-colors ${
+              opt.value === selected ? 'text-white' : 'text-white/30'
+            }`}
+            style={{ height: `${ITEM_HEIGHT}px` }}
+          >
+            {opt.label}
+          </div>
+        ))}
+        <div style={{ height: `${ITEM_HEIGHT * 2}px` }} />
+      </div>
+      {/* Highlight band showing the centered, selected row */}
+      <div
+        className="absolute left-0 right-0 border-y border-white/20 pointer-events-none"
+        style={{ top: `${ITEM_HEIGHT * 2}px`, height: `${ITEM_HEIGHT}px` }}
+      />
+    </div>
+  );
+};
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// Day/Month/Year wheel picker, combining 3 scroll columns - replaces
+// the native <input type="date">, which renders inconsistently
+// across browsers and doesn't match this app's dark, branded style.
+const DateWheelPicker: React.FC<{ value: string; onChange: (isoDate: string) => void }> = ({ value, onChange }) => {
+  const parsed = value ? new Date(value + 'T00:00:00') : null;
+  const currentYear = new Date().getFullYear();
+
+  const [day, setDay] = useState(parsed ? parsed.getDate() : 15);
+  const [month, setMonth] = useState(parsed ? parsed.getMonth() + 1 : 6);
+  const [year, setYear] = useState(parsed ? parsed.getFullYear() : currentYear - 25);
+
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const dayOptions = Array.from({ length: daysInMonth }, (_, i) => ({ label: String(i + 1), value: i + 1 }));
+  const monthOptions = MONTH_NAMES.map((m, i) => ({ label: m, value: i + 1 }));
+  const yearOptions = Array.from({ length: 90 }, (_, i) => ({ label: String(currentYear - i), value: currentYear - i }));
+
+  const commit = (d: number, m: number, y: number) => {
+    const safeDay = Math.min(d, new Date(y, m, 0).getDate());
+    const iso = `${y}-${String(m).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`;
+    onChange(iso);
+  };
+
+  return (
+    <div className="flex gap-2">
+      <ScrollWheelColumn options={dayOptions} selected={Math.min(day, daysInMonth)} onSelect={(d) => { setDay(d); commit(d, month, year); }} />
+      <ScrollWheelColumn options={monthOptions} selected={month} onSelect={(m) => { setMonth(m); commit(day, m, year); }} />
+      <ScrollWheelColumn options={yearOptions} selected={year} onSelect={(y) => { setYear(y); commit(day, month, y); }} />
+    </div>
+  );
+};
+
 interface PrqScreenProps {
   clientId: string;
   clientName: string;
@@ -377,12 +473,9 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         );
       case 'date':
         return (
-          <input
-            autoFocus
-            type="date"
+          <DateWheelPicker
             value={(value as string) || ''}
-            onChange={(e) => set(current.key, e.target.value)}
-            className="w-full bg-transparent border-b-2 border-white/30 focus:border-white text-white text-xl font-semibold py-3 focus:outline-none [color-scheme:dark]"
+            onChange={(isoDate) => set(current.key, isoDate)}
           />
         );
       case 'textarea':
