@@ -24,19 +24,35 @@ const ScrollWheelColumn: React.FC<{
     if (ref.current && idx >= 0) {
       ref.current.scrollTop = idx * ITEM_HEIGHT;
     }
+    // Register the currently-displayed value immediately, so the
+    // default the client sees is actually saved even if they never
+    // touch the scroller at all.
+    onSelect(selected);
     // Only run once on mount - scroll position afterward is driven by
     // the user's own scrolling, not by re-syncing to `selected`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const commitFromScrollPosition = () => {
+    if (!ref.current) return;
+    const idx = Math.round(ref.current.scrollTop / ITEM_HEIGHT);
+    const clamped = Math.max(0, Math.min(options.length - 1, idx));
+    onSelect(options[clamped].value);
+  };
+
   const handleScroll = () => {
+    // The native scroll-snap animation settles *after* scroll events
+    // stop firing, so a short debounce can capture the position mid-
+    // snap rather than where it actually lands. The 'scrollend' event
+    // (where supported) fires exactly once snapping is fully done;
+    // the longer timeout is just a fallback for browsers without it.
     if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    scrollTimeout.current = setTimeout(() => {
-      if (!ref.current) return;
-      const idx = Math.round(ref.current.scrollTop / ITEM_HEIGHT);
-      const clamped = Math.max(0, Math.min(options.length - 1, idx));
-      onSelect(options[clamped].value);
-    }, 100);
+    scrollTimeout.current = setTimeout(commitFromScrollPosition, 250);
+  };
+
+  const handleScrollEnd = () => {
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    commitFromScrollPosition();
   };
 
   return (
@@ -44,6 +60,7 @@ const ScrollWheelColumn: React.FC<{
       <div
         ref={ref}
         onScroll={handleScroll}
+        onScrollEnd={handleScrollEnd}
         className="h-[176px] overflow-y-scroll snap-y snap-mandatory no-scrollbar"
         style={{
           scrollbarWidth: 'none',
