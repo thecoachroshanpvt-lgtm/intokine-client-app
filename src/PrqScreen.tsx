@@ -214,7 +214,6 @@ const PhoneNumberInput: React.FC<{ value: string; onChange: (v: string) => void 
       <div className="flex items-center gap-2 border-b-2 border-white/30 focus-within:border-white">
         {countryCode && <span className="text-white text-xl font-semibold py-3">{countryCode}</span>}
         <input
-          autoFocus
           type="tel"
           inputMode="numeric"
           value={localNumber}
@@ -581,7 +580,6 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
       case 'text':
         return (
           <input
-            autoFocus
             type="text"
             value={(value as string) || ''}
             onChange={(e) => set(current.key, e.target.value)}
@@ -600,7 +598,6 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
       case 'number':
         return (
           <input
-            autoFocus
             type="number"
             value={(value as string) || ''}
             onChange={(e) => set(current.key, e.target.value)}
@@ -629,7 +626,6 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
       case 'textarea':
         return (
           <textarea
-            autoFocus
             value={(value as string) || ''}
             onChange={(e) => set(current.key, e.target.value)}
             rows={4}
