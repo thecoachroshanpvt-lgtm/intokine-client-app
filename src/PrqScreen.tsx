@@ -673,15 +673,20 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         );
       case 'chips':
         return (
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-3">
             {current.options!.map((opt) => {
               const list = (value as string[]) || [];
+              const isLong = current.options!.length > 8;
               return (
                 <button
                   key={opt}
                   type="button"
                   onClick={() => toggleChip(current.key, opt)}
-                  className={`px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ease-out active:scale-95 ${list.includes(opt) ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
+                  className={
+                    isLong
+                      ? `px-4 py-2.5 rounded-full text-xs font-bold transition-all duration-200 ease-out active:scale-95 ${list.includes(opt) ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`
+                      : `flex-1 min-w-[45%] py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${list.includes(opt) ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`
+                  }
                 >
                   {opt}
                 </button>
