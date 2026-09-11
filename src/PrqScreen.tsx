@@ -36,24 +36,9 @@ const SECTION_POSE: Record<string, string> = {
 // each one shifts emphasis and direction slightly, so moving through
 // the form still feels like it's progressing subject by subject
 // rather than one flat, unchanging background throughout.
-const SECTION_GRADIENT: Record<string, string> = {
-  'Personal Details': 'from-[#ec2226]/30 via-transparent to-[#6ccbde]/25',
-  'Medical Information': 'from-[#ec2226]/40 via-[#ec2226]/10 to-transparent',
-  'Surgery & Injury History': 'from-[#ec2226]/35 via-transparent to-[#6ccbde]/10',
-  'Family History': 'from-[#6ccbde]/15 via-transparent to-[#ec2226]/25',
-  'Substance-Related Habits': 'from-[#ec2226]/25 via-transparent to-[#6ccbde]/15',
-  'Physical Activity': 'from-[#6ccbde]/35 via-transparent to-[#ec2226]/20',
-  'Occupational': 'from-[#6ccbde]/15 via-transparent to-[#ec2226]/15',
-  'Sleep & Stress': 'from-[#6ccbde]/10 via-transparent to-[#ec2226]/30',
-  'Weight History': 'from-[#6ccbde]/30 via-transparent to-[#6ccbde]/10',
-  'Circumferences': 'from-[#ec2226]/20 via-transparent to-[#6ccbde]/25',
-  'Body Composition': 'from-[#6ccbde]/40 via-transparent to-[#ec2226]/15',
-  'Goals & Readiness': 'from-[#ec2226]/35 via-transparent to-[#6ccbde]/30',
-  'COVID History': 'from-[#6ccbde]/20 via-transparent to-[#6ccbde]/5',
-  'Nutrition': 'from-[#6ccbde]/25 via-transparent to-[#ec2226]/15',
-  'Food & Medical Considerations': 'from-[#ec2226]/30 via-transparent to-[#6ccbde]/15',
-  'Fitness Goal': 'from-[#ec2226]/40 via-transparent to-[#6ccbde]/35',
-};
+// One single, consistent gradient on the dark brand background,
+// the same for every question - not varying per section.
+const SINGLE_GRADIENT = 'from-[#ec2226]/25 via-transparent to-[#6ccbde]/25';
 
 interface PrqScreenProps {
   clientId: string;
@@ -542,7 +527,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
   };
 
   const isAutoAdvance = ['yesno', 'single', 'scale'].includes(current.type);
-  const sectionGradient = SECTION_GRADIENT[current.section] || 'from-[#ec2226]/25 via-transparent to-[#6ccbde]/20';
+  const sectionGradient = SINGLE_GRADIENT;
 
   return (
     <div className={`min-h-screen ${BRAND_BG} flex flex-col relative overflow-hidden transition-all duration-500`}>
@@ -557,7 +542,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
       <img
         src={poseImageSrc}
         alt=""
-        className="absolute -right-4 bottom-0 h-[80%] w-auto object-contain opacity-90 pointer-events-none"
+        className="absolute -right-4 bottom-0 h-[80%] w-auto object-contain opacity-[0.12] pointer-events-none"
         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
       />
 
