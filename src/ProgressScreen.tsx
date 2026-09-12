@@ -292,6 +292,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [goals, setGoals] = useState<GoalEntry[]>([]);
   const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
+  const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -321,6 +322,25 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     );
 
     return () => unsubscribe();
+  }, [clientId]);
+
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+
+    const fetchPrq = async () => {
+      try {
+        const prqDoc = await getDoc(doc(db, 'intokine_prq_records', `PRQ-${clientId}`));
+        if (prqDoc.exists()) {
+          const data = prqDoc.data();
+          setPrqData({ heightCm: data.heightCm, sex: data.sex, weightGoalDirection: data.weightGoalDirection });
+        }
+      } catch (err) {
+        console.warn('Could not load health screening data:', err);
+      }
+    };
+
+    fetchPrq();
   }, [clientId]);
 
   useEffect(() => {
@@ -401,6 +421,42 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         const muscleData = chronological.filter((a) => a.muscleMassKg != null).map((a) => ({ date: a.date, value: a.muscleMassKg as number }));
         const visceralData = chronological.filter((a) => a.visceralFatLevel != null).map((a) => ({ date: a.date, value: a.visceralFatLevel as number }));
 
+        // Current / Normal / Goal table - same calculation approach as
+        // the coach's BCA calculator, read-only here since goals and
+        // reference ranges are the coach's call, not something a
+        // client edits themselves.
+        const latest = chronological[chronological.length - 1];
+        const heightM = prqData?.heightCm ? prqData.heightCm / 100 : undefined;
+        const currentWeight = latest?.weightKg;
+        const currentBodyFat = latest?.bodyFatPercentage;
+        const currentMuscleMass = latest?.muscleMassKg;
+        const currentVisceralFat = latest?.visceralFatLevel;
+        const currentBmi = heightM && currentWeight ? currentWeight / (heightM * heightM) : undefined;
+        const direction = prqData?.weightGoalDirection || 'Maintain weight';
+
+        const normalWeightRange = heightM ? { min: Math.round(18.5 * heightM * heightM), max: Math.round(24.9 * heightM * heightM) } : null;
+        const normalBmiRange = { min: 18.5, max: 24.9 };
+        const normalBodyFatRange = prqData?.sex === 'Female' ? { min: 21, max: 33 } : { min: 8, max: 20 };
+        const normalVisceralFatRange = { min: 1, max: 9 };
+
+        const suggestGoal = (current: number | undefined, min: number, max: number): number | undefined => {
+          if (current === undefined) return undefined;
+          if (direction === 'Lose weight') return current > max ? Math.round(max) : current;
+          if (direction === 'Gain weight') return current < min ? Math.round(min) : current;
+          if (current > max) return Math.round(max);
+          if (current < min) return Math.round(min);
+          return current;
+        };
+
+        const bcaRows = [
+          { label: 'Weight', unit: 'kg', current: currentWeight, normal: normalWeightRange ? `${normalWeightRange.min}-${normalWeightRange.max}` : '—', goal: normalWeightRange ? suggestGoal(currentWeight, normalWeightRange.min, normalWeightRange.max) : undefined },
+          { label: 'Body Fat', unit: '%', current: currentBodyFat, normal: `${normalBodyFatRange.min}-${normalBodyFatRange.max}`, goal: suggestGoal(currentBodyFat, normalBodyFatRange.min, normalBodyFatRange.max) },
+          { label: 'Muscle Mass', unit: 'kg', current: currentMuscleMass, normal: 'Varies', goal: currentMuscleMass },
+          { label: 'BMI', unit: '', current: currentBmi ? Number(currentBmi.toFixed(1)) : undefined, normal: `${normalBmiRange.min}-${normalBmiRange.max}`, goal: suggestGoal(currentBmi, normalBmiRange.min, normalBmiRange.max) },
+          { label: 'Visceral Fat', unit: '', current: currentVisceralFat, normal: `${normalVisceralFatRange.min}-${normalVisceralFatRange.max}`, goal: suggestGoal(currentVisceralFat, normalVisceralFatRange.min, normalVisceralFatRange.max) },
+        ];
+        const hasAnyBcaData = bcaRows.some((r) => r.current !== undefined);
+
         if (weightData.length === 0 && bodyFatData.length === 0 && muscleData.length === 0 && visceralData.length === 0) {
           return (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
@@ -410,6 +466,36 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         }
 
         return (
+          <div className="space-y-4">
+            {hasAnyBcaData && (
+              <div className="rounded-2xl overflow-hidden border border-white/[0.08]" style={{ background: 'linear-gradient(160deg, #242426, #1c1c1e)' }}>
+                <div className="px-4 py-3 border-b border-white/[0.06]">
+                  <h3 className="text-sm font-bold text-white">Where You Stand</h3>
+                  <p className="text-[11px] text-white/40 mt-0.5">Your current numbers against a healthy range and your goal.</p>
+                </div>
+                <div className="divide-y divide-white/[0.05]">
+                  {bcaRows.map((row) => (
+                    <div key={row.label} className="px-4 py-3">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-bold text-white">{row.label}</span>
+                        <span className="text-sm font-black text-white">
+                          {row.current !== undefined ? `${row.current}${row.unit}` : '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-[10px]">
+                        <span className="flex items-center gap-1 text-emerald-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Normal: {row.normal}
+                        </span>
+                        <span className="flex items-center gap-1 text-[#6ccbde]">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" /> Goal: {row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
@@ -419,7 +505,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Fat</span>
-              <MiniLineChart data={bodyFatData} color="#f59e0b" unit="kg" />
+              <MiniLineChart data={bodyFatData} color="#f59e0b" unit="%" />
             </div>
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
@@ -431,6 +517,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Visceral Fat</span>
               <MiniLineChart data={visceralData} color="#a78bfa" unit="" />
             </div>
+          </div>
           </div>
         );
       })()}
