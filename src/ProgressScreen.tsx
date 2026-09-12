@@ -419,7 +419,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Fat</span>
-              <MiniLineChart data={bodyFatData} color="#f59e0b" unit="%" />
+              <MiniLineChart data={bodyFatData} color="#f59e0b" unit="kg" />
             </div>
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
