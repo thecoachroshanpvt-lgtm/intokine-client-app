@@ -580,7 +580,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
         return (
           <div className="space-y-3">
-            {Array.from(roadmaps.entries()).map(([skillName, steps]) => (
+            {Array.from(roadmaps.entries()).reverse().map(([skillName, steps]) => (
               <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
                 <span className="text-sm font-bold text-white">{skillName}</span>
                 <div className="space-y-2">
