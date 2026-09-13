@@ -415,6 +415,28 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         <TabButton tab="skills" label="Skill Roadmap" />
       </div>
 
+      {(() => {
+        const recentNotes = chronological
+          .filter((a) => a.notes && a.notes.trim())
+          .slice(-5)
+          .reverse();
+        if (recentNotes.length === 0) return null;
+        return (
+          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-2 mb-5">
+            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block">Recent Coach Notes</span>
+            {recentNotes.map((a) => (
+              <div key={a.id} className="bg-white/[0.03] rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-white/40">{a.date}</span>
+                  {a.targetMilestone && <span className="text-[9px] text-[#6ccbde] font-bold">🎯 {a.targetMilestone}</span>}
+                </div>
+                <p className="text-xs text-white/80 font-light leading-relaxed">{a.notes}</p>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {topTab === 'bca' && (() => {
         const weightData = chronological.filter((a) => a.weightKg != null).map((a) => ({ date: a.date, value: a.weightKg as number }));
         const bodyFatData = chronological.filter((a) => a.bodyFatPercentage != null).map((a) => ({ date: a.date, value: a.bodyFatPercentage as number }));
