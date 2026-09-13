@@ -425,12 +425,23 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         // the coach's BCA calculator, read-only here since goals and
         // reference ranges are the coach's call, not something a
         // client edits themselves.
-        const latest = chronological[chronological.length - 1];
+        // Each coach "Save" creates a separate record per category, so
+        // the single most recent record can easily belong to a
+        // different category and not have this field at all - this
+        // searches backward for the most recent record that actually
+        // has a value for the specific field being displayed.
+        const getLatestFieldValue = <K extends keyof AssessmentSnapshot>(fieldKey: K): AssessmentSnapshot[K] | undefined => {
+          for (let i = chronological.length - 1; i >= 0; i--) {
+            const value = chronological[i][fieldKey];
+            if (value !== undefined && value !== null) return value;
+          }
+          return undefined;
+        };
         const heightM = prqData?.heightCm ? prqData.heightCm / 100 : undefined;
-        const currentWeight = latest?.weightKg;
-        const currentBodyFat = latest?.bodyFatPercentage;
-        const currentMuscleMass = latest?.muscleMassKg;
-        const currentVisceralFat = latest?.visceralFatLevel;
+        const currentWeight = getLatestFieldValue('weightKg');
+        const currentBodyFat = getLatestFieldValue('bodyFatPercentage');
+        const currentMuscleMass = getLatestFieldValue('muscleMassKg');
+        const currentVisceralFat = getLatestFieldValue('visceralFatLevel');
         const currentBmi = heightM && currentWeight ? currentWeight / (heightM * heightM) : undefined;
         const direction = prqData?.weightGoalDirection || 'Maintain weight';
 
