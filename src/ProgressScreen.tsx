@@ -564,22 +564,47 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             </div>
           );
         }
+        // Groups each step under its parent skill (split on " > ") so
+        // a chain like Muscle Up -> Straight Bar Dips -> Negative
+        // Straight Bar Dips renders as one connected roadmap, in the
+        // order steps were added.
+        type Step = { name: string; goal: GoalEntry };
+        const roadmaps = new Map<string, Step[]>();
+        skillGoals.forEach((g) => {
+          const fullName = g.activityName.replace('Skills: ', '');
+          const [parent, ...rest] = fullName.split(' > ');
+          const stepName = rest.length > 0 ? rest.join(' > ') : fullName;
+          if (!roadmaps.has(parent)) roadmaps.set(parent, []);
+          roadmaps.get(parent)!.push({ name: stepName, goal: g });
+        });
+
         return (
-          <div className="space-y-2">
-            {skillGoals.map((g) => (
-              <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-white font-semibold">{g.activityName.replace('Skills: ', '')}</span>
-                  <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${
-                    g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
-                    g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
-                    'bg-white/10 text-white/50'
-                  }`}>
-                    {g.status === 'Pass' ? '✓ Pass' : g.status === 'AlreadyFit' ? '🎓 Already Fit' : 'In Progress'}
-                    {g.dateAchieved && <span className="text-white/40 font-normal">{g.dateAchieved}</span>}
-                  </span>
+          <div className="space-y-3">
+            {Array.from(roadmaps.entries()).map(([skillName, steps]) => (
+              <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
+                <span className="text-sm font-bold text-white">{skillName}</span>
+                <div className="space-y-2">
+                  {steps.map((step, i) => {
+                    const isDone = step.goal.status === 'Pass' || step.goal.status === 'AlreadyFit';
+                    return (
+                      <div key={step.goal.id} className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${isDone ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/50'}`}>
+                            {isDone ? '✓' : i + 1}
+                          </div>
+                          {i < steps.length - 1 && <div className={`w-0.5 flex-1 min-h-[18px] ${isDone ? 'bg-emerald-500/40' : 'bg-white/10'}`} />}
+                        </div>
+                        <div className="flex-1 pb-2">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-xs font-semibold ${isDone ? 'text-emerald-300' : 'text-white'}`}>{step.name === skillName ? skillName : step.name}</span>
+                            {step.goal.value && <span className="text-[11px] text-white/40 font-light">{step.goal.value} reps</span>}
+                          </div>
+                          {step.goal.observation && <p className="text-[11px] text-white/40 font-light mt-0.5">{step.goal.observation}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                {g.observation && <p className="text-[11px] text-white/40 font-light mt-1">{g.observation}</p>}
               </div>
             ))}
           </div>
