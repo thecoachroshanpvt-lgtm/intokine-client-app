@@ -566,13 +566,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
           {(() => {
             const bodyParts: { key: keyof AssessmentSnapshot; label: string; anchorX: number; anchorY: number; labelY: number; side: 'left' | 'right' }[] = [
-              { key: 'chestCircumferenceIn', label: 'Chest', anchorX: 78, anchorY: 22, labelY: 30, side: 'right' },
+              { key: 'chestCircumferenceIn', label: 'Chest', anchorX: 78, anchorY: 22, labelY: 22, side: 'right' },
               { key: 'rightArmCircumferenceIn', label: 'Right arm', anchorX: 78, anchorY: 25, labelY: 12, side: 'right' },
-              { key: 'hipsCircumferenceIn', label: 'Hips', anchorX: 78, anchorY: 41, labelY: 41, side: 'right' },
+              { key: 'hipsCircumferenceIn', label: 'Hips', anchorX: 78, anchorY: 47, labelY: 47, side: 'right' },
               { key: 'rightThighCircumferenceIn', label: 'Right thigh', anchorX: 78, anchorY: 62, labelY: 66, side: 'right' },
               { key: 'calfCircumferenceIn', label: 'Calf', anchorX: 78, anchorY: 80, labelY: 84, side: 'right' },
               { key: 'leftArmCircumferenceIn', label: 'Left arm', anchorX: 22, anchorY: 25, labelY: 22, side: 'left' },
-              { key: 'waistCircumferenceIn', label: 'Waist', anchorX: 22, anchorY: 34, labelY: 34, side: 'left' },
+              { key: 'waistCircumferenceIn', label: 'Waist', anchorX: 22, anchorY: 40, labelY: 40, side: 'left' },
               { key: 'leftThighCircumferenceIn', label: 'Left thigh', anchorX: 22, anchorY: 62, labelY: 62, side: 'left' },
             ];
 
