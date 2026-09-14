@@ -415,7 +415,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         <TabButton tab="skills" label="Skill Roadmap" />
       </div>
 
-      {(() => {
+      {topTab !== 'bca' && (() => {
         const recentNotes = chronological
           .filter((a) => a.notes && a.notes.trim())
           .slice(-5)
@@ -511,16 +511,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <div key={row.label} className="px-4 py-3">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs font-bold text-white">{row.label}</span>
-                        <span className="text-sm font-black text-white">
+                        <span className="text-sm font-black text-white font-mono">
                           {row.current !== undefined ? `${row.current}${row.unit}` : '—'}
                         </span>
                       </div>
                       <div className="flex items-center gap-3 text-[10px]">
                         <span className="flex items-center gap-1 text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Normal: {row.normal}
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Normal: <span className="font-mono">{row.normal}</span>
                         </span>
                         <span className="flex items-center gap-1 text-[#6ccbde]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" /> Goal: {row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" /> Goal: <span className="font-mono">{row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
                         </span>
                       </div>
                     </div>
@@ -704,7 +704,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 flex items-center justify-between">
                             <div>
                               <span className="text-sm text-white font-semibold block">{g.activityName.replace('Posture: ', '')}</span>
-                              {g.value && <span className="text-[11px] text-white/40 font-light">Score: {g.value}/10</span>}
+                              {g.value && <span className="text-[11px] text-white/40 font-light">Score: <span className="font-mono">{g.value}/10</span></span>}
                             </div>
                             <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
                               g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
@@ -757,7 +757,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     {customGoals.map((g) => (
                       <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
                         <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
-                        {g.value && <span className="text-[11px] text-white/40 font-light">Score: {g.value}/10</span>}
+                        {g.value && <span className="text-[11px] text-white/40 font-light">Score: <span className="font-mono">{g.value}/10</span></span>}
                       </div>
                     ))}
                   </div>
@@ -796,7 +796,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             {g.valueType === 'unilateral_time' ? (
                               <span className="text-[11px] text-white/40 font-light">Left: {g.valueLeft || '—'}s · Right: {g.valueRight || '—'}s</span>
                             ) : (
-                              g.value && <span className="text-[11px] text-white/40 font-light">Time: {g.value}s</span>
+                              g.value && <span className="text-[11px] text-white/40 font-light">Time: <span className="font-mono">{g.value}s</span></span>
                             )}
                           </div>
                         ))}
@@ -876,7 +876,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         {customGoals.map((g) => (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
                             <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Core Endurance & Stability: ', '')}</span>
-                            {g.value && <span className="text-[11px] text-white/40 font-light">Time: {g.value}s</span>}
+                            {g.value && <span className="text-[11px] text-white/40 font-light">Time: <span className="font-mono">{g.value}s</span></span>}
                           </div>
                         ))}
                       </div>
@@ -968,7 +968,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                 ))}
                               </div>
                             ) : (
-                              g.value && <span className="text-[11px] text-white/40 font-light">{g.value} {unitFor(g.valueType)}</span>
+                              g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} {unitFor(g.valueType)}</span></span>
                             )}
                           </div>
                         ))}
@@ -1012,7 +1012,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         {customGoals.map((g) => (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
                             <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Muscular Endurance: ', '')}</span>
-                            {g.value && <span className="text-[11px] text-white/40 font-light">{g.value} reps</span>}
+                            {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} reps</span></span>}
                           </div>
                         ))}
                       </div>
@@ -1053,7 +1053,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         {customGoals.map((g) => (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
                             <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Muscular Strength: ', '')}</span>
-                            {g.value && <span className="text-[11px] text-white/40 font-light">{g.value} kg</span>}
+                            {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} kg</span></span>}
                           </div>
                         ))}
                       </div>
