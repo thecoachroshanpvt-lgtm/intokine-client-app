@@ -62,6 +62,15 @@ interface AssessmentSnapshot {
   muscleMassKg?: number;
   visceralFatLevel?: number;
   restingHeartRateBpm?: number;
+  chestCircumferenceIn?: number;
+  waistCircumferenceIn?: number;
+  hipsCircumferenceIn?: number;
+  rightArmCircumferenceIn?: number;
+  leftArmCircumferenceIn?: number;
+  rightThighCircumferenceIn?: number;
+  leftThighCircumferenceIn?: number;
+  calfCircumferenceIn?: number;
+  waistToHipRatio?: number;
 
   // Posture
   postureScore?: number;
@@ -553,6 +562,64 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <MiniLineChart data={visceralData} color="#a78bfa" unit="" />
             </div>
           </div>
+
+          {(() => {
+            const waistData = chronological.filter((a) => a.waistCircumferenceIn != null).map((a) => ({ date: a.date, value: a.waistCircumferenceIn as number }));
+            const hipsData = chronological.filter((a) => a.hipsCircumferenceIn != null).map((a) => ({ date: a.date, value: a.hipsCircumferenceIn as number }));
+            const ratioData = chronological.filter((a) => a.waistToHipRatio != null).map((a) => ({ date: a.date, value: a.waistToHipRatio as number }));
+            const chestData = chronological.filter((a) => a.chestCircumferenceIn != null).map((a) => ({ date: a.date, value: a.chestCircumferenceIn as number }));
+            const rightArmData = chronological.filter((a) => a.rightArmCircumferenceIn != null).map((a) => ({ date: a.date, value: a.rightArmCircumferenceIn as number }));
+            const leftArmData = chronological.filter((a) => a.leftArmCircumferenceIn != null).map((a) => ({ date: a.date, value: a.leftArmCircumferenceIn as number }));
+            const rightThighData = chronological.filter((a) => a.rightThighCircumferenceIn != null).map((a) => ({ date: a.date, value: a.rightThighCircumferenceIn as number }));
+            const leftThighData = chronological.filter((a) => a.leftThighCircumferenceIn != null).map((a) => ({ date: a.date, value: a.leftThighCircumferenceIn as number }));
+            const calfData = chronological.filter((a) => a.calfCircumferenceIn != null).map((a) => ({ date: a.date, value: a.calfCircumferenceIn as number }));
+            const hasAnyCircData = [waistData, hipsData, ratioData, chestData, rightArmData, leftArmData, rightThighData, leftThighData, calfData].some((d) => d.length > 0);
+            if (!hasAnyCircData) return null;
+
+            return (
+              <div className="space-y-3">
+                <h3 className="text-sm font-bold text-white">Circumferences</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Waist</span>
+                    <MiniLineChart data={waistData} color="#ec2226" unit="in" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Hips</span>
+                    <MiniLineChart data={hipsData} color="#6ccbde" unit="in" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Waist:Hip Ratio</span>
+                    <MiniLineChart data={ratioData} color="#10b981" unit="" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Chest</span>
+                    <MiniLineChart data={chestData} color="#f59e0b" unit="in" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Arm</span>
+                    <MiniLineChart data={rightArmData} color="#a78bfa" unit="in" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Arm</span>
+                    <MiniLineChart data={leftArmData} color="#a78bfa" unit="in" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Thigh</span>
+                    <MiniLineChart data={rightThighData} color="#ec4899" unit="in" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Thigh</span>
+                    <MiniLineChart data={leftThighData} color="#ec4899" unit="in" />
+                  </div>
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Calf</span>
+                    <MiniLineChart data={calfData} color="#14b8a6" unit="in" />
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           </div>
         );
       })()}
