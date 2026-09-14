@@ -303,6 +303,15 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
   const [openBodyPartPopup, setOpenBodyPartPopup] = useState<string | null>(null);
   const [showWhereYouStandPopup, setShowWhereYouStandPopup] = useState(false);
+
+  useEffect(() => {
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup;
+    if (anyPopupOpen) {
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = previousOverflow; };
+    }
+  }, [openBodyPartPopup, showWhereYouStandPopup]);
   const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
@@ -533,14 +542,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
             {showWhereYouStandPopup && (
               <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowWhereYouStandPopup(false)}>
-                <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                  <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+                <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
                     <h3 className="text-sm font-bold text-white">Where you stand</h3>
                     <button type="button" onClick={() => setShowWhereYouStandPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                   </div>
                   <div className="divide-y divide-white/[0.05]">
                     {bcaRows.map((row) => (
-                      <div key={row.label} className="px-4 py-3.5 space-y-2.5">
+                      <div key={row.label} className="px-4 py-2.5 space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-white">{row.label}</span>
                           <span className="text-base font-black text-white font-mono">
@@ -548,11 +557,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           </span>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(52, 211, 153, 0.08)' }}>
+                          <div className="rounded-xl px-3 py-1.5" style={{ background: 'rgba(52, 211, 153, 0.08)' }}>
                             <span className="text-[9px] text-emerald-400/70 uppercase font-bold tracking-wide block">Normal</span>
                             <span className="text-xs font-bold text-emerald-300 font-mono">{row.normal}</span>
                           </div>
-                          <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(108, 203, 222, 0.08)' }}>
+                          <div className="rounded-xl px-3 py-1.5" style={{ background: 'rgba(108, 203, 222, 0.08)' }}>
                             <span className="text-[9px] text-[#6ccbde]/70 uppercase font-bold tracking-wide block">Goal</span>
                             <span className="text-xs font-bold text-[#6ccbde] font-mono">{row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
                           </div>
