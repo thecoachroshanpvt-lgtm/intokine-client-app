@@ -301,6 +301,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [goals, setGoals] = useState<GoalEntry[]>([]);
   const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
+  const [openBodyPartPopup, setOpenBodyPartPopup] = useState<string | null>(null);
   const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
@@ -564,59 +565,114 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           </div>
 
           {(() => {
-            const waistData = chronological.filter((a) => a.waistCircumferenceIn != null).map((a) => ({ date: a.date, value: a.waistCircumferenceIn as number }));
-            const hipsData = chronological.filter((a) => a.hipsCircumferenceIn != null).map((a) => ({ date: a.date, value: a.hipsCircumferenceIn as number }));
-            const ratioData = chronological.filter((a) => a.waistToHipRatio != null).map((a) => ({ date: a.date, value: a.waistToHipRatio as number }));
-            const chestData = chronological.filter((a) => a.chestCircumferenceIn != null).map((a) => ({ date: a.date, value: a.chestCircumferenceIn as number }));
-            const rightArmData = chronological.filter((a) => a.rightArmCircumferenceIn != null).map((a) => ({ date: a.date, value: a.rightArmCircumferenceIn as number }));
-            const leftArmData = chronological.filter((a) => a.leftArmCircumferenceIn != null).map((a) => ({ date: a.date, value: a.leftArmCircumferenceIn as number }));
-            const rightThighData = chronological.filter((a) => a.rightThighCircumferenceIn != null).map((a) => ({ date: a.date, value: a.rightThighCircumferenceIn as number }));
-            const leftThighData = chronological.filter((a) => a.leftThighCircumferenceIn != null).map((a) => ({ date: a.date, value: a.leftThighCircumferenceIn as number }));
-            const calfData = chronological.filter((a) => a.calfCircumferenceIn != null).map((a) => ({ date: a.date, value: a.calfCircumferenceIn as number }));
-            const hasAnyCircData = [waistData, hipsData, ratioData, chestData, rightArmData, leftArmData, rightThighData, leftThighData, calfData].some((d) => d.length > 0);
+            const bodyParts: { key: keyof AssessmentSnapshot; label: string; xPct: number; yPct: number; side: 'left' | 'right' }[] = [
+              { key: 'chestCircumferenceIn', label: 'Chest', xPct: 78, yPct: 22, side: 'right' },
+              { key: 'waistCircumferenceIn', label: 'Waist', xPct: 22, yPct: 34, side: 'left' },
+              { key: 'hipsCircumferenceIn', label: 'Hips', xPct: 78, yPct: 41, side: 'right' },
+              { key: 'leftArmCircumferenceIn', label: 'Left arm', xPct: 22, yPct: 25, side: 'left' },
+              { key: 'rightArmCircumferenceIn', label: 'Right arm', xPct: 78, yPct: 25, side: 'right' },
+              { key: 'leftThighCircumferenceIn', label: 'Left thigh', xPct: 22, yPct: 62, side: 'left' },
+              { key: 'rightThighCircumferenceIn', label: 'Right thigh', xPct: 78, yPct: 62, side: 'right' },
+              { key: 'calfCircumferenceIn', label: 'Calf', xPct: 78, yPct: 80, side: 'right' },
+            ];
+
+            const historyFor = (key: keyof AssessmentSnapshot) =>
+              chronological.filter((a) => a[key] != null).map((a) => ({ date: a.date, value: a[key] as number }));
+
+            const latestValueFor = (key: keyof AssessmentSnapshot) => {
+              const h = historyFor(key);
+              return h.length > 0 ? h[h.length - 1].value : undefined;
+            };
+
+            const ratioHistory = historyFor('waistToHipRatio');
+            const latestRatio = ratioHistory.length > 0 ? ratioHistory[ratioHistory.length - 1].value : undefined;
+
+            const hasAnyCircData = bodyParts.some((p) => historyFor(p.key).length > 0) || ratioHistory.length > 0;
             if (!hasAnyCircData) return null;
+
+            const activePartConfig = bodyParts.find((p) => p.key === openBodyPartPopup);
 
             return (
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-white">Circumferences</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Waist</span>
-                    <MiniLineChart data={waistData} color="#ec2226" unit="in" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Hips</span>
-                    <MiniLineChart data={hipsData} color="#6ccbde" unit="in" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Waist:Hip Ratio</span>
-                    <MiniLineChart data={ratioData} color="#10b981" unit="" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Chest</span>
-                    <MiniLineChart data={chestData} color="#f59e0b" unit="in" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Arm</span>
-                    <MiniLineChart data={rightArmData} color="#a78bfa" unit="in" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Arm</span>
-                    <MiniLineChart data={leftArmData} color="#a78bfa" unit="in" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Thigh</span>
-                    <MiniLineChart data={rightThighData} color="#ec4899" unit="in" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Thigh</span>
-                    <MiniLineChart data={leftThighData} color="#ec4899" unit="in" />
-                  </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Calf</span>
-                    <MiniLineChart data={calfData} color="#14b8a6" unit="in" />
-                  </div>
+                <div className="relative bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden" style={{ aspectRatio: '3 / 4' }}>
+                  <img
+                    src="/bca-body-outline.png"
+                    alt="Body diagram"
+                    className="absolute inset-0 w-full h-full object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
+                  {bodyParts.map((part) => {
+                    const value = latestValueFor(part.key);
+                    if (value === undefined) return null;
+                    const anchorX = part.side === 'left' ? part.xPct + 6 : part.xPct - 6;
+                    const labelX = part.side === 'left' ? 4 : 96;
+                    return (
+                      <svg key={`line-${part.key}`} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+                        <line
+                          x1={`${anchorX}%`} y1={`${part.yPct}%`}
+                          x2={`${labelX}%`} y2={`${part.yPct}%`}
+                          stroke="#6ccbde" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"
+                        />
+                      </svg>
+                    );
+                  })}
+                  {bodyParts.map((part) => {
+                    const value = latestValueFor(part.key);
+                    if (value === undefined) return null;
+                    const labelXPct = part.side === 'left' ? 4 : 96;
+                    return (
+                      <button
+                        key={part.key}
+                        type="button"
+                        onClick={() => setOpenBodyPartPopup(part.key)}
+                        className="absolute flex flex-col items-center active:scale-95 transition-transform"
+                        style={{
+                          left: `${labelXPct}%`,
+                          top: `${part.yPct}%`,
+                          transform: part.side === 'left' ? 'translate(0, -50%)' : 'translate(-100%, -50%)',
+                          zIndex: 2,
+                        }}
+                      >
+                        <div className="relative flex items-center justify-center w-3 h-3 mb-0.5">
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-[#6ccbde] opacity-60" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#6ccbde]" />
+                        </div>
+                        <span className="text-[11px] font-bold text-[#6ccbde] font-mono bg-[#1c1c1e]/80 rounded px-1">{value}in</span>
+                        <span className="text-[9px] text-white/50">{part.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {latestRatio !== undefined && (
+                  <button
+                    type="button"
+                    onClick={() => setOpenBodyPartPopup('waistToHipRatio')}
+                    className="w-full bg-[#242426] border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                  >
+                    <span className="text-xs font-bold text-white">Waist : Hip Ratio</span>
+                    <span className="text-base font-black text-emerald-400 font-mono">{latestRatio}</span>
+                  </button>
+                )}
+
+                {openBodyPartPopup && (
+                  <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenBodyPartPopup(null)}>
+                    <div className="bg-[#242426] border border-white/[0.1] rounded-2xl p-4 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-bold text-white">
+                          {openBodyPartPopup === 'waistToHipRatio' ? 'Waist : Hip Ratio' : bodyParts.find((p) => p.key === openBodyPartPopup)?.label}
+                        </h4>
+                        <button type="button" onClick={() => setOpenBodyPartPopup(null)} className="text-white/40 text-lg leading-none px-1">×</button>
+                      </div>
+                      <MiniLineChart
+                        data={openBodyPartPopup === 'waistToHipRatio' ? ratioHistory : historyFor(openBodyPartPopup as keyof AssessmentSnapshot)}
+                        color={openBodyPartPopup === 'waistToHipRatio' ? '#10b981' : '#6ccbde'}
+                        unit={openBodyPartPopup === 'waistToHipRatio' ? '' : 'in'}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
