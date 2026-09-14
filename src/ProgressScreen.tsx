@@ -302,6 +302,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [assessments, setAssessments] = useState<AssessmentSnapshot[]>([]);
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
   const [openBodyPartPopup, setOpenBodyPartPopup] = useState<string | null>(null);
+  const [showWhereYouStandPopup, setShowWhereYouStandPopup] = useState(false);
   const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
@@ -511,32 +512,54 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         return (
           <div className="space-y-4">
             {hasAnyBcaData && (
-              <div className="rounded-2xl overflow-hidden border border-white/[0.08]" style={{ background: 'linear-gradient(160deg, #242426, #1c1c1e)' }}>
-                <div className="px-4 py-3 border-b border-white/[0.06]">
-                  <h3 className="text-sm font-bold text-white">Where You Stand</h3>
-                  <p className="text-[11px] text-white/40 mt-0.5">Your current numbers against a healthy range and your goal.</p>
+              <button
+                type="button"
+                onClick={() => setShowWhereYouStandPopup(true)}
+                className="w-full text-left rounded-2xl overflow-hidden border active:scale-[0.98] transition-transform"
+                style={{
+                  background: 'linear-gradient(160deg, #242426, #1c1c1e)',
+                  animation: 'cardBorderPulse 2.4s ease-in-out infinite',
+                }}
+              >
+                <div className="px-4 py-3.5 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Where you stand</h3>
+                    <p className="text-[11px] text-white/40 mt-0.5">Your current numbers against a healthy range and your goal.</p>
+                  </div>
+                  <span className="text-white/30 text-lg leading-none pl-3">›</span>
                 </div>
-                <div className="divide-y divide-white/[0.05]">
-                  {bcaRows.map((row) => (
-                    <div key={row.label} className="px-4 py-3.5 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-white">{row.label}</span>
-                        <span className="text-base font-black text-white font-mono">
-                          {row.current !== undefined ? `${row.current}${row.unit}` : '—'}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(52, 211, 153, 0.08)' }}>
-                          <span className="text-[9px] text-emerald-400/70 uppercase font-bold tracking-wide block">Normal</span>
-                          <span className="text-xs font-bold text-emerald-300 font-mono">{row.normal}</span>
+              </button>
+            )}
+
+            {showWhereYouStandPopup && (
+              <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowWhereYouStandPopup(false)}>
+                <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+                    <h3 className="text-sm font-bold text-white">Where you stand</h3>
+                    <button type="button" onClick={() => setShowWhereYouStandPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                  </div>
+                  <div className="divide-y divide-white/[0.05]">
+                    {bcaRows.map((row) => (
+                      <div key={row.label} className="px-4 py-3.5 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-white">{row.label}</span>
+                          <span className="text-base font-black text-white font-mono">
+                            {row.current !== undefined ? `${row.current}${row.unit}` : '—'}
+                          </span>
                         </div>
-                        <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(108, 203, 222, 0.08)' }}>
-                          <span className="text-[9px] text-[#6ccbde]/70 uppercase font-bold tracking-wide block">Goal</span>
-                          <span className="text-xs font-bold text-[#6ccbde] font-mono">{row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(52, 211, 153, 0.08)' }}>
+                            <span className="text-[9px] text-emerald-400/70 uppercase font-bold tracking-wide block">Normal</span>
+                            <span className="text-xs font-bold text-emerald-300 font-mono">{row.normal}</span>
+                          </div>
+                          <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(108, 203, 222, 0.08)' }}>
+                            <span className="text-[9px] text-[#6ccbde]/70 uppercase font-bold tracking-wide block">Goal</span>
+                            <span className="text-xs font-bold text-[#6ccbde] font-mono">{row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
