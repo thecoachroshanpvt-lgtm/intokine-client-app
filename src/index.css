@@ -28,3 +28,15 @@ html, body {
     opacity: 0;
   }
 }
+
+/* Very mild pulsing red border on the Where You Stand card, inviting
+   a tap to see the full breakdown - kept subtle since it wraps an
+   entire card rather than a small point. */
+@keyframes cardBorderPulse {
+  0%, 100% {
+    border-color: rgba(236, 34, 38, 0.25);
+  }
+  50% {
+    border-color: rgba(236, 34, 38, 0.6);
+  }
+}
