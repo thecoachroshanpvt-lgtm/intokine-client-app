@@ -565,15 +565,15 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           </div>
 
           {(() => {
-            const bodyParts: { key: keyof AssessmentSnapshot; label: string; xPct: number; yPct: number; side: 'left' | 'right' }[] = [
-              { key: 'chestCircumferenceIn', label: 'Chest', xPct: 78, yPct: 22, side: 'right' },
-              { key: 'waistCircumferenceIn', label: 'Waist', xPct: 22, yPct: 34, side: 'left' },
-              { key: 'hipsCircumferenceIn', label: 'Hips', xPct: 78, yPct: 41, side: 'right' },
-              { key: 'leftArmCircumferenceIn', label: 'Left arm', xPct: 22, yPct: 25, side: 'left' },
-              { key: 'rightArmCircumferenceIn', label: 'Right arm', xPct: 78, yPct: 25, side: 'right' },
-              { key: 'leftThighCircumferenceIn', label: 'Left thigh', xPct: 22, yPct: 62, side: 'left' },
-              { key: 'rightThighCircumferenceIn', label: 'Right thigh', xPct: 78, yPct: 62, side: 'right' },
-              { key: 'calfCircumferenceIn', label: 'Calf', xPct: 78, yPct: 80, side: 'right' },
+            const bodyParts: { key: keyof AssessmentSnapshot; label: string; anchorX: number; anchorY: number; labelY: number; side: 'left' | 'right' }[] = [
+              { key: 'chestCircumferenceIn', label: 'Chest', anchorX: 78, anchorY: 22, labelY: 12, side: 'right' },
+              { key: 'rightArmCircumferenceIn', label: 'Right arm', anchorX: 78, anchorY: 25, labelY: 30, side: 'right' },
+              { key: 'hipsCircumferenceIn', label: 'Hips', anchorX: 78, anchorY: 41, labelY: 48, side: 'right' },
+              { key: 'rightThighCircumferenceIn', label: 'Right thigh', anchorX: 78, anchorY: 62, labelY: 66, side: 'right' },
+              { key: 'calfCircumferenceIn', label: 'Calf', anchorX: 78, anchorY: 80, labelY: 84, side: 'right' },
+              { key: 'leftArmCircumferenceIn', label: 'Left arm', anchorX: 22, anchorY: 25, labelY: 22, side: 'left' },
+              { key: 'waistCircumferenceIn', label: 'Waist', anchorX: 22, anchorY: 34, labelY: 42, side: 'left' },
+              { key: 'leftThighCircumferenceIn', label: 'Left thigh', anchorX: 22, anchorY: 62, labelY: 62, side: 'left' },
             ];
 
             const historyFor = (key: keyof AssessmentSnapshot) =>
@@ -590,8 +590,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             const hasAnyCircData = bodyParts.some((p) => historyFor(p.key).length > 0) || ratioHistory.length > 0;
             if (!hasAnyCircData) return null;
 
-            const activePartConfig = bodyParts.find((p) => p.key === openBodyPartPopup);
-
             return (
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-white">Circumferences</h3>
@@ -605,13 +603,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   {bodyParts.map((part) => {
                     const value = latestValueFor(part.key);
                     if (value === undefined) return null;
-                    const anchorX = part.side === 'left' ? part.xPct + 6 : part.xPct - 6;
+                    const lineStartX = part.side === 'left' ? part.anchorX + 6 : part.anchorX - 6;
                     const labelX = part.side === 'left' ? 4 : 96;
                     return (
                       <svg key={`line-${part.key}`} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
                         <line
-                          x1={`${anchorX}%`} y1={`${part.yPct}%`}
-                          x2={`${labelX}%`} y2={`${part.yPct}%`}
+                          x1={`${lineStartX}%`} y1={`${part.anchorY}%`}
+                          x2={`${labelX}%`} y2={`${part.labelY}%`}
                           stroke="#6ccbde" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"
                         />
                       </svg>
@@ -629,7 +627,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         className="absolute flex flex-col items-center active:scale-95 transition-transform"
                         style={{
                           left: `${labelXPct}%`,
-                          top: `${part.yPct}%`,
+                          top: `${part.labelY}%`,
                           transform: part.side === 'left' ? 'translate(0, -50%)' : 'translate(-100%, -50%)',
                           zIndex: 2,
                         }}
