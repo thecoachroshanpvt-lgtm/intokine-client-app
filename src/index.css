@@ -11,3 +11,20 @@ html, body {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Pulsing ring behind each BCA body-part tap target, inviting the
+   client to tap and see that measurement's graph. */
+@keyframes bcaPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
