@@ -566,14 +566,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
           {(() => {
             const bodyParts: { key: keyof AssessmentSnapshot; label: string; anchorX: number; anchorY: number; labelY: number; side: 'left' | 'right' }[] = [
-              { key: 'chestCircumferenceIn', label: 'Chest', anchorX: 65, anchorY: 26, labelY: 26, side: 'right' },
-              { key: 'rightArmCircumferenceIn', label: 'Right arm', anchorX: 75, anchorY: 29, labelY: 12, side: 'right' },
+              { key: 'chestCircumferenceIn', label: 'Chest', anchorX: 65, anchorY: 26, labelY: 12, side: 'right' },
+              { key: 'rightArmCircumferenceIn', label: 'Right arm', anchorX: 75, anchorY: 29, labelY: 30, side: 'right' },
               { key: 'hipsCircumferenceIn', label: 'Hips', anchorX: 71, anchorY: 46, labelY: 46, side: 'right' },
-              { key: 'rightThighCircumferenceIn', label: 'Right thigh', anchorX: 60, anchorY: 68, labelY: 66, side: 'right' },
+              { key: 'rightThighCircumferenceIn', label: 'Right thigh', anchorX: 55, anchorY: 68, labelY: 66, side: 'right' },
               { key: 'calfCircumferenceIn', label: 'Calf', anchorX: 66, anchorY: 80, labelY: 84, side: 'right' },
               { key: 'leftArmCircumferenceIn', label: 'Left arm', anchorX: 25, anchorY: 29, labelY: 22, side: 'left' },
               { key: 'waistCircumferenceIn', label: 'Waist', anchorX: 39, anchorY: 39, labelY: 39, side: 'left' },
-              { key: 'leftThighCircumferenceIn', label: 'Left thigh', anchorX: 40, anchorY: 68, labelY: 62, side: 'left' },
+              { key: 'leftThighCircumferenceIn', label: 'Left thigh', anchorX: 45, anchorY: 68, labelY: 62, side: 'left' },
             ];
 
             const historyFor = (key: keyof AssessmentSnapshot) =>
@@ -604,12 +604,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     const value = latestValueFor(part.key);
                     if (value === undefined) return null;
                     const lineStartX = part.side === 'left' ? part.anchorX + 6 : part.anchorX - 6;
-                    const labelX = part.side === 'left' ? 4 : 96;
+                    const lineEndX = part.side === 'left' ? 12 : 88;
                     return (
                       <svg key={`line-${part.key}`} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
                         <line
                           x1={`${lineStartX}%`} y1={`${part.anchorY}%`}
-                          x2={`${labelX}%`} y2={`${part.labelY}%`}
+                          x2={`${lineEndX}%`} y2={`${part.labelY}%`}
                           stroke="#6ccbde" strokeWidth="1" strokeDasharray="3,3" opacity="0.6"
                         />
                       </svg>
@@ -633,8 +633,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         }}
                       >
                         <div className="relative flex items-center justify-center w-3 h-3 mb-0.5">
-                          <span className="absolute inline-flex h-full w-full rounded-full bg-[#6ccbde] opacity-60" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
-                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#6ccbde]" />
+                          <span className="absolute inline-flex h-full w-full rounded-full bg-[#ec2226] opacity-60" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
+                          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#ec2226]" />
                         </div>
                         <span className="text-[11px] font-bold text-[#6ccbde] font-mono bg-[#1c1c1e]/80 rounded px-1">{value}in</span>
                         <span className="text-[9px] text-white/50">{part.label}</span>
