@@ -508,20 +508,22 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 </div>
                 <div className="divide-y divide-white/[0.05]">
                   {bcaRows.map((row) => (
-                    <div key={row.label} className="px-4 py-3">
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div key={row.label} className="px-4 py-3.5 space-y-2.5">
+                      <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-white">{row.label}</span>
-                        <span className="text-sm font-black text-white font-mono">
+                        <span className="text-base font-black text-white font-mono">
                           {row.current !== undefined ? `${row.current}${row.unit}` : '—'}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-[10px]">
-                        <span className="flex items-center gap-1 text-emerald-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Normal: <span className="font-mono">{row.normal}</span>
-                        </span>
-                        <span className="flex items-center gap-1 text-[#6ccbde]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" /> Goal: <span className="font-mono">{row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
-                        </span>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(52, 211, 153, 0.08)' }}>
+                          <span className="text-[9px] text-emerald-400/70 uppercase font-bold tracking-wide block">Normal</span>
+                          <span className="text-xs font-bold text-emerald-300 font-mono">{row.normal}</span>
+                        </div>
+                        <div className="rounded-xl px-3 py-2" style={{ background: 'rgba(108, 203, 222, 0.08)' }}>
+                          <span className="text-[9px] text-[#6ccbde]/70 uppercase font-bold tracking-wide block">Goal</span>
+                          <span className="text-xs font-bold text-[#6ccbde] font-mono">{row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
+                        </div>
                       </div>
                     </div>
                   ))}
