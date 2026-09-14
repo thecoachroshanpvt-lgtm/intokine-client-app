@@ -569,7 +569,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               { key: 'chestCircumferenceIn', label: 'Chest', anchorX: 65, anchorY: 26, labelY: 12, side: 'right' },
               { key: 'rightArmCircumferenceIn', label: 'Right arm', anchorX: 75, anchorY: 29, labelY: 30, side: 'right' },
               { key: 'hipsCircumferenceIn', label: 'Hips', anchorX: 71, anchorY: 46, labelY: 46, side: 'right' },
-              { key: 'rightThighCircumferenceIn', label: 'Right thigh', anchorX: 55, anchorY: 68, labelY: 66, side: 'right' },
+              { key: 'rightThighCircumferenceIn', label: 'Right thigh', anchorX: 63, anchorY: 68, labelY: 66, side: 'right' },
               { key: 'calfCircumferenceIn', label: 'Calf', anchorX: 66, anchorY: 80, labelY: 84, side: 'right' },
               { key: 'leftArmCircumferenceIn', label: 'Left arm', anchorX: 25, anchorY: 29, labelY: 22, side: 'left' },
               { key: 'waistCircumferenceIn', label: 'Waist', anchorX: 39, anchorY: 39, labelY: 39, side: 'left' },
