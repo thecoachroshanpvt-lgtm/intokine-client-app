@@ -74,6 +74,7 @@ interface AssessmentSnapshot {
 
   // Posture
   postureScore?: number;
+  customActivityScores?: Record<string, number>;
 
   // Flexibility & Mobility
   thomasTestPass?: boolean;
@@ -820,36 +821,34 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
-                const scoreData = chronological.filter((a) => a.postureScore != null).map((a) => ({ date: a.date, value: a.postureScore as number }));
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Posture:') && g.activityName !== 'Posture: Postural Alignment Score');
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Posture:'));
+                const historyFor = (activityName: string) =>
+                  chronological
+                    .filter((a) => a.customActivityScores?.[activityName] != null)
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
+
+                if (customGoals.length === 0) {
+                  return <p className="text-xs text-white/40 text-center py-6">No posture activities logged yet.</p>;
+                }
 
                 return (
-                  <div className="space-y-3">
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Postural Alignment Score</span>
-                      <MiniLineChart data={scoreData} color="#6ccbde" unit="/10" />
-                    </div>
-
-                    {customGoals.length > 0 && (
-                      <div className="space-y-2">
-                        {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 flex items-center justify-between">
-                            <div>
-                              <span className="text-sm text-white font-semibold block">{g.activityName.replace('Posture: ', '')}</span>
-                              {g.value && <span className="text-[11px] text-white/40 font-light">Score: <span className="font-mono">{g.value}/10</span></span>}
-                            </div>
-                            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
-                              g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
-                              g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
-                              'bg-white/10 text-white/50'
-                            }`}>
-                              {g.status === 'Pass' ? '✓ Pass' : g.status === 'AlreadyFit' ? '🎓 Already Fit' : 'In Progress'}
-                            </span>
-                          </div>
-                        ))}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {customGoals.map((g) => (
+                      <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Posture: ', '')}</span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                            g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
+                            g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
+                            'bg-white/10 text-white/50'
+                          }`}>
+                            {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
+                          </span>
+                        </div>
+                        <MiniLineChart data={historyFor(g.activityName)} color="#6ccbde" unit="/10" />
                       </div>
-                    )}
+                    ))}
                   </div>
                 );
               })()}
