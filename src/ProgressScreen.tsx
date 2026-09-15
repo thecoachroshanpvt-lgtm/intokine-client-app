@@ -75,6 +75,8 @@ interface AssessmentSnapshot {
   // Posture
   postureScore?: number;
   customActivityScores?: Record<string, number>;
+  postureBeforeImageUrl?: string;
+  postureAfterImageUrl?: string;
 
   // Flexibility & Mobility
   thomasTestPass?: boolean;
@@ -828,12 +830,41 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     .filter((a) => a.customActivityScores?.[activityName] != null)
                     .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
 
-                if (customGoals.length === 0) {
+                const latestBeforeImage = [...chronological].reverse().find((a) => a.postureBeforeImageUrl)?.postureBeforeImageUrl;
+                const latestAfterImage = [...chronological].reverse().find((a) => a.postureAfterImageUrl)?.postureAfterImageUrl;
+
+                if (customGoals.length === 0 && !latestBeforeImage && !latestAfterImage) {
                   return <p className="text-xs text-white/40 text-center py-6">No posture activities logged yet.</p>;
                 }
 
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-4">
+                    {(latestBeforeImage || latestAfterImage) && (
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-bold text-white">Before & After</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="relative aspect-[3/4] bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden">
+                            {latestBeforeImage ? (
+                              <img src={latestBeforeImage} alt="Before" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-white/30">No photo yet</div>
+                            )}
+                            <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/60 rounded px-1.5 py-0.5">Before</span>
+                          </div>
+                          <div className="relative aspect-[3/4] bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden">
+                            {latestAfterImage ? (
+                              <img src={latestAfterImage} alt="After" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-white/30">No photo yet</div>
+                            )}
+                            <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/60 rounded px-1.5 py-0.5">After</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {customGoals.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {customGoals.map((g, idx) => {
                       const color = colorPalette[idx % colorPalette.length];
                       return (
@@ -853,6 +884,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </div>
                       );
                     })}
+                    </div>
+                    )}
                   </div>
                 );
               })()}
