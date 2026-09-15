@@ -75,8 +75,8 @@ interface AssessmentSnapshot {
   // Posture
   postureScore?: number;
   customActivityScores?: Record<string, number>;
-  postureBeforeImageUrl?: string;
-  postureAfterImageUrl?: string;
+  postureBeforeImages?: Record<string, string>;
+  postureAfterImages?: Record<string, string>;
 
   // Flexibility & Mobility
   thomasTestPass?: boolean;
@@ -829,63 +829,63 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   chronological
                     .filter((a) => a.customActivityScores?.[activityName] != null)
                     .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
+                const imageFor = (activityName: string, slot: 'before' | 'after') => {
+                  const key = slot === 'before' ? 'postureBeforeImages' : 'postureAfterImages';
+                  const record = [...chronological].reverse().find((a) => a[key]?.[activityName]);
+                  return record ? record[key]![activityName] : undefined;
+                };
 
-                const latestBeforeImage = [...chronological].reverse().find((a) => a.postureBeforeImageUrl)?.postureBeforeImageUrl;
-                const latestAfterImage = [...chronological].reverse().find((a) => a.postureAfterImageUrl)?.postureAfterImageUrl;
-
-                if (customGoals.length === 0 && !latestBeforeImage && !latestAfterImage) {
+                if (customGoals.length === 0) {
                   return <p className="text-xs text-white/40 text-center py-6">No posture activities logged yet.</p>;
                 }
 
                 return (
                   <div className="space-y-4">
-                    {(latestBeforeImage || latestAfterImage) && (
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-bold text-white">Before & After</h3>
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="relative aspect-[3/4] bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden">
-                            {latestBeforeImage ? (
-                              <img src={latestBeforeImage} alt="Before" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-white/30">No photo yet</div>
-                            )}
-                            <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/60 rounded px-1.5 py-0.5">Before</span>
-                          </div>
-                          <div className="relative aspect-[3/4] bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden">
-                            {latestAfterImage ? (
-                              <img src={latestAfterImage} alt="After" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-[10px] text-white/30">No photo yet</div>
-                            )}
-                            <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/60 rounded px-1.5 py-0.5">After</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {customGoals.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {customGoals.map((g, idx) => {
                       const color = colorPalette[idx % colorPalette.length];
+                      const beforeImg = imageFor(g.activityName, 'before');
+                      const afterImg = imageFor(g.activityName, 'after');
                       return (
-                      <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Posture: ', '')}</span>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                            g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
-                            g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
-                            'bg-white/10 text-white/50'
-                          }`}>
-                            {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
-                          </span>
+                        <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Posture: ', '')}</span>
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                              g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
+                              g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
+                              'bg-white/10 text-white/50'
+                            }`}>
+                              {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
+                            </span>
+                          </div>
+                          <MiniLineChart data={historyFor(g.activityName)} color={color} unit="/10" />
+
+                          {(beforeImg || afterImg) && (
+                            <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                              <span className="text-[9px] text-white/30 uppercase font-bold tracking-wide block mb-2">Before & After</span>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="relative aspect-[3/4] bg-[#1c1c1e] border border-white/[0.06] rounded-xl overflow-hidden">
+                                  {beforeImg ? (
+                                    <img src={beforeImg} alt="Before" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[9px] text-white/25">No photo</div>
+                                  )}
+                                  <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/60 rounded px-1.5 py-0.5">Before</span>
+                                </div>
+                                <div className="relative aspect-[3/4] bg-[#1c1c1e] border border-white/[0.06] rounded-xl overflow-hidden">
+                                  {afterImg ? (
+                                    <img src={afterImg} alt="After" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[9px] text-white/25">No photo</div>
+                                  )}
+                                  <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold text-white bg-black/60 rounded px-1.5 py-0.5">After</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <MiniLineChart data={historyFor(g.activityName)} color={color} unit="/10" />
-                      </div>
                       );
                     })}
-                    </div>
-                    )}
                   </div>
                 );
               })()}
