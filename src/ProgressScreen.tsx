@@ -821,7 +821,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Posture:'));
+                const customGoals = [...goals.filter((g) => g.activityName.startsWith('Posture:'))].reverse();
+                const colorPalette = ['#6ccbde', '#ec2226', '#f59e0b', '#a78bfa', '#ec4899', '#14b8a6', '#10b981'];
                 const historyFor = (activityName: string) =>
                   chronological
                     .filter((a) => a.customActivityScores?.[activityName] != null)
@@ -833,9 +834,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {customGoals.map((g) => (
+                    {customGoals.map((g, idx) => {
+                      const color = colorPalette[idx % colorPalette.length];
+                      return (
                       <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Posture: ', '')}</span>
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
@@ -846,9 +849,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
                           </span>
                         </div>
-                        <MiniLineChart data={historyFor(g.activityName)} color="#6ccbde" unit="/10" />
+                        <MiniLineChart data={historyFor(g.activityName)} color={color} unit="/10" />
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 );
               })()}
