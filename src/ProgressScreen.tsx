@@ -849,7 +849,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
                           </span>
                         </div>
-                        <MiniLineChart data={historyFor(g.activityName)} color={color} unit="/10" />
+                        <MiniBarChart data={historyFor(g.activityName)} color={color} unit="/10" maxValue={10} />
+                        {g.observation && (
+                          <p className="text-[11px] text-white/40 font-light mt-2 pt-2 border-t border-white/[0.06]">{g.observation}</p>
+                        )}
                       </div>
                       );
                     })}
