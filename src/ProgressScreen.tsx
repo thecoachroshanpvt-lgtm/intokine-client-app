@@ -1200,8 +1200,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   return <p className="text-xs text-white/40 text-center py-6">No movement activities logged yet.</p>;
                 }
 
+                const standardNamesSet = new Set(standardNames);
                 const achieved = allActivities.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
-                const inProgress = allActivities.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
+                const inProgress = allActivities.filter((g) => {
+                  if (g.status === 'Pass' || g.status === 'AlreadyFit') return false;
+                  if (standardNamesSet.has(g.activityName) && historyFor(g.activityName).length === 0) return false;
+                  return true;
+                });
 
                 if (inProgress.length === 0 && achieved.length > 0) {
                   return (
