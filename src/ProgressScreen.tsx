@@ -885,13 +885,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
                               {i < achieved.length - 1 && <div className="w-0.5 h-[18px] bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
                             </div>
-                            <div className="flex-1 pb-6">
+                            <div className="flex-1 pb-6" style={{ minHeight: '76px' }}>
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-bold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
                                 <span className="text-xs text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
                               </div>
                               {g.dateAchieved && <span className="text-[11px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                              {g.observation && <p className="text-xs text-white/40 font-light mt-1">{g.observation}</p>}
+                              {g.observation && <p className="text-xs text-white/40 font-light mt-1 truncate">{g.observation}</p>}
                             </div>
                           </div>
                         ))}
@@ -956,13 +956,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
                                   {i < achieved.length - 1 && <div className="w-0.5 h-[18px] bg-[#6ccbde]/30" />}
                                 </div>
-                                <div className="flex-1 pb-4">
+                                <div className="flex-1 pb-4" style={{ minHeight: '64px' }}>
                                   <div className="flex items-center justify-between">
                                     <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
                                     <span className="text-[11px] text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
                                   </div>
                                   {g.dateAchieved && <span className="text-[10px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                                  {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5">{g.observation}</p>}
+                                  {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5 truncate">{g.observation}</p>}
                                 </div>
                               </div>
                             ))}
