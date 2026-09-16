@@ -836,8 +836,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   return <p className="text-xs text-white/40 text-center py-6">No posture activities logged yet.</p>;
                 }
 
-                const achieved = customGoals.filter((g) => latestScoreFor(g.activityName) === 10);
-                const inProgress = customGoals.filter((g) => latestScoreFor(g.activityName) !== 10);
+                const achieved = customGoals.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
+                const inProgress = customGoals.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
 
                 return (
                   <div className="space-y-4">
@@ -849,7 +849,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       >
                         <div>
                           <span className="text-sm font-bold text-white block">Posture achievements</span>
-                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} reached 10/10</span>
+                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
                       </button>
@@ -898,7 +898,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                 <div className="flex-1 pb-4">
                                   <div className="flex items-center justify-between">
                                     <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
-                                    <span className="text-[11px] text-white/40 font-mono">10/10</span>
+                                    <span className="text-[11px] text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
                                   </div>
                                   {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5">{g.observation}</p>}
                                 </div>
