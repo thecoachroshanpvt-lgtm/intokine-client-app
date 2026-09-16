@@ -868,9 +868,23 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 if (inProgress.length === 0 && achieved.length > 0) {
                   return (
                     <div className="space-y-5">
-                      <div className="relative overflow-hidden bg-gradient-to-br from-[#6ccbde]/15 via-[#242426] to-[#242426] border border-[#6ccbde]/30 rounded-2xl p-6 text-center">
-                        <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-[#6ccbde]/15 border border-[#6ccbde]/40 flex items-center justify-center">
-                          <span className="text-2xl">🎉</span>
+                      <div className="relative overflow-hidden bg-gradient-to-br from-[#ec2226]/10 via-[#242426] to-[#6ccbde]/10 border border-white/[0.08] rounded-2xl p-6 text-center">
+                        <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.15), rgba(108,203,222,0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
+                          <div
+                            style={{
+                              width: '28px',
+                              height: '28px',
+                              background: 'linear-gradient(135deg, #ec2226, #6ccbde)',
+                              WebkitMaskImage: "url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='75' font-size='70' text-anchor='middle'%3E%F0%9F%A4%9C%F0%9F%A4%9B%3C/text%3E%3C/svg%3E)",
+                              WebkitMaskSize: 'contain',
+                              WebkitMaskRepeat: 'no-repeat',
+                              WebkitMaskPosition: 'center',
+                              maskImage: "url(data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext x='50' y='75' font-size='70' text-anchor='middle'%3E%F0%9F%A4%9C%F0%9F%A4%9B%3C/text%3E%3C/svg%3E)",
+                              maskSize: 'contain',
+                              maskRepeat: 'no-repeat',
+                              maskPosition: 'center',
+                            }}
+                          />
                         </div>
                         <h2 className="text-base font-bold text-white mb-1">Every posture goal, achieved</h2>
                         <p className="text-xs text-white/50">
@@ -883,7 +897,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <div key={g.id} className="flex gap-4">
                             <div className="flex flex-col items-center">
                               <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
-                              {i < achieved.length - 1 && <div className="w-0.5 flex-1 min-h-[26px] bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
+                              {i < achieved.length - 1 && <div className="w-0.5 flex-1 min-h-[18px] bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
                             </div>
                             <div className="flex-1 pb-6">
                               <div className="flex items-center justify-between">
