@@ -1166,50 +1166,80 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
-                const tests: { key: keyof AssessmentSnapshot; scoreKey: keyof AssessmentSnapshot; label: string; color: string }[] = [
-                  { key: 'bendAndLiftSquatPatternPass', scoreKey: 'bendAndLiftSquatPatternScore', label: 'Bend & Lift Squat Pattern', color: '#ec2226' },
-                  { key: 'singleLegStepUpPass', scoreKey: 'singleLegStepUpScore', label: 'Single Leg Step Up', color: '#f59e0b' },
-                  { key: 'shoulderPushStabilizationPass', scoreKey: 'shoulderPushStabilizationScore', label: 'Shoulder Push Stabilization', color: '#6ccbde' },
-                  { key: 'pullStabilityStandingRowPass', scoreKey: 'pullStabilityStandingRowScore', label: 'Pull Stability Standing Row', color: '#a78bfa' },
-                  { key: 'thoracicSpineMobilityPass', scoreKey: 'thoracicSpineMobilityScore', label: 'Thoracic Spine Mobility', color: '#34d399' },
-                  { key: 'overheadSquatTestPass', scoreKey: 'overheadSquatTestScore', label: 'Overhead Squat Test', color: '#fb923c' },
+                const standardTests: { name: string; scoreKey: keyof AssessmentSnapshot; label: string }[] = [
+                  { name: 'Movement: Bend & Lift Squat Pattern', scoreKey: 'bendAndLiftSquatPatternScore', label: 'Bend & Lift Squat Pattern' },
+                  { name: 'Movement: Single Leg Step Up', scoreKey: 'singleLegStepUpScore', label: 'Single Leg Step Up' },
+                  { name: 'Movement: Shoulder Push Stabilization', scoreKey: 'shoulderPushStabilizationScore', label: 'Shoulder Push Stabilization' },
+                  { name: 'Movement: Pull Stability Standing Row', scoreKey: 'pullStabilityStandingRowScore', label: 'Pull Stability Standing Row' },
+                  { name: 'Movement: Thoracic Spine Mobility', scoreKey: 'thoracicSpineMobilityScore', label: 'Thoracic Spine Mobility' },
+                  { name: 'Movement: Overhead Squat Test', scoreKey: 'overheadSquatTestScore', label: 'Overhead Squat Test' },
                 ];
+                const standardNames = standardTests.map((t) => t.name);
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Movement:') && !standardNames.includes(g.activityName));
 
-                const customGoals = [...goals.filter((g) => g.activityName.startsWith('Movement:'))].reverse();
-                const historyFor = (activityName: string) =>
-                  chronological
+                const historyFor = (activityName: string) => {
+                  const standard = standardTests.find((t) => t.name === activityName);
+                  if (standard) {
+                    return chronological.filter((a) => a[standard.scoreKey] != null).map((a) => ({ date: a.date, value: a[standard.scoreKey] as number }));
+                  }
+                  return chronological
                     .filter((a) => a.customActivityScores?.[activityName] != null)
                     .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
+                };
                 const latestScoreFor = (activityName: string) => {
                   const h = historyFor(activityName);
                   return h.length > 0 ? h[h.length - 1].value : undefined;
                 };
-                const achieved = customGoals.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
-                const inProgress = customGoals.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
+
+                const standardGoals = standardTests
+                  .map((t) => goals.find((g) => g.activityName === t.name))
+                  .filter((g): g is GoalEntry => !!g);
+                const allActivities = [...standardGoals, ...customGoals].reverse();
+
+                if (allActivities.length === 0) {
+                  return <p className="text-xs text-white/40 text-center py-6">No movement activities logged yet.</p>;
+                }
+
+                const achieved = allActivities.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
+                const inProgress = allActivities.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
+
+                if (inProgress.length === 0 && achieved.length > 0) {
+                  return (
+                    <div className="space-y-5">
+                      <div className="relative overflow-hidden bg-gradient-to-br from-[#ec2226]/10 via-[#242426] to-[#6ccbde]/10 border border-white/[0.08] rounded-2xl p-6 text-center">
+                        <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.15), rgba(108,203,222,0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
+                          <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-11 h-11 object-contain" />
+                        </div>
+                        <h2 className="text-base font-bold text-white mb-1">Every movement goal, achieved</h2>
+                        <p className="text-xs text-white/50">
+                          {achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed - here's the journey.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-5">
+                        {achieved.map((g, i) => (
+                          <div key={g.id} className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
+                              {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
+                            </div>
+                            <div className="flex-1 pb-6" style={{ minHeight: '76px' }}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-[#6ccbde]">{g.activityName.replace('Movement: ', '')}</span>
+                                <span className="text-xs text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
+                              </div>
+                              {g.dateAchieved && <span className="text-[11px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
+                              {g.observation && <p className="text-xs text-white/40 font-light mt-1 truncate">{g.observation}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
 
                 return (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {tests.map((t) => {
-                        const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
-                        const latest = [...chronological].reverse().find((a) => a[t.key] != null);
-                        return (
-                          <div key={t.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
-                              {latest && (
-                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${latest[t.key] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
-                                  {latest[t.key] ? 'Pass' : 'Needs Work'}
-                                </span>
-                              )}
-                            </div>
-                            <MiniLineChart data={scoreData} color={t.color} unit="/10" />
-                          </div>
-                        );
-                      })}
-                    </div>
-
                     {achieved.length > 0 && (
                       <button
                         type="button"
