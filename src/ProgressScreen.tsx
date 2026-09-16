@@ -870,7 +870,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <div className="space-y-5">
                       <div className="relative overflow-hidden bg-gradient-to-br from-[#ec2226]/10 via-[#242426] to-[#6ccbde]/10 border border-white/[0.08] rounded-2xl p-6 text-center">
                         <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.15), rgba(108,203,222,0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
-                          <img src="/posture-achievement-icon.png" alt="Achievement" className="w-8 h-8 object-contain" />
+                          <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-8 h-8 object-contain" />
                         </div>
                         <h2 className="text-base font-bold text-white mb-1">Every posture goal, achieved</h2>
                         <p className="text-xs text-white/50">
