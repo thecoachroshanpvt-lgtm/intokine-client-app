@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   initializeClientFirebaseApp,
   collection,
@@ -305,6 +305,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [openBodyPartPopup, setOpenBodyPartPopup] = useState<string | null>(null);
   const [showWhereYouStandPopup, setShowWhereYouStandPopup] = useState(false);
   const [showPostureAchievementsPopup, setShowPostureAchievementsPopup] = useState(false);
+  const postureRoadmapListRef = useRef<HTMLDivElement | null>(null);
+  const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup;
@@ -314,6 +316,29 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
       return () => { document.body.style.overflow = previousOverflow; };
     }
   }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup]);
+
+  useEffect(() => {
+    if (!showPostureAchievementsPopup) {
+      setPostureRoadmapMaxHeight(undefined);
+      return;
+    }
+    // Measures the real rendered height of the first 3 entries (not a
+    // guessed pixel value) since entry height varies depending on
+    // whether a coach observation is present and how long it is -
+    // a fixed guess either cuts entries off or never triggers
+    // scrolling at all when entries turn out shorter than expected.
+    const raf = requestAnimationFrame(() => {
+      const container = postureRoadmapListRef.current;
+      if (!container) return;
+      const children = Array.from(container.children).slice(0, 3);
+      if (children.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
+      const height = lastRect.bottom - containerRect.top;
+      setPostureRoadmapMaxHeight(height);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showPostureAchievementsPopup]);
   const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
@@ -888,7 +913,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <h3 className="text-sm font-bold text-white">Posture achievements</h3>
                             <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '264px' }}>
+                          <div ref={postureRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: postureRoadmapMaxHeight }}>
                             {achieved.map((g, i) => (
                               <div key={g.id} className="flex gap-3">
                                 <div className="flex flex-col items-center">
