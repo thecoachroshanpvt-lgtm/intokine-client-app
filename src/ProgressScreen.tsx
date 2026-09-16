@@ -330,6 +330,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     const raf = requestAnimationFrame(() => {
       const container = postureRoadmapListRef.current;
       if (!container) return;
+      container.scrollTop = 0;
       const children = Array.from(container.children).slice(0, 3);
       if (children.length === 0) return;
       const containerRect = container.getBoundingClientRect();
@@ -861,7 +862,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   return <p className="text-xs text-white/40 text-center py-6">No posture activities logged yet.</p>;
                 }
 
-                const achieved = customGoals.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
+                const achieved = [...customGoals.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit')].reverse();
                 const inProgress = customGoals.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
 
                 return (
