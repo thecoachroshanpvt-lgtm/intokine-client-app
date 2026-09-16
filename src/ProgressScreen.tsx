@@ -304,15 +304,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [assessmentsLoading, setAssessmentsLoading] = useState(true);
   const [openBodyPartPopup, setOpenBodyPartPopup] = useState<string | null>(null);
   const [showWhereYouStandPopup, setShowWhereYouStandPopup] = useState(false);
+  const [showPostureAchievementsPopup, setShowPostureAchievementsPopup] = useState(false);
 
   useEffect(() => {
-    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup;
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup;
     if (anyPopupOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = previousOverflow; };
     }
-  }, [openBodyPartPopup, showWhereYouStandPopup]);
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup]);
   const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
@@ -841,22 +842,17 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 return (
                   <div className="space-y-4">
                     {achieved.length > 0 && (
-                      <div className="bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4">
-                        <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-3">Posture achievements</span>
-                        <div className="space-y-2">
-                          {achieved.map((g) => (
-                            <div key={g.id} className="bg-white/[0.03] rounded-xl px-3 py-2">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-white font-semibold">{g.activityName.replace('Posture: ', '')}</span>
-                                <span className="text-sm font-black text-[#6ccbde] font-mono">10/10</span>
-                              </div>
-                              {g.observation && (
-                                <p className="text-[11px] text-white/40 font-light mt-1">{g.observation}</p>
-                              )}
-                            </div>
-                          ))}
+                      <button
+                        type="button"
+                        onClick={() => setShowPostureAchievementsPopup(true)}
+                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                      >
+                        <div>
+                          <span className="text-sm font-bold text-white block">Posture achievements</span>
+                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} reached 10/10</span>
                         </div>
-                      </div>
+                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                      </button>
                     )}
 
                     {inProgress.length > 0 && (
@@ -882,6 +878,34 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           </div>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {showPostureAchievementsPopup && (
+                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowPostureAchievementsPopup(false)}>
+                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+                            <h3 className="text-sm font-bold text-white">Posture achievements</h3>
+                            <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                          </div>
+                          <div className="p-4">
+                            {achieved.map((g, i) => (
+                              <div key={g.id} className="flex gap-3">
+                                <div className="flex flex-col items-center">
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
+                                  {i < achieved.length - 1 && <div className="w-0.5 flex-1 min-h-[18px] bg-[#6ccbde]/30" />}
+                                </div>
+                                <div className="flex-1 pb-4">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
+                                    <span className="text-[11px] text-white/40 font-mono">10/10</span>
+                                  </div>
+                                  {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5">{g.observation}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
