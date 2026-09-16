@@ -883,12 +883,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                     {showPostureAchievementsPopup && (
                       <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowPostureAchievementsPopup(false)}>
-                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Posture achievements</h3>
                             <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div className="p-4">
+                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '264px' }}>
                             {achieved.map((g, i) => (
                               <div key={g.id} className="flex gap-3">
                                 <div className="flex flex-col items-center">
