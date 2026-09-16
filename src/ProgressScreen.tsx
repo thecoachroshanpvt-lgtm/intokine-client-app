@@ -305,17 +305,20 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [openBodyPartPopup, setOpenBodyPartPopup] = useState<string | null>(null);
   const [showWhereYouStandPopup, setShowWhereYouStandPopup] = useState(false);
   const [showPostureAchievementsPopup, setShowPostureAchievementsPopup] = useState(false);
+  const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
+  const movementRoadmapListRef = useRef<HTMLDivElement | null>(null);
+  const [movementRoadmapMaxHeight, setMovementRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const postureRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup;
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup;
     if (anyPopupOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = previousOverflow; };
     }
-  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup]);
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup]);
 
   useEffect(() => {
     if (!showPostureAchievementsPopup) {
@@ -340,6 +343,25 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showPostureAchievementsPopup]);
+
+  useEffect(() => {
+    if (!showMovementAchievementsPopup) {
+      setMovementRoadmapMaxHeight(undefined);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      const container = movementRoadmapListRef.current;
+      if (!container) return;
+      container.scrollTop = 0;
+      const children = Array.from(container.children).slice(0, 3);
+      if (children.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
+      const height = lastRect.bottom - containerRect.top;
+      setMovementRoadmapMaxHeight(height);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showMovementAchievementsPopup]);
   const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
@@ -1152,26 +1174,110 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   { key: 'thoracicSpineMobilityPass', scoreKey: 'thoracicSpineMobilityScore', label: 'Thoracic Spine Mobility', color: '#34d399' },
                   { key: 'overheadSquatTestPass', scoreKey: 'overheadSquatTestScore', label: 'Overhead Squat Test', color: '#fb923c' },
                 ];
+
+                const customGoals = [...goals.filter((g) => g.activityName.startsWith('Movement:'))].reverse();
+                const historyFor = (activityName: string) =>
+                  chronological
+                    .filter((a) => a.customActivityScores?.[activityName] != null)
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
+                const latestScoreFor = (activityName: string) => {
+                  const h = historyFor(activityName);
+                  return h.length > 0 ? h[h.length - 1].value : undefined;
+                };
+                const achieved = customGoals.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
+                const inProgress = customGoals.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
+
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {tests.map((t) => {
-                      const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
-                      const latest = [...chronological].reverse().find((a) => a[t.key] != null);
-                      return (
-                        <div key={t.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                          <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
-                            {latest && (
-                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${latest[t.key] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
-                                {latest[t.key] ? 'Pass' : 'Needs Work'}
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {tests.map((t) => {
+                        const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
+                        const latest = [...chronological].reverse().find((a) => a[t.key] != null);
+                        return (
+                          <div key={t.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
+                              {latest && (
+                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${latest[t.key] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                                  {latest[t.key] ? 'Pass' : 'Needs Work'}
+                                </span>
+                              )}
+                            </div>
+                            <MiniLineChart data={scoreData} color={t.color} unit="/10" />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {achieved.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowMovementAchievementsPopup(true)}
+                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                      >
+                        <div>
+                          <span className="text-sm font-bold text-white block">Movement achievements</span>
+                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
+                        </div>
+                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                      </button>
+                    )}
+
+                    {inProgress.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {inProgress.map((g) => {
+                          const score = latestScoreFor(g.activityName);
+                          return (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Movement: ', '')}</span>
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
+                                g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
+                                'bg-white/10 text-white/50'
+                              }`}>
+                                {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
                               </span>
+                            </div>
+                            <SegmentMeter value={score ?? 0} max={10} />
+                            {g.observation && (
+                              <p className="text-[11px] text-white/40 font-light mt-2 pt-2 border-t border-white/[0.06]">{g.observation}</p>
                             )}
                           </div>
-                          <MiniLineChart data={scoreData} color={t.color} unit="/10" />
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {showMovementAchievementsPopup && (
+                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMovementAchievementsPopup(false)}>
+                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white">Movement achievements</h3>
+                            <button type="button" onClick={() => setShowMovementAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                          </div>
+                          <div ref={movementRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: movementRoadmapMaxHeight }}>
+                            {achieved.map((g, i) => (
+                              <div key={g.id} className="flex gap-3">
+                                <div className="flex flex-col items-center">
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
+                                  {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-[#6ccbde]/30" />}
+                                </div>
+                                <div className="flex-1 pb-4" style={{ minHeight: '64px' }}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace('Movement: ', '')}</span>
+                                    <span className="text-[11px] text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
+                                  </div>
+                                  {g.dateAchieved && <span className="text-[10px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
+                                  {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5 truncate">{g.observation}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
