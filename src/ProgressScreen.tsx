@@ -883,7 +883,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <div key={g.id} className="flex gap-4">
                             <div className="flex flex-col items-center">
                               <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
-                              {i < achieved.length - 1 && <div className="w-0.5 h-[18px] bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
+                              {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
                             </div>
                             <div className="flex-1 pb-6" style={{ minHeight: '76px' }}>
                               <div className="flex items-center justify-between">
@@ -954,7 +954,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <div key={g.id} className="flex gap-3">
                                 <div className="flex flex-col items-center">
                                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
-                                  {i < achieved.length - 1 && <div className="w-0.5 h-[18px] bg-[#6ccbde]/30" />}
+                                  {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-[#6ccbde]/30" />}
                                 </div>
                                 <div className="flex-1 pb-4" style={{ minHeight: '64px' }}>
                                   <div className="flex items-center justify-between">
