@@ -865,6 +865,41 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const achieved = [...customGoals.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit')].reverse();
                 const inProgress = customGoals.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
 
+                if (inProgress.length === 0 && achieved.length > 0) {
+                  return (
+                    <div className="space-y-5">
+                      <div className="relative overflow-hidden bg-gradient-to-br from-[#6ccbde]/15 via-[#242426] to-[#242426] border border-[#6ccbde]/30 rounded-2xl p-6 text-center">
+                        <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-[#6ccbde]/15 border border-[#6ccbde]/40 flex items-center justify-center">
+                          <span className="text-2xl">🎉</span>
+                        </div>
+                        <h2 className="text-base font-bold text-white mb-1">Every posture goal, achieved</h2>
+                        <p className="text-xs text-white/50">
+                          {achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed - here's the journey.
+                        </p>
+                      </div>
+
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-5">
+                        {achieved.map((g, i) => (
+                          <div key={g.id} className="flex gap-4">
+                            <div className="flex flex-col items-center">
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
+                              {i < achieved.length - 1 && <div className="w-0.5 flex-1 min-h-[26px] bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
+                            </div>
+                            <div className="flex-1 pb-6">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
+                                <span className="text-xs text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
+                              </div>
+                              {g.dateAchieved && <span className="text-[11px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
+                              {g.observation && <p className="text-xs text-white/40 font-light mt-1">{g.observation}</p>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                }
+
                 return (
                   <div className="space-y-4">
                     {achieved.length > 0 && (
@@ -926,6 +961,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                     <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
                                     <span className="text-[11px] text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
                                   </div>
+                                  {g.dateAchieved && <span className="text-[10px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
                                   {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5">{g.observation}</p>}
                                 </div>
                               </div>
