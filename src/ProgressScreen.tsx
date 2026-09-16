@@ -9,7 +9,7 @@ import {
   doc,
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
-import { MiniBarChart } from './MiniBarChart';
+import { SegmentMeter } from './SegmentMeter';
 
 interface CircuitRound {
   round: number;
@@ -822,40 +822,68 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <BackButton />
               {(() => {
                 const customGoals = [...goals.filter((g) => g.activityName.startsWith('Posture:'))].reverse();
-                const colorPalette = ['#6ccbde', '#ec2226', '#f59e0b', '#a78bfa', '#ec4899', '#14b8a6', '#10b981'];
                 const historyFor = (activityName: string) =>
                   chronological
                     .filter((a) => a.customActivityScores?.[activityName] != null)
                     .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
+                const latestScoreFor = (activityName: string) => {
+                  const h = historyFor(activityName);
+                  return h.length > 0 ? h[h.length - 1].value : undefined;
+                };
 
                 if (customGoals.length === 0) {
                   return <p className="text-xs text-white/40 text-center py-6">No posture activities logged yet.</p>;
                 }
 
+                const achieved = customGoals.filter((g) => latestScoreFor(g.activityName) === 10);
+                const inProgress = customGoals.filter((g) => latestScoreFor(g.activityName) !== 10);
+
                 return (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {customGoals.map((g, idx) => {
-                      const color = colorPalette[idx % colorPalette.length];
-                      return (
-                      <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Posture: ', '')}</span>
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                            g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
-                            g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
-                            'bg-white/10 text-white/50'
-                          }`}>
-                            {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
-                          </span>
+                  <div className="space-y-4">
+                    {achieved.length > 0 && (
+                      <div className="bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4">
+                        <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-3">Posture achievements</span>
+                        <div className="space-y-2">
+                          {achieved.map((g) => (
+                            <div key={g.id} className="bg-white/[0.03] rounded-xl px-3 py-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-white font-semibold">{g.activityName.replace('Posture: ', '')}</span>
+                                <span className="text-sm font-black text-[#6ccbde] font-mono">10/10</span>
+                              </div>
+                              {g.observation && (
+                                <p className="text-[11px] text-white/40 font-light mt-1">{g.observation}</p>
+                              )}
+                            </div>
+                          ))}
                         </div>
-                        <MiniBarChart data={historyFor(g.activityName)} color={color} unit="/10" maxValue={10} />
-                        {g.observation && (
-                          <p className="text-[11px] text-white/40 font-light mt-2 pt-2 border-t border-white/[0.06]">{g.observation}</p>
-                        )}
                       </div>
-                      );
-                    })}
+                    )}
+
+                    {inProgress.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {inProgress.map((g) => {
+                          const score = latestScoreFor(g.activityName);
+                          return (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Posture: ', '')}</span>
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
+                                g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
+                                'bg-white/10 text-white/50'
+                              }`}>
+                                {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
+                              </span>
+                            </div>
+                            <SegmentMeter value={score ?? 0} max={10} />
+                            {g.observation && (
+                              <p className="text-[11px] text-white/40 font-light mt-2 pt-2 border-t border-white/[0.06]">{g.observation}</p>
+                            )}
+                          </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
