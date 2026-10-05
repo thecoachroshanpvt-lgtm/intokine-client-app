@@ -28,6 +28,7 @@ interface GoalEntry {
   valueLeft?: string;
   valueRight?: string;
   circuitRounds?: CircuitRound[];
+  targetValue?: number;
 }
 
 interface ProgressScreenProps {
@@ -751,38 +752,60 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         // a chain like Muscle Up -> Straight Bar Dips -> Negative
         // Straight Bar Dips renders as one connected roadmap, in the
         // order steps were added.
-        type Step = { name: string; goal: GoalEntry };
+        type Step = { name: string; goal: GoalEntry; isFinal: boolean };
         const roadmaps = new Map<string, Step[]>();
         skillGoals.forEach((g) => {
           const fullName = g.activityName.replace('Skills: ', '');
           const [parent, ...rest] = fullName.split(' > ');
-          const stepName = rest.length > 0 ? rest.join(' > ') : fullName;
+          const isFinal = rest.length === 0;
+          const stepName = isFinal ? fullName : rest.join(' > ');
           if (!roadmaps.has(parent)) roadmaps.set(parent, []);
-          roadmaps.get(parent)!.push({ name: stepName, goal: g });
+          roadmaps.get(parent)!.push({ name: stepName, goal: g, isFinal });
         });
+        // Progression steps in the order they were added, then the skill
+        // itself (the final goal) last.
+        const orderedRoadmaps = Array.from(roadmaps.entries()).map(([parent, steps]) => [
+          parent,
+          [...steps.filter((x) => !x.isFinal), ...steps.filter((x) => x.isFinal)],
+        ] as [string, Step[]]);
 
         return (
           <div className="space-y-3">
-            {Array.from(roadmaps.entries()).reverse().map(([skillName, steps]) => (
+            {orderedRoadmaps.reverse().map(([skillName, steps]) => (
               <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
                 <span className="text-sm font-bold text-white">{skillName}</span>
                 <div className="space-y-2">
                   {steps.map((step, i) => {
                     const isDone = step.goal.status === 'Pass' || step.goal.status === 'AlreadyFit';
+                    const unit = step.goal.valueType === 'time_seconds' ? 'sec' : 'reps';
+                    const current = Number(step.goal.value) || 0;
+                    const target = step.goal.targetValue;
+                    const pct = isDone ? 100 : target ? Math.min(100, (current / target) * 100) : 0;
                     return (
                       <div key={step.goal.id} className="flex gap-3">
                         <div className="flex flex-col items-center">
                           <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${isDone ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/50'}`}>
-                            {isDone ? '✓' : i + 1}
+                            {isDone ? '✓' : step.isFinal ? '★' : i + 1}
                           </div>
                           {i < steps.length - 1 && <div className={`w-0.5 flex-1 min-h-[18px] ${isDone ? 'bg-emerald-500/40' : 'bg-white/10'}`} />}
                         </div>
                         <div className="flex-1 pb-2">
-                          <div className="flex items-center justify-between">
-                            <span className={`text-xs font-semibold ${isDone ? 'text-emerald-300' : 'text-white'}`}>{step.name === skillName ? skillName : step.name}</span>
-                            {step.goal.value && <span className="text-[11px] text-white/40 font-light">{step.goal.value} reps</span>}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className={`text-xs font-semibold ${isDone ? 'text-emerald-300' : 'text-white'}`}>
+                              {step.isFinal ? `${skillName} (final skill)` : step.name}
+                            </span>
+                            {(step.goal.value || target) && (
+                              <span className="text-[11px] text-white/40 font-light shrink-0">
+                                {step.goal.value ?? 0}{target ? ` / ${target}` : ''} {unit}
+                              </span>
+                            )}
                           </div>
-                          {step.goal.observation && <p className="text-[11px] text-white/40 font-light mt-0.5">{step.goal.observation}</p>}
+                          {target ? (
+                            <div className="mt-1.5 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                              <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
+                            </div>
+                          ) : null}
+                          {step.goal.observation && <p className="text-[11px] text-white/40 font-light mt-1">{step.goal.observation}</p>}
                         </div>
                       </div>
                     );
@@ -1200,13 +1223,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   return <p className="text-xs text-white/40 text-center py-6">No movement activities logged yet.</p>;
                 }
 
-                const standardNamesSet = new Set(standardNames);
                 const achieved = allActivities.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
-                const inProgress = allActivities.filter((g) => {
-                  if (g.status === 'Pass' || g.status === 'AlreadyFit') return false;
-                  if (standardNamesSet.has(g.activityName) && historyFor(g.activityName).length === 0) return false;
-                  return true;
-                });
+                const inProgress = allActivities.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
 
                 if (inProgress.length === 0 && achieved.length > 0) {
                   return (
