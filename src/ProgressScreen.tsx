@@ -9,7 +9,6 @@ import {
   doc,
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
-import { SegmentMeter } from './SegmentMeter';
 
 interface CircuitRound {
   round: number;
@@ -1464,23 +1463,28 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                     {inProgress.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {inProgress.map((g) => {
-                          const score = latestScoreFor(g.activityName);
+                        {inProgress.map((g, idx) => {
+                          const cardColor = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'][idx % 4];
+                          const reviewText = g.coachReview || g.observation;
                           return (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${cardColor}, transparent)` }} />
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Movement: ', '')}</span>
                               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                                 g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
                                 g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
-                                'bg-white/10 text-white/50'
+                                'bg-rose-500/20 text-rose-300'
                               }`}>
                                 {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
                               </span>
                             </div>
-                            <SegmentMeter value={score ?? 0} max={10} />
-                            {g.observation && (
-                              <p className="text-[11px] text-white/40 font-light mt-2 pt-2 border-t border-white/[0.06]">{g.observation}</p>
+                            <ScoreMeter data={historyFor(g.activityName)} color={cardColor} />
+                            {reviewText && (
+                              <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewText}</p>
+                              </div>
                             )}
                           </div>
                           );
