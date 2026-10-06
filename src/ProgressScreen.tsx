@@ -399,16 +399,15 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
           </div>
           <div className={`flex-1 ${compact ? 'pb-4' : 'pb-5'}`}>
             <button type="button" onClick={() => setOpenId(it.id)} className="w-full text-left bg-[#1c1c1e] border border-white/[0.08] rounded-xl p-3 relative overflow-hidden active:scale-[0.98] transition-transform">
-              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
-              <div className="flex items-start justify-between gap-2 pl-1">
+              <div className="flex items-start justify-between gap-2 rounded-lg px-2.5 py-2" style={{ background: 'linear-gradient(90deg, rgba(236,34,38,0.14), rgba(108,203,222,0.14))' }}>
                 <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
                 <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
               </div>
-              <div className="flex items-center gap-2 mt-2 pl-1">
+              <div className="flex items-center gap-2 mt-2 px-1">
                 <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
                 {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
               </div>
-              {it.note && <p className="text-[11px] text-white/70 font-normal leading-relaxed mt-2 pl-1 whitespace-pre-line">“{it.note}”</p>}
+              {it.note && <p className="text-[11px] text-white/70 font-normal leading-relaxed mt-2 px-1 whitespace-pre-line">“{it.note}”</p>}
               <span className="absolute top-3 right-3 text-[#6ccbde] text-base leading-none">›</span>
             </button>
           </div>
@@ -477,7 +476,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 /** Full-page celebration shown when every activity in a category has been passed. */
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
   <div className="space-y-5">
-    <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-white/[0.1]" style={{ background: 'linear-gradient(135deg, #242426, rgba(108,203,222,0.08))' }}>
+    <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-white/[0.1]" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.14), rgba(108,203,222,0.14))' }}>
       <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(108,203,222,0.12)', border: '1px solid rgba(108,203,222,0.35)' }}>
         <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-12 h-12 object-contain" />
       </div>
