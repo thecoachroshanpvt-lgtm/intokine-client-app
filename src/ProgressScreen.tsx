@@ -2133,7 +2133,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   { key: 'deadlift1RM', label: 'Deadlift 1RM', color: '#6ccbde' },
                   { key: 'overheadPress1RM', label: 'Overhead Press 1RM', color: '#a78bfa' },
                 ];
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Muscular Strength:'));
+                const customGoals = goals.filter((g) => g.activityName.startsWith('Muscular Strength:') && !lifts.some((l) => `Muscular Strength: ${l.label}` === g.activityName));
+                const reviewFor = (name: string) => {
+                  const g = goals.find((x) => x.activityName === name);
+                  return g?.coachReview || g?.observation;
+                };
                 return (
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2144,6 +2148,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${l.color}, transparent)` }} />
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{l.label}</span>
                             <MiniLineChart data={data} color={l.color} unit="kg" />
+                            {reviewFor(`Muscular Strength: ${l.label}`) && (
+                              <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewFor(`Muscular Strength: ${l.label}`)}</p>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -2154,6 +2164,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
                             <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Muscular Strength: ', '')}</span>
                             {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} kg</span></span>}
+                            {(g.coachReview || g.observation) && (
+                              <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{g.coachReview || g.observation}</p>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
