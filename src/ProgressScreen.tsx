@@ -382,7 +382,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
       assessmentsQuery,
       (snapshot) => {
         const results = snapshot.docs.map((d) => d.data() as AssessmentSnapshot);
-        results.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        // Newest first; saves on the same day are ordered by when they were
+        // created (read from the record id) so the latest save is the latest value.
+        const createdAt = (r: AssessmentSnapshot) => {
+          const m = /^ASS-(\d{12,})/.exec(String((r as { id?: string }).id ?? ''));
+          return m ? Number(m[1]) : 0;
+        };
+        results.sort((a, b) => {
+          const d = b.date.localeCompare(a.date);
+          return d !== 0 ? d : createdAt(b) - createdAt(a);
+        });
         setAssessments(results);
         setAssessmentsLoading(false);
       },
