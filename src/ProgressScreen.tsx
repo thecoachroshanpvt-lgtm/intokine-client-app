@@ -376,6 +376,7 @@ interface RoadmapItem {
   series?: { label: string; color: string; data: { date: string; value: number }[] }[];
   /** One row per result for activities with several measurements. */
   rows?: { date: string; text: string; note?: string }[];
+  rowsTitle?: string;
 }
 
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
@@ -442,7 +443,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
             </div>
             {openItem.sides ? (
               <SideComparison data={openItem.sides} unit="s" />
-            ) : openItem.series ? (
+            ) : openItem.rows && !openItem.series && hist.length === 0 ? null : openItem.series ? (
               <div className="grid grid-cols-1 gap-3">
                 {openItem.series.map((sr) => (
                   <div key={sr.label}>
@@ -458,7 +459,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
             )}
             {openItem.rows && openItem.rows.length > 0 && (
               <div>
-                <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Result journey</span>
+                <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{openItem.rowsTitle || 'Result journey'}</span>
                 <div className="space-y-1.5">
                   {openItem.rows.map((d, k) => (
                     <div key={`${d.date}-${k}`} className="flex flex-col items-start bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
@@ -669,6 +670,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
   const [mcgillOpen, setMcgillOpen] = useState(false);
+  const [showSkillAchievementsPopup, setShowSkillAchievementsPopup] = useState(false);
+  const skillRoadmapListRef = useRef<HTMLDivElement | null>(null);
+  const [skillRoadmapMaxHeight, setSkillRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const [clientSex, setClientSex] = useState<'male' | 'female' | undefined>(undefined);
   const [showCoreAchievementsPopup, setShowCoreAchievementsPopup] = useState(false);
   const [showMuscEndAchievementsPopup, setShowMuscEndAchievementsPopup] = useState(false);
@@ -687,13 +691,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup;
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup || showSkillAchievementsPopup;
     if (anyPopupOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = previousOverflow; };
     }
-  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup, showMuscEndAchievementsPopup]);
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup, showMuscEndAchievementsPopup, showSkillAchievementsPopup]);
 
   useEffect(() => {
     if (!showPostureAchievementsPopup) {
@@ -718,6 +722,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showPostureAchievementsPopup]);
+
+  useEffect(() => {
+    if (!showSkillAchievementsPopup) {
+      setSkillRoadmapMaxHeight(undefined);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      const container = skillRoadmapListRef.current;
+      if (!container) return;
+      container.scrollTop = 0;
+      const children = Array.from(container.children).slice(0, 3);
+      if (children.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
+      setSkillRoadmapMaxHeight(lastRect.bottom - containerRect.top);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showSkillAchievementsPopup]);
 
   useEffect(() => {
     if (!showMuscEndAchievementsPopup) {
@@ -1281,9 +1303,65 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           [...steps.filter((x) => !x.isFinal), ...steps.filter((x) => x.isFinal)],
         ] as [string, Step[]]);
 
+        // A skill is achieved once its final goal is passed.
+        const isPassed = (g: GoalEntry) => g.status === 'Pass' || g.status === 'AlreadyFit';
+        const achievedSkills = orderedRoadmaps.filter(([, steps]) => steps.some((x) => x.isFinal && isPassed(x.goal))).reverse();
+        const activeRoadmaps = orderedRoadmaps.filter(([, steps]) => !steps.some((x) => x.isFinal && isPassed(x.goal)));
+        const skillItems: RoadmapItem[] = [...achievedSkills].reverse().map(([skillName, steps]) => {
+          const fin = steps.find((x) => x.isFinal)!.goal;
+          return {
+            id: fin.id,
+            name: skillName,
+            date: fin.dateAchieved,
+            note: fin.coachReview || fin.observation,
+            status: fin.status,
+            scoreText: `${steps.length} step${steps.length === 1 ? '' : 's'}`,
+            rowsTitle: 'Skill roadmap',
+            rows: steps.map((x) => {
+              const unit = x.goal.valueType === 'time_seconds' ? 'sec' : 'reps';
+              const val = x.goal.value ? ` · ${x.goal.value}${x.goal.targetValue ? ` / ${x.goal.targetValue}` : ''} ${unit}` : '';
+              return {
+                date: x.goal.dateAchieved || '',
+                text: `${isPassed(x.goal) ? '✓ ' : ''}${x.isFinal ? `${skillName} (final skill)` : x.name}${val}`,
+                note: x.goal.coachReview || x.goal.observation,
+              };
+            }),
+          };
+        });
+
+        if (activeRoadmaps.length === 0 && achievedSkills.length > 0) {
+          return <AchievementsPage title="Skills complete" items={skillItems} />;
+        }
+
         return (
           <div className="space-y-3">
-            {orderedRoadmaps.reverse().map(([skillName, steps]) => (
+            {achievedSkills.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowSkillAchievementsPopup(true)}
+                className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+              >
+                <div>
+                  <span className="text-sm font-bold text-white block">Skill achievements</span>
+                  <span className="text-[11px] text-white/40">{achievedSkills.length} skill{achievedSkills.length === 1 ? '' : 's'} mastered</span>
+                </div>
+                <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+              </button>
+            )}
+            {showSkillAchievementsPopup && (
+              <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowSkillAchievementsPopup(false)}>
+                <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                  <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-white">Skill achievements</h3>
+                    <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                  </div>
+                  <div ref={skillRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: skillRoadmapMaxHeight }}>
+                    <AchievementsTimeline compact items={skillItems} />
+                  </div>
+                </div>
+              </div>
+            )}
+            {[...activeRoadmaps].reverse().map(([skillName, steps]) => (
               <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
                 <span className="text-sm font-bold text-white">{skillName}</span>
                 <div className="space-y-2">
