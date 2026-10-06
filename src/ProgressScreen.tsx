@@ -398,41 +398,35 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
   <div>
     {items.map((it, i) => {
       const last = i === items.length - 1;
-      const rank = String(i + 1).padStart(2, '0');
       return (
         <div key={it.id} className="flex gap-3">
           <div className="flex flex-col items-center">
             <div
-              className={`${compact ? 'w-9 h-9 text-xs' : 'w-11 h-11 text-sm'} flex items-center justify-center font-black italic shrink-0 -skew-x-12`}
-              style={last ? { background: '#ec2226', color: '#fff', boxShadow: '0 4px 14px rgba(236,34,38,0.45)' } : { background: '#6ccbde', color: '#0a0a0b', boxShadow: '0 4px 14px rgba(108,203,222,0.3)' }}
+              className={`${compact ? 'w-7 h-7 text-[11px]' : 'w-8 h-8 text-xs'} rounded-full flex items-center justify-center font-bold shrink-0`}
+              style={last ? { background: '#6ccbde', color: '#0a0a0b' } : { background: 'rgba(108,203,222,0.15)', color: '#6ccbde', border: '1px solid rgba(108,203,222,0.5)' }}
             >
-              <span className="skew-x-12">{last ? '🏆' : rank}</span>
+              {last ? '🏆' : i + 1}
             </div>
-            {!last && <div className="w-[3px] flex-1 mt-1" style={{ backgroundImage: 'repeating-linear-gradient(to bottom, rgba(108,203,222,0.55) 0 6px, transparent 6px 11px)' }} />}
+            {!last && <div className="w-px flex-1 mt-1 bg-[#6ccbde]/25" />}
           </div>
-          <div className={`flex-1 ${compact ? 'pb-4' : 'pb-5'}`}>
+          <div className={`flex-1 ${compact ? 'pb-3' : 'pb-4'}`}>
             <button
               type="button"
               onClick={() => setOpenId(it.id)}
-              className="w-full text-left relative overflow-hidden active:scale-[0.98] transition-transform bg-[#141416] border border-white/[0.08]"
-              style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%)' }}
+              className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-xl p-3 transition active:scale-[0.99]"
             >
-              <span className="absolute top-0 bottom-0 left-0 w-1.5 bg-[#6ccbde]" />
-              <span className="absolute -right-1 -top-2 text-6xl font-black italic text-white/[0.05] select-none pointer-events-none">{rank}</span>
-              <div className="relative pl-4 pr-3 py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-[13px] font-black italic text-white uppercase tracking-tight leading-tight">{it.name}</span>
-                  <span className="shrink-0 text-right leading-none">
-                    <span className={`${it.scoreText ? 'text-xs' : 'text-2xl'} font-black italic text-[#6ccbde] font-mono`}>{it.scoreText ?? it.score ?? '—'}</span>
-                    {!it.scoreText && <span className="text-[10px] text-white/40 font-bold">{it.unit ?? '/10'}</span>}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 -skew-x-12 bg-[#ec2226] text-white"><span className="inline-block skew-x-12">Solved</span></span>
-                  {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
-                </div>
-                {it.note && <p className="text-[11px] text-white/70 font-normal leading-relaxed mt-2 whitespace-pre-line border-l-2 border-white/15 pl-2">“{it.note}”</p>}
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-bold text-white uppercase tracking-wide">{it.name}</span>
+                <span className="shrink-0 text-[#6ccbde] font-mono font-bold text-sm">
+                  {it.scoreText ?? it.score ?? '—'}
+                  {!it.scoreText && <span className="text-[10px] text-white/40 font-normal">{it.unit ?? '/10'}</span>}
+                </span>
               </div>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
+                {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
+              </div>
+              {it.note && <p className="text-[11px] text-white/70 leading-relaxed mt-2 whitespace-pre-line">“{it.note}”</p>}
             </button>
           </div>
         </div>
@@ -556,21 +550,15 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 
 /** Full-page celebration shown when every activity in a category has been passed. */
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
-  <div className="space-y-5">
-    <div className="relative overflow-hidden p-6 text-center bg-[#141416] border border-white/[0.1]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%)', backgroundImage: 'repeating-linear-gradient(135deg, rgba(255,255,255,0.035) 0 10px, transparent 10px 22px)' }}>
-      <span className="absolute top-0 bottom-0 left-0 w-1.5 bg-[#6ccbde]" />
-      <span className="absolute top-0 right-6 h-1.5 w-16 -skew-x-12 bg-[#ec2226]" />
+  <div className="space-y-4">
+    <div className="bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.12), #242426 70%)' }}>
       <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
-      <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#6ccbde] block">{title.replace(/ complete$/i, '')}</span>
-      <h2 className="text-3xl font-black italic text-white uppercase tracking-tight leading-none my-1">Level complete</h2>
-      <div className="flex items-end justify-center gap-1 mt-3">
-        <span className="text-5xl font-black italic text-[#6ccbde] font-mono leading-none">{items.length}</span>
-        <span className="text-[11px] font-black uppercase tracking-widest text-white/60 pb-1">/ {items.length} solved</span>
-      </div>
-      <div className="mt-3 h-2 bg-white/10 -skew-x-12 overflow-hidden"><div className="h-full w-full bg-[#6ccbde]" /></div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-white/50 mt-3">100% done - keep pushing</p>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Level complete</p>
+      <h2 className="text-lg font-bold text-white mt-1">{title}</h2>
+      <p className="text-xs text-white/50 mt-1">{items.length} of {items.length} activities solved</p>
+      <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
     </div>
-    <div className="bg-[#0f0f10] border border-white/[0.06] p-5">
+    <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4">
       <AchievementsTimeline items={items} />
     </div>
   </div>
@@ -1353,10 +1341,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <button
                 type="button"
                 onClick={() => setShowSkillAchievementsPopup(true)}
-                className="w-full text-left bg-[#141416] border border-white/[0.08] border-l-4 border-l-[#6ccbde] p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
               >
                 <div>
-                  <span className="text-sm font-black italic uppercase tracking-tight text-white block">🏆 Skill achievements</span>
+                  <span className="text-sm font-bold text-white block">🏆 Skill achievements</span>
                   <span className="text-[11px] text-white/40">{achievedSkills.length} skill{achievedSkills.length === 1 ? '' : 's'} mastered</span>
                 </div>
                 <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
@@ -1526,10 +1514,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowPostureAchievementsPopup(true)}
-                        className="w-full text-left bg-[#141416] border border-white/[0.08] border-l-4 border-l-[#6ccbde] p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-black italic uppercase tracking-tight text-white block">🏆 Posture achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Posture achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
@@ -1627,10 +1615,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowFlexAchievementsPopup(true)}
-                        className="w-full text-left bg-[#141416] border border-white/[0.08] border-l-4 border-l-[#6ccbde] p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-black italic uppercase tracking-tight text-white block">🏆 Flexibility & Mobility achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Flexibility & Mobility achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
@@ -1741,10 +1729,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowBalanceAchievementsPopup(true)}
-                        className="w-full text-left bg-[#141416] border border-white/[0.08] border-l-4 border-l-[#6ccbde] p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-black italic uppercase tracking-tight text-white block">🏆 Balance achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Balance achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
@@ -1940,10 +1928,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowCoreAchievementsPopup(true)}
-                        className="w-full text-left bg-[#141416] border border-white/[0.08] border-l-4 border-l-[#6ccbde] p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-black italic uppercase tracking-tight text-white block">🏆 Core Endurance achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Core Endurance achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
@@ -2075,10 +2063,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowMovementAchievementsPopup(true)}
-                        className="w-full text-left bg-[#141416] border border-white/[0.08] border-l-4 border-l-[#6ccbde] p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-black italic uppercase tracking-tight text-white block">🏆 Movement achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Movement achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
@@ -2242,10 +2230,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowMuscEndAchievementsPopup(true)}
-                        className="w-full text-left bg-[#141416] border border-white/[0.08] border-l-4 border-l-[#6ccbde] p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-black italic uppercase tracking-tight text-white block">🏆 Muscular Endurance achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Muscular Endurance achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
