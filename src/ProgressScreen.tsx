@@ -365,7 +365,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
           <div className="flex flex-col items-center">
             <div
               className={`${nodeSize} rounded-full flex items-center justify-center font-black shrink-0`}
-              style={{ background: '#6ccbde', color: '#0c3b47', boxShadow: '0 0 0 3px rgba(108,203,222,0.12)' }}
+              style={last ? { background: '#ec2226', color: '#fff', boxShadow: '0 0 0 3px rgba(236,34,38,0.18)' } : { background: '#6ccbde', color: '#0c3b47', boxShadow: '0 0 0 3px rgba(108,203,222,0.12)' }}
             >
               {last ? '🏆' : i + 1}
             </div>
@@ -373,7 +373,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
           </div>
           <div className={`flex-1 ${compact ? 'pb-4' : 'pb-5'}`}>
             <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-xl p-3 relative overflow-hidden">
-              <span className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ background: '#6ccbde' }} />
+              <span className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ background: '#ec2226' }} />
               <div className="flex items-start justify-between gap-2 pl-1">
                 <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
                 <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
@@ -399,11 +399,11 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 /** Full-page celebration shown when every activity in a category has been passed. */
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
   <div className="space-y-5">
-    <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-white/[0.1]" style={{ background: 'linear-gradient(135deg, #242426, rgba(108,203,222,0.08))' }}>
-      <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(108,203,222,0.12)', border: '1px solid rgba(108,203,222,0.35)' }}>
+    <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-white/[0.1]" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.10), #242426 50%, rgba(108,203,222,0.10))' }}>
+      <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(236,34,38,0.10)', border: '1px solid rgba(236,34,38,0.35)' }}>
         <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-12 h-12 object-contain" />
       </div>
-      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6ccbde] block mb-1">Level complete</span>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#ec2226] block mb-1">Level complete</span>
       <h2 className="text-lg font-black text-white uppercase tracking-wide mb-1">{title}</h2>
       <p className="text-xs text-white/60">
         <span className="font-black text-white font-mono">{items.length}</span> activit{items.length === 1 ? 'y' : 'ies'} conquered - here's your road to the top.
