@@ -9,9 +9,12 @@ interface MiniLineChartProps {
   data: DataPoint[];
   color: string;
   unit?: string;
+  /** Optional fixed scale (e.g. 0-10 for scores). Without it the chart fits the data. */
+  fixedMin?: number;
+  fixedMax?: number;
 }
 
-export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit = '' }) => {
+export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit = '', fixedMin, fixedMax }) => {
   if (data.length === 0) {
     return (
       <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">
@@ -36,8 +39,9 @@ export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit 
   const paddingBottom = 24;
 
   const values = data.map((d) => d.value);
-  const minVal = Math.min(...values);
-  const maxVal = Math.max(...values);
+  const fixed = fixedMin !== undefined && fixedMax !== undefined && fixedMax > fixedMin;
+  const minVal = fixed ? (fixedMin as number) : Math.min(...values);
+  const maxVal = fixed ? (fixedMax as number) : Math.max(...values);
   const range = maxVal - minVal || 1;
 
   const points = data.map((d, i) => {
@@ -56,6 +60,19 @@ export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit 
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height: `${height}px` }} preserveAspectRatio="none">
+        {fixed && (
+          <>
+            {[maxVal, minVal].map((v) => {
+              const gy = paddingTop + (height - paddingTop - paddingBottom) - ((v - minVal) / range) * (height - paddingTop - paddingBottom);
+              return (
+                <g key={v}>
+                  <line x1={paddingX} x2={width - paddingX} y1={gy} y2={gy} stroke="white" strokeOpacity="0.08" strokeDasharray="3 3" />
+                  <text x={2} y={gy - 2} fontSize="6" fill="white" fillOpacity="0.3" fontFamily="monospace">{v}</text>
+                </g>
+              );
+            })}
+          </>
+        )}
         <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => (
           <g key={i}>
