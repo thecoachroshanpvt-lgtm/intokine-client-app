@@ -403,7 +403,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
           <div className="flex flex-col items-center">
             <div
               className={`${compact ? 'w-7 h-7 text-[11px]' : 'w-8 h-8 text-xs'} rounded-full flex items-center justify-center font-bold shrink-0`}
-              style={last ? { background: '#6ccbde', color: '#0a0a0b' } : { background: 'rgba(108,203,222,0.15)', color: '#6ccbde', border: '1px solid rgba(108,203,222,0.5)' }}
+              style={last ? { background: '#ec2226', color: '#fff' } : { background: 'rgba(108,203,222,0.15)', color: '#6ccbde', border: '1px solid rgba(108,203,222,0.5)' }}
             >
               {last ? '🏆' : i + 1}
             </div>
@@ -551,7 +551,8 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 /** Full-page celebration shown when every activity in a category has been passed. */
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
   <div className="space-y-4">
-    <div className="bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.12), #242426 70%)' }}>
+    <div className="relative overflow-hidden bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.12), #242426 70%)' }}>
+      <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-16 rounded-b-full bg-[#ec2226]" />
       <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
       <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Level complete</p>
       <h2 className="text-lg font-bold text-white mt-1">{title}</h2>
