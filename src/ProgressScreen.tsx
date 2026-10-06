@@ -570,7 +570,6 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
       <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none">
         <path d={d} fill="none" stroke="rgba(108,203,222,0.14)" strokeWidth="16" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         <path d={d} fill="none" stroke="#6ccbde" strokeWidth="5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        <path d={d} fill="none" stroke="#fff" strokeOpacity="0.85" strokeWidth="1.5" strokeDasharray="4 10" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${summit.x}%`, top: summit.y }}>
         <div className="w-12 h-12 rounded-full bg-[#242426] border-2 border-[#6ccbde] flex items-center justify-center text-xl shadow-[0_0_24px_rgba(108,203,222,0.45)]">🏆</div>
