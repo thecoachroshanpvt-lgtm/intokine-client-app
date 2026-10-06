@@ -345,6 +345,77 @@ const ScoreMeter: React.FC<{ data: { date: string; value: number }[]; color: str
   );
 };
 
+interface RoadmapItem {
+  id: string;
+  name: string;
+  score?: string | number;
+  date?: string;
+  note?: string;
+}
+
+/** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
+const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }> = ({ items, compact }) => (
+  <div>
+    {items.map((it, i) => {
+      const last = i === items.length - 1;
+      const filled = Math.max(0, Math.min(10, Math.round(Number(it.score) || 0)));
+      const nodeSize = compact ? 'w-8 h-8 text-[11px]' : 'w-10 h-10 text-sm';
+      return (
+        <div key={it.id} className="flex gap-3">
+          <div className="flex flex-col items-center">
+            <div
+              className={`${nodeSize} rounded-full flex items-center justify-center font-black text-white shrink-0`}
+              style={{ background: 'linear-gradient(135deg, #ec2226, #6ccbde)', boxShadow: '0 0 0 3px rgba(108,203,222,0.15), 0 4px 14px rgba(236,34,38,0.35)' }}
+            >
+              {last ? '🏆' : i + 1}
+            </div>
+            {!last && <div className="w-[3px] flex-1 mt-1 rounded-full" style={{ background: 'linear-gradient(to bottom, #6ccbde, #ec2226)', opacity: 0.55 }} />}
+          </div>
+          <div className={`flex-1 ${compact ? 'pb-4' : 'pb-5'}`}>
+            <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-xl p-3 relative overflow-hidden">
+              <span className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ background: 'linear-gradient(to bottom, #ec2226, #6ccbde)' }} />
+              <div className="flex items-start justify-between gap-2 pl-1">
+                <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
+                <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
+              </div>
+              <div className="grid grid-cols-10 gap-[3px] mt-2 pl-1">
+                {Array.from({ length: 10 }).map((_, k) => (
+                  <span key={k} className="h-1.5 rounded-sm" style={{ background: k < filled ? 'linear-gradient(90deg, #ec2226, #6ccbde)' : 'rgba(255,255,255,0.08)' }} />
+                ))}
+              </div>
+              <div className="flex items-center gap-2 mt-2 pl-1">
+                <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Achieved</span>
+                {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
+              </div>
+              {it.note && <p className="text-[11px] text-white/70 font-normal leading-relaxed mt-2 pl-1 whitespace-pre-line">“{it.note}”</p>}
+            </div>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+);
+
+/** Full-page celebration shown when every activity in a category has been passed. */
+const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
+  <div className="space-y-5">
+    <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-white/[0.1]" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.28), #242426 45%, rgba(108,203,222,0.28))' }}>
+      <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.3), rgba(108,203,222,0.3))', border: '1px solid rgba(255,255,255,0.25)', boxShadow: '0 0 24px rgba(236,34,38,0.35)' }}>
+        <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-12 h-12 object-contain" />
+      </div>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6ccbde] block mb-1">Level complete</span>
+      <h2 className="text-lg font-black text-white uppercase tracking-wide mb-1">{title}</h2>
+      <p className="text-xs text-white/60">
+        <span className="font-black text-white font-mono">{items.length}</span> activit{items.length === 1 ? 'y' : 'ies'} conquered - here's your road to the top.
+      </p>
+      <div className="h-1.5 rounded-full mt-4 mx-auto max-w-[220px]" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
+    </div>
+    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-5">
+      <AchievementsTimeline items={items} />
+    </div>
+  </div>
+);
+
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [topTab, setTopTab] = useState<TopTab>('bca');
   const [perfCategory, setPerfCategory] = useState<PerformanceCategory>('hub');
@@ -988,36 +1059,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 if (inProgress.length === 0 && achieved.length > 0) {
                   return (
-                    <div className="space-y-5">
-                      <div className="relative overflow-hidden bg-gradient-to-br from-[#ec2226]/10 via-[#242426] to-[#6ccbde]/10 border border-white/[0.08] rounded-2xl p-6 text-center">
-                        <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.15), rgba(108,203,222,0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
-                          <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-11 h-11 object-contain" />
-                        </div>
-                        <h2 className="text-base font-bold text-white mb-1">Every posture goal, achieved</h2>
-                        <p className="text-xs text-white/50">
-                          {achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed - here's the journey.
-                        </p>
-                      </div>
-
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-5">
-                        {achieved.map((g, i) => (
-                          <div key={g.id} className="flex gap-4">
-                            <div className="flex flex-col items-center">
-                              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
-                              {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
-                            </div>
-                            <div className="flex-1 pb-6" style={{ minHeight: '76px' }}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
-                                <span className="text-xs text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
-                              </div>
-                              {g.dateAchieved && <span className="text-[11px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                              {g.observation && <p className="text-xs text-white/40 font-light mt-1 truncate">{g.observation}</p>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <AchievementsPage title="Posture complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
                   );
                 }
 
@@ -1076,22 +1118,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
                           <div ref={postureRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: postureRoadmapMaxHeight }}>
-                            {achieved.map((g, i) => (
-                              <div key={g.id} className="flex gap-3">
-                                <div className="flex flex-col items-center">
-                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
-                                  {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-[#6ccbde]/30" />}
-                                </div>
-                                <div className="flex-1 pb-4" style={{ minHeight: '64px' }}>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace('Posture: ', '')}</span>
-                                    <span className="text-[11px] text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
-                                  </div>
-                                  {g.dateAchieved && <span className="text-[10px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                                  {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5 truncate">{g.observation}</p>}
-                                </div>
-                              </div>
-                            ))}
+                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
                           </div>
                         </div>
                       </div>
@@ -1128,36 +1155,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 if (visibleTests.length === 0 && visibleCustom.length === 0 && achieved.length > 0) {
                   const ordered = [...achieved].reverse();
                   return (
-                    <div className="space-y-5">
-                      <div className="relative overflow-hidden bg-gradient-to-br from-[#ec2226]/10 via-[#242426] to-[#6ccbde]/10 border border-white/[0.08] rounded-2xl p-6 text-center">
-                        <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.15), rgba(108,203,222,0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
-                          <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-11 h-11 object-contain" />
-                        </div>
-                        <h2 className="text-base font-bold text-white mb-1">Every flexibility & mobility goal, achieved</h2>
-                        <p className="text-xs text-white/50">
-                          {ordered.length} activit{ordered.length === 1 ? 'y' : 'ies'} passed - here's the journey.
-                        </p>
-                      </div>
-
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-5">
-                        {ordered.map((g, i) => (
-                          <div key={g.id} className="flex gap-4">
-                            <div className="flex flex-col items-center">
-                              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
-                              {i < ordered.length - 1 && <div className="w-0.5 flex-1 bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
-                            </div>
-                            <div className="flex-1 pb-6" style={{ minHeight: '76px' }}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-[#6ccbde]">{g.activityName.replace(FLEX, '')}</span>
-                                <span className="text-xs text-white/40 font-mono">{flexScoreFor(g) ?? '—'}/10</span>
-                              </div>
-                              {g.dateAchieved && <span className="text-[11px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                              {(g.coachReview || g.observation) && <p className="text-xs text-white/40 font-light mt-1 truncate">{g.coachReview || g.observation}</p>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <AchievementsPage title="Flexibility & Mobility complete" items={ordered.map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
                   );
                 }
 
@@ -1184,22 +1182,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <button type="button" onClick={() => setShowFlexAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
                           <div ref={flexRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: flexRoadmapMaxHeight }}>
-                            {achieved.map((g, i) => (
-                              <div key={g.id} className="flex gap-3">
-                                <div className="flex flex-col items-center">
-                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
-                                  {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-[#6ccbde]/30" />}
-                                </div>
-                                <div className="flex-1 pb-4" style={{ minHeight: '64px' }}>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace(FLEX, '')}</span>
-                                    <span className="text-[11px] text-white/40 font-mono">{flexScoreFor(g) ?? '—'}/10</span>
-                                  </div>
-                                  {g.dateAchieved && <span className="text-[10px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                                  {(g.coachReview || g.observation) && <p className="text-[11px] text-white/40 font-light mt-0.5 truncate">{g.coachReview || g.observation}</p>}
-                                </div>
-                              </div>
-                            ))}
+                            <AchievementsTimeline compact items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
                           </div>
                         </div>
                       </div>
@@ -1412,36 +1395,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 if (inProgress.length === 0 && achieved.length > 0) {
                   return (
-                    <div className="space-y-5">
-                      <div className="relative overflow-hidden bg-gradient-to-br from-[#ec2226]/10 via-[#242426] to-[#6ccbde]/10 border border-white/[0.08] rounded-2xl p-6 text-center">
-                        <div className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.15), rgba(108,203,222,0.15))', border: '1px solid rgba(255,255,255,0.15)' }}>
-                          <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-11 h-11 object-contain" />
-                        </div>
-                        <h2 className="text-base font-bold text-white mb-1">Every movement goal, achieved</h2>
-                        <p className="text-xs text-white/50">
-                          {achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed - here's the journey.
-                        </p>
-                      </div>
-
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-5">
-                        {achieved.map((g, i) => (
-                          <div key={g.id} className="flex gap-4">
-                            <div className="flex flex-col items-center">
-                              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black bg-[#6ccbde] text-[#0c3b47] shadow-[0_0_0_4px_rgba(108,203,222,0.12)]">✓</div>
-                              {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-gradient-to-b from-[#6ccbde]/50 to-[#6ccbde]/10" />}
-                            </div>
-                            <div className="flex-1 pb-6" style={{ minHeight: '76px' }}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-[#6ccbde]">{g.activityName.replace('Movement: ', '')}</span>
-                                <span className="text-xs text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
-                              </div>
-                              {g.dateAchieved && <span className="text-[11px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                              {g.observation && <p className="text-xs text-white/40 font-light mt-1 truncate">{g.observation}</p>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <AchievementsPage title="Movement complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
                   );
                 }
 
@@ -1500,22 +1454,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <button type="button" onClick={() => setShowMovementAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
                           <div ref={movementRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: movementRoadmapMaxHeight }}>
-                            {achieved.map((g, i) => (
-                              <div key={g.id} className="flex gap-3">
-                                <div className="flex flex-col items-center">
-                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
-                                  {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-[#6ccbde]/30" />}
-                                </div>
-                                <div className="flex-1 pb-4" style={{ minHeight: '64px' }}>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace('Movement: ', '')}</span>
-                                    <span className="text-[11px] text-white/40 font-mono">{latestScoreFor(g.activityName) ?? '—'}/10</span>
-                                  </div>
-                                  {g.dateAchieved && <span className="text-[10px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
-                                  {g.observation && <p className="text-[11px] text-white/40 font-light mt-0.5 truncate">{g.observation}</p>}
-                                </div>
-                              </div>
-                            ))}
+                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
                           </div>
                         </div>
                       </div>
