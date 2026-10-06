@@ -405,7 +405,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                 <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
               </div>
               <div className="flex items-center gap-2 mt-2 pl-1">
-                <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Achieved</span>
+                <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
                 {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
               </div>
               {it.note && <p className="text-[11px] text-white/70 font-normal leading-relaxed mt-2 pl-1 whitespace-pre-line">“{it.note}”</p>}
@@ -425,7 +425,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-2">
               <span className={`text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${openItem.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
-                {openItem.status === 'AlreadyFit' ? 'Already Fit' : 'Achieved'}
+                {openItem.status === 'AlreadyFit' ? 'Already Fit' : 'Solved'}
               </span>
               {openItem.date && <span className="text-[10px] text-white/40 font-mono">{openItem.date}</span>}
             </div>
@@ -478,7 +478,6 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
   <div className="space-y-5">
     <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-white/[0.1]" style={{ background: 'linear-gradient(135deg, #242426, rgba(108,203,222,0.08))' }}>
-      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
       <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(108,203,222,0.12)', border: '1px solid rgba(108,203,222,0.35)' }}>
         <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-12 h-12 object-contain" />
       </div>
