@@ -62,6 +62,22 @@ interface AssessmentSnapshot {
   bodyFatPercentage?: number;
   muscleMassKg?: number;
   visceralFatLevel?: number;
+  bmi?: number;
+  weightNormalMin?: number;
+  weightNormalMax?: number;
+  weightGoal?: number;
+  bodyFatNormalMin?: number;
+  bodyFatNormalMax?: number;
+  bodyFatGoal?: number;
+  muscleMassNormalMin?: number;
+  muscleMassNormalMax?: number;
+  muscleMassGoal?: number;
+  bmiNormalMin?: number;
+  bmiNormalMax?: number;
+  bmiGoal?: number;
+  visceralFatNormalMin?: number;
+  visceralFatNormalMax?: number;
+  visceralFatGoal?: number;
   restingHeartRateBpm?: number;
   chestCircumferenceIn?: number;
   waistCircumferenceIn?: number;
@@ -363,7 +379,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showMovementAchievementsPopup]);
-  const [prqData, setPrqData] = useState<{ heightCm?: number; sex?: string; weightGoalDirection?: string } | null>(null);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -402,25 +417,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     );
 
     return () => unsubscribe();
-  }, [clientId]);
-
-  useEffect(() => {
-    const { db } = initializeClientFirebaseApp();
-    if (!db) return;
-
-    const fetchPrq = async () => {
-      try {
-        const prqDoc = await getDoc(doc(db, 'intokine_prq_records', `PRQ-${clientId}`));
-        if (prqDoc.exists()) {
-          const data = prqDoc.data();
-          setPrqData({ heightCm: data.heightCm, sex: data.sex, weightGoalDirection: data.weightGoalDirection });
-        }
-      } catch (err) {
-        console.warn('Could not load health screening data:', err);
-      }
-    };
-
-    fetchPrq();
   }, [clientId]);
 
   useEffect(() => {
@@ -517,38 +513,33 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           }
           return undefined;
         };
-        const heightM = prqData?.heightCm ? prqData.heightCm / 100 : undefined;
-        const currentWeight = getLatestFieldValue('weightKg');
-        const currentBodyFat = getLatestFieldValue('bodyFatPercentage');
-        const currentMuscleMass = getLatestFieldValue('muscleMassKg');
-        const currentVisceralFat = getLatestFieldValue('visceralFatLevel');
-        const currentBmi = heightM && currentWeight ? currentWeight / (heightM * heightM) : undefined;
-        const direction = prqData?.weightGoalDirection || 'Maintain weight';
-
-        const normalWeightRange = heightM ? { min: Math.round(18.5 * heightM * heightM), max: Math.round(24.9 * heightM * heightM) } : null;
-        const normalBmiRange = { min: 18.5, max: 24.9 };
-        const normalBodyFatRange = prqData?.sex === 'Female' ? { min: 21, max: 33 } : { min: 8, max: 20 };
-        const normalVisceralFatRange = { min: 1, max: 9 };
-
-        const suggestGoal = (current: number | undefined, min: number, max: number): number | undefined => {
-          if (current === undefined) return undefined;
-          if (direction === 'Lose weight') return current > max ? Math.round(max) : current;
-          if (direction === 'Gain weight') return current < min ? Math.round(min) : current;
-          if (current > max) return Math.round(max);
-          if (current < min) return Math.round(min);
-          return current;
+        // Current / Normal / Goal are exactly what the coach entered - nothing is calculated here.
+        const bmiData = chronological.filter((a) => a.bmi != null).map((a) => ({ date: a.date, value: a.bmi as number }));
+        const num = (k: keyof AssessmentSnapshot) => {
+          const v = getLatestFieldValue(k);
+          return typeof v === 'number' ? v : undefined;
         };
-
+        const bcaRow = (label: string, unit: string, valueKey: keyof AssessmentSnapshot, prefix: string) => {
+          const from = num(`${prefix}NormalMin` as keyof AssessmentSnapshot);
+          const to = num(`${prefix}NormalMax` as keyof AssessmentSnapshot);
+          return {
+            label,
+            unit,
+            current: num(valueKey),
+            normal: from !== undefined && to !== undefined ? `${from}-${to}` : String(from ?? to ?? '—'),
+            goal: num(`${prefix}Goal` as keyof AssessmentSnapshot),
+          };
+        };
         const bcaRows = [
-          { label: 'Weight', unit: 'kg', current: currentWeight, normal: normalWeightRange ? `${normalWeightRange.min}-${normalWeightRange.max}` : '—', goal: normalWeightRange ? suggestGoal(currentWeight, normalWeightRange.min, normalWeightRange.max) : undefined },
-          { label: 'Body Fat', unit: '%', current: currentBodyFat, normal: `${normalBodyFatRange.min}-${normalBodyFatRange.max}`, goal: suggestGoal(currentBodyFat, normalBodyFatRange.min, normalBodyFatRange.max) },
-          { label: 'Muscle Mass', unit: 'kg', current: currentMuscleMass, normal: 'Varies', goal: currentMuscleMass },
-          { label: 'BMI', unit: '', current: currentBmi ? Number(currentBmi.toFixed(1)) : undefined, normal: `${normalBmiRange.min}-${normalBmiRange.max}`, goal: suggestGoal(currentBmi, normalBmiRange.min, normalBmiRange.max) },
-          { label: 'Visceral Fat', unit: '', current: currentVisceralFat, normal: `${normalVisceralFatRange.min}-${normalVisceralFatRange.max}`, goal: suggestGoal(currentVisceralFat, normalVisceralFatRange.min, normalVisceralFatRange.max) },
+          bcaRow('Weight', 'kg', 'weightKg', 'weight'),
+          bcaRow('Body Fat', '%', 'bodyFatPercentage', 'bodyFat'),
+          bcaRow('Muscle Mass', 'kg', 'muscleMassKg', 'muscleMass'),
+          bcaRow('BMI', '', 'bmi', 'bmi'),
+          bcaRow('Visceral Fat', '', 'visceralFatLevel', 'visceralFat'),
         ];
         const hasAnyBcaData = bcaRows.some((r) => r.current !== undefined);
 
-        if (weightData.length === 0 && bodyFatData.length === 0 && muscleData.length === 0 && visceralData.length === 0) {
+        if (weightData.length === 0 && bodyFatData.length === 0 && muscleData.length === 0 && visceralData.length === 0 && bmiData.length === 0) {
           return (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
               <p className="text-sm text-white/50 font-light leading-relaxed">No BCA data shared yet.</p>
@@ -626,6 +617,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Skeletal Muscle Mass</span>
               <MiniLineChart data={muscleData} color="#6ccbde" unit="kg" />
+            </div>
+            <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #10b981, transparent)' }} />
+              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">BMI</span>
+              <MiniLineChart data={bmiData} color="#10b981" unit="" />
             </div>
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
