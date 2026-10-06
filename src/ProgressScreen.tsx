@@ -1648,7 +1648,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const MCG = "Core Endurance & Stability: McGill's Test";
                 const mcgillGoal = goals.find((g) => g.activityName === MCG);
                 const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
-                const mcgillPassed = isPassedGoal(mcgillGoal);
+                const mcgillPassed = false; // McGill's test is tracked continuously (like BCA) - it is never marked passed
                 const palette = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'];
                 const customHistory = (g: GoalEntry) =>
                   chronological
@@ -1680,7 +1680,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   const h = customHistory(g);
                   return { ...base, history: h, score: h.length > 0 ? h[h.length - 1].value : undefined };
                 };
-                const achieved = [...(mcgillGoal ? [mcgillGoal] : []), ...customGoals].filter(isPassedGoal).reverse();
+                const achieved = customGoals.filter(isPassedGoal).reverse();
                 const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
                 const showMcgill = !mcgillPassed && (hasMcgill || (visibleCustom.length === 0 && achieved.length === 0));
                 const mcgillReview = mcgillGoal?.coachReview || mcgillGoal?.observation;
