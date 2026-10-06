@@ -324,19 +324,22 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showWhereYouStandPopup, setShowWhereYouStandPopup] = useState(false);
   const [showPostureAchievementsPopup, setShowPostureAchievementsPopup] = useState(false);
   const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
+  const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
+  const flexRoadmapListRef = useRef<HTMLDivElement | null>(null);
+  const [flexRoadmapMaxHeight, setFlexRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const movementRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [movementRoadmapMaxHeight, setMovementRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const postureRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup;
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup;
     if (anyPopupOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = previousOverflow; };
     }
-  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup]);
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup]);
 
   useEffect(() => {
     if (!showPostureAchievementsPopup) {
@@ -361,6 +364,25 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showPostureAchievementsPopup]);
+
+  useEffect(() => {
+    if (!showFlexAchievementsPopup) {
+      setFlexRoadmapMaxHeight(undefined);
+      return;
+    }
+    // Same approach as the posture popup: show the first 3 entries, scroll for the rest.
+    const raf = requestAnimationFrame(() => {
+      const container = flexRoadmapListRef.current;
+      if (!container) return;
+      container.scrollTop = 0;
+      const children = Array.from(container.children).slice(0, 3);
+      if (children.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
+      setFlexRoadmapMaxHeight(lastRect.bottom - containerRect.top);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showFlexAchievementsPopup]);
 
   useEffect(() => {
     if (!showMovementAchievementsPopup) {
@@ -1055,7 +1077,57 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   { key: 'shoulderExtensionTestPass', scoreKey: 'shoulderExtensionScore', label: 'Shoulder Extension Test', color: '#a78bfa' },
                 ];
                 const customGoals = goals.filter((g) => g.activityName.startsWith('Flexibility & Mobility:') && !tests.some((t) => `Flexibility & Mobility: ${t.label}` === g.activityName));
+                const FLEX = 'Flexibility & Mobility: ';
+                const achieved = goals.filter((g) => g.activityName.startsWith(FLEX) && (g.status === 'Pass' || g.status === 'AlreadyFit')).reverse();
+                const flexScoreFor = (g: GoalEntry) => {
+                  if (g.value) return g.value;
+                  const t = tests.find((x) => `${FLEX}${x.label}` === g.activityName);
+                  const h = t ? chronological.filter((a) => a[t.scoreKey] != null) : [];
+                  return h.length > 0 ? String(h[h.length - 1][t!.scoreKey]) : undefined;
+                };
                 return (
+                  <div className="space-y-4">
+                    {achieved.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowFlexAchievementsPopup(true)}
+                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                      >
+                        <div>
+                          <span className="text-sm font-bold text-white block">Flexibility & Mobility achievements</span>
+                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
+                        </div>
+                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                      </button>
+                    )}
+                    {showFlexAchievementsPopup && (
+                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowFlexAchievementsPopup(false)}>
+                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white">Flexibility & Mobility achievements</h3>
+                            <button type="button" onClick={() => setShowFlexAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                          </div>
+                          <div ref={flexRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: flexRoadmapMaxHeight }}>
+                            {achieved.map((g, i) => (
+                              <div key={g.id} className="flex gap-3">
+                                <div className="flex flex-col items-center">
+                                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black bg-[#6ccbde] text-[#0c3b47]">✓</div>
+                                  {i < achieved.length - 1 && <div className="w-0.5 flex-1 bg-[#6ccbde]/30" />}
+                                </div>
+                                <div className="flex-1 pb-4" style={{ minHeight: '64px' }}>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-[#6ccbde]">{g.activityName.replace(FLEX, '')}</span>
+                                    <span className="text-[11px] text-white/40 font-mono">{flexScoreFor(g) ?? '—'}/10</span>
+                                  </div>
+                                  {g.dateAchieved && <span className="text-[10px] text-white/30 font-mono block mt-0.5">{g.dateAchieved}</span>}
+                                  {(g.coachReview || g.observation) && <p className="text-[11px] text-white/40 font-light mt-0.5 truncate">{g.coachReview || g.observation}</p>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {tests.map((t) => {
                       const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
@@ -1121,6 +1193,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         )}
                       </div>
                     ))}
+                  </div>
                   </div>
                 );
               })()}
