@@ -398,8 +398,8 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
             {!last && <div className="w-[3px] flex-1 mt-1 rounded-full" style={{ background: 'rgba(108,203,222,0.3)' }} />}
           </div>
           <div className={`flex-1 ${compact ? 'pb-4' : 'pb-5'}`}>
-            <button type="button" onClick={() => setOpenId(it.id)} className="w-full text-left bg-[#1c1c1e] border border-white/[0.08] rounded-xl p-3 relative overflow-hidden active:scale-[0.98] transition-transform">
-              <div className="flex items-start justify-between gap-2 rounded-lg px-2.5 py-2" style={{ background: 'linear-gradient(90deg, rgba(236,34,38,0.14), rgba(108,203,222,0.14))' }}>
+            <button type="button" onClick={() => setOpenId(it.id)} className="w-full text-left border border-white/[0.08] rounded-xl p-3 relative overflow-hidden active:scale-[0.98] transition-transform" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.14), rgba(108,203,222,0.14))' }}>
+              <div className="flex items-start justify-between gap-2 px-1">
                 <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
                 <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
               </div>
