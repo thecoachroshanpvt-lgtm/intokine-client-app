@@ -1071,7 +1071,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               </span>
                             )}
                           </div>
-                          <MiniLineChart data={scoreData} color={t.color} unit="/10" />
+                          <MiniLineChart data={scoreData} color={t.color} unit="/10" fixedMin={0} fixedMax={10} />
                           {goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview && (
                             <div className="mt-3 pt-3 border-t border-white/[0.06]">
                               <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
