@@ -372,6 +372,10 @@ interface RoadmapItem {
   scoreText?: string;
   /** For left/right activities: results per date, drawn as a side comparison. */
   sides?: SidePoint[];
+  /** Several lines to graph for one activity (e.g. McGill's four tests). */
+  series?: { label: string; color: string; data: { date: string; value: number }[] }[];
+  /** One row per result for activities with several measurements. */
+  rows?: { date: string; text: string; note?: string }[];
 }
 
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
@@ -438,10 +442,40 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
             </div>
             {openItem.sides ? (
               <SideComparison data={openItem.sides} unit="s" />
+            ) : openItem.series ? (
+              <div className="grid grid-cols-1 gap-3">
+                {openItem.series.map((sr) => (
+                  <div key={sr.label}>
+                    <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-1">{sr.label}</span>
+                    <MiniLineChart data={sr.data} color={sr.color} unit="s" />
+                  </div>
+                ))}
+              </div>
             ) : unit === '/10' ? (
               <MiniLineChart data={hist} color="#6ccbde" unit="/10" fixedMin={0} fixedMax={10} />
             ) : (
               <MiniLineChart data={hist} color="#6ccbde" unit={unit} />
+            )}
+            {openItem.rows && openItem.rows.length > 0 && (
+              <div>
+                <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Result journey</span>
+                <div className="space-y-1.5">
+                  {openItem.rows.map((d, k) => (
+                    <div key={`${d.date}-${k}`} className="flex flex-col items-start bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                      <div className="flex items-center justify-between w-full gap-2">
+                        <span className="text-[11px] text-white/50 font-mono">{d.date}</span>
+                        <span className="text-[11px] font-black text-white font-mono text-right">{d.text}</span>
+                      </div>
+                      {d.note && (
+                        <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
+                          <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+                          <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{d.note}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
             {openItem.sides && openItem.sides.length > 0 && (
               <div>
@@ -464,7 +498,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                 </div>
               </div>
             )}
-            {!openItem.sides && hist.length > 0 && (
+            {!openItem.sides && !openItem.rows && hist.length > 0 && (
               <div>
                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">
                   {unit === '/10' ? 'Score journey' : 'Result journey'}{totalGain !== null && hist.length > 1 && totalGain !== 0 ? ` (${totalGain > 0 ? '+' : ''}${totalGain} overall)` : ''}
@@ -494,7 +528,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                 </div>
               </div>
             )}
-            {openItem.note && !(openItem.sides || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !hist.some((h) => (h.note || '').trim() === openItem.note!.trim()) && (
+            {openItem.note && !(openItem.rows || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !(openItem.sides || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !hist.some((h) => (h.note || '').trim() === openItem.note!.trim()) && (
               <div className="pt-3 border-t border-white/[0.06]">
                 <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{openItem.note}</p>
@@ -619,6 +653,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
   const [mcgillOpen, setMcgillOpen] = useState(false);
+  const [showCoreAchievementsPopup, setShowCoreAchievementsPopup] = useState(false);
+  const coreRoadmapListRef = useRef<HTMLDivElement | null>(null);
+  const [coreRoadmapMaxHeight, setCoreRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const [showBalanceAchievementsPopup, setShowBalanceAchievementsPopup] = useState(false);
   const balanceRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [balanceRoadmapMaxHeight, setBalanceRoadmapMaxHeight] = useState<number | undefined>(undefined);
@@ -630,13 +667,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup;
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup;
     if (anyPopupOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = previousOverflow; };
     }
-  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup]);
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup]);
 
   useEffect(() => {
     if (!showPostureAchievementsPopup) {
@@ -661,6 +698,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showPostureAchievementsPopup]);
+
+  useEffect(() => {
+    if (!showCoreAchievementsPopup) {
+      setCoreRoadmapMaxHeight(undefined);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      const container = coreRoadmapListRef.current;
+      if (!container) return;
+      container.scrollTop = 0;
+      const children = Array.from(container.children).slice(0, 3);
+      if (children.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
+      setCoreRoadmapMaxHeight(lastRect.bottom - containerRect.top);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showCoreAchievementsPopup]);
 
   useEffect(() => {
     if (!showBalanceAchievementsPopup) {
@@ -1589,8 +1644,52 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const hasRatios = latest ? MCGILL_RATIOS.some((r) => !!latest[r.key]) : false;
                 const lastDate = [flexorData, extensorData, rightData, leftData].map((d) => (d.length > 0 ? d[d.length - 1].date : '')).sort().pop() || '';
                 const hasMcgill = flexorData.length + extensorData.length + rightData.length + leftData.length > 0;
+                const CORE = 'Core Endurance & Stability: ';
+                const MCG = "Core Endurance & Stability: McGill's Test";
+                const mcgillGoal = goals.find((g) => g.activityName === MCG);
+                const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
+                const mcgillPassed = isPassedGoal(mcgillGoal);
+                const palette = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'];
+                const customHistory = (g: GoalEntry) =>
+                  chronological
+                    .filter((a) => a.customActivityScores?.[g.activityName] != null)
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName], note: resultNote(a, g.activityName) }));
+                const mcgillRows = chronological
+                  .filter((a) => a.mcgillFlexorSeconds != null || a.mcgillExtensorSeconds != null || a.mcgillRightSideBridgeSeconds != null || a.mcgillLeftSideBridgeSeconds != null)
+                  .map((a) => ({
+                    date: a.date,
+                    text: `F ${a.mcgillFlexorSeconds ?? '—'} · E ${a.mcgillExtensorSeconds ?? '—'} · R ${a.mcgillRightSideBridgeSeconds ?? '—'} · L ${a.mcgillLeftSideBridgeSeconds ?? '—'}s`,
+                    note: resultNote(a, MCG),
+                  }));
+                const toItem = (g: GoalEntry): RoadmapItem => {
+                  const base = { id: g.id, name: g.activityName.replace(CORE, '').replace("McGill's Test", "McGill's Core Endurance Test"), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, unit: 's' };
+                  if (g.activityName === MCG) {
+                    const lr = mcgillRows[mcgillRows.length - 1];
+                    return {
+                      ...base,
+                      scoreText: lr ? lr.text : undefined,
+                      rows: mcgillRows,
+                      series: [
+                        { label: 'Flexor Endurance', color: '#ec2226', data: flexorData },
+                        { label: 'Extensor Endurance', color: '#f59e0b', data: extensorData },
+                        { label: 'Right Side Bridge', color: '#6ccbde', data: rightData },
+                        { label: 'Left Side Bridge', color: '#a78bfa', data: leftData },
+                      ],
+                    };
+                  }
+                  const h = customHistory(g);
+                  return { ...base, history: h, score: h.length > 0 ? h[h.length - 1].value : undefined };
+                };
+                const achieved = [...(mcgillGoal ? [mcgillGoal] : []), ...customGoals].filter(isPassedGoal).reverse();
+                const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
+                const showMcgill = !mcgillPassed && (hasMcgill || (visibleCustom.length === 0 && achieved.length === 0));
+                const mcgillReview = mcgillGoal?.coachReview || mcgillGoal?.observation;
 
-                if (mcgillOpen) {
+                if (!showMcgill && visibleCustom.length === 0 && achieved.length > 0) {
+                  return <AchievementsPage title="Core Endurance complete" items={[...achieved].reverse().map(toItem)} />;
+                }
+
+                if (mcgillOpen && showMcgill) {
                   return (
                     <div className="space-y-3">
                       <button onClick={() => setMcgillOpen(false)} className="text-xs font-bold text-[#6ccbde] hover:text-white flex items-center gap-1">
@@ -1636,12 +1735,45 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         })}
                       </div>
                     )}
+                      {mcgillReview && (
+                        <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                          <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                          <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{mcgillReview}</p>
+                        </div>
+                      )}
                     </div>
                   );
                 }
 
                 return (
                   <div className="space-y-3">
+                    {achieved.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowCoreAchievementsPopup(true)}
+                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                      >
+                        <div>
+                          <span className="text-sm font-bold text-white block">Core Endurance achievements</span>
+                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
+                        </div>
+                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                      </button>
+                    )}
+                    {showCoreAchievementsPopup && (
+                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowCoreAchievementsPopup(false)}>
+                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white">Core Endurance achievements</h3>
+                            <button type="button" onClick={() => setShowCoreAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                          </div>
+                          <div ref={coreRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: coreRoadmapMaxHeight }}>
+                            <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {showMcgill && (
                     <button
                       type="button"
                       onClick={() => setMcgillOpen(true)}
@@ -1670,16 +1802,29 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           {outCount > 0 ? `⚠ ${outCount} ratio${outCount === 1 ? '' : 's'} outside normal range` : 'All ratios in normal range'}
                         </span>
                       )}
+                      {mcgillReview && <p className="text-[11px] text-white/60 font-normal leading-relaxed mt-3 line-clamp-2">“{mcgillReview}”</p>}
                       <span className="text-[10px] text-white/30 block mt-3">Tap to see graphs and details</span>
                     </button>
-                    {customGoals.length > 0 && (
-                      <div className="space-y-2">
-                        {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Core Endurance & Stability: ', '')}</span>
-                            {g.value && <span className="text-[11px] text-white/40 font-light">Time: <span className="font-mono">{g.value}s</span></span>}
-                          </div>
-                        ))}
+                    )}
+                    {visibleCustom.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {visibleCustom.map((g, idx) => {
+                          const color = palette[idx % palette.length];
+                          const review = g.coachReview || g.observation;
+                          return (
+                            <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(CORE, '')}</span>
+                              <MiniLineChart data={customHistory(g)} color={color} unit="s" />
+                              {review && (
+                                <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                                  <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                  <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{review}</p>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
