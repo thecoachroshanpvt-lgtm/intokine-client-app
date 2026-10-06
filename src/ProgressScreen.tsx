@@ -1602,30 +1602,23 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     </div>
                     {latest && (
                       <div className="grid grid-cols-2 gap-3">
-                        {latest.mcgillFlexorExtensorRatio && (
-                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
-                            <span className="text-[9px] text-white/40 uppercase font-bold block">Flexor-Extensor Ratio</span>
-                            <span className="text-sm text-white font-mono">{latest.mcgillFlexorExtensorRatio}</span>
-                          </div>
-                        )}
-                        {latest.mcgillRightLeftSideRatio && (
-                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
-                            <span className="text-[9px] text-white/40 uppercase font-bold block">Right-Left Side Ratio</span>
-                            <span className="text-sm text-white font-mono">{latest.mcgillRightLeftSideRatio}</span>
-                          </div>
-                        )}
-                        {latest.mcgillRightToExtensorRatio && (
-                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
-                            <span className="text-[9px] text-white/40 uppercase font-bold block">Right to Extensor Ratio</span>
-                            <span className="text-sm text-white font-mono">{latest.mcgillRightToExtensorRatio}</span>
-                          </div>
-                        )}
-                        {latest.mcgillLeftToExtensorRatio && (
-                          <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3">
-                            <span className="text-[9px] text-white/40 uppercase font-bold block">Left to Extensor Ratio</span>
-                            <span className="text-sm text-white font-mono">{latest.mcgillLeftToExtensorRatio}</span>
-                          </div>
-                        )}
+                        {([
+                          { label: 'Flexor-Extensor Ratio', value: latest.mcgillFlexorExtensorRatio, normal: '< 1.0', out: (n: number) => n >= 1.0 },
+                          { label: 'Right-Left Side Ratio', value: latest.mcgillRightLeftSideRatio, normal: '0.95 - 1.05', out: (n: number) => n < 0.95 || n > 1.05 },
+                          { label: 'Right to Extensor Ratio', value: latest.mcgillRightToExtensorRatio, normal: '< 0.75', out: (n: number) => n >= 0.75 },
+                          { label: 'Left to Extensor Ratio', value: latest.mcgillLeftToExtensorRatio, normal: '< 0.75', out: (n: number) => n >= 0.75 },
+                        ] as { label: string; value?: string; normal: string; out: (n: number) => boolean }[]).map((r) => {
+                          if (!r.value) return null;
+                          const num = parseFloat(r.value);
+                          const alert = Number.isFinite(num) && r.out(num);
+                          return (
+                            <div key={r.label} className={`rounded-2xl p-3 border ${alert ? 'bg-rose-500/10 border-rose-500/50' : 'bg-[#242426] border-white/[0.06]'}`}>
+                              <span className={`text-[9px] uppercase font-bold block ${alert ? 'text-rose-300' : 'text-white/40'}`}>{r.label}</span>
+                              <span className={`text-sm font-mono ${alert ? 'text-rose-300 font-bold' : 'text-white'}`}>{r.value}</span>
+                              {alert && <span className="text-[9px] text-rose-300/80 block mt-1">⚠ Not in normal range ({r.normal})</span>}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     {customGoals.length > 0 && (
