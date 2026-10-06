@@ -569,6 +569,22 @@ const MCGILL_RATIOS: { key: 'mcgillFlexorExtensorRatio' | 'mcgillRightLeftSideRa
   { key: 'mcgillLeftToExtensorRatio', label: 'Left to Extensor Ratio', normal: '< 0.75', out: (n) => n >= 0.75 },
 ];
 
+/** Waist-to-hip ratio risk bands (depend on gender, which comes from the health questionnaire). */
+type WhrLevel = 'low' | 'increased' | 'high';
+const whrRisk = (ratio: number, sex: 'male' | 'female'): WhrLevel => {
+  if (sex === 'male') return ratio < 0.9 ? 'low' : ratio < 1.0 ? 'increased' : 'high';
+  return ratio < 0.8 ? 'low' : ratio < 0.85 ? 'increased' : 'high';
+};
+const WHR_RANGES: Record<'male' | 'female', Record<WhrLevel, string>> = {
+  male: { low: 'Below 0.90', increased: '0.90 - 0.99', high: '1.00 and above' },
+  female: { low: 'Below 0.80', increased: '0.80 - 0.84', high: '0.85 and above' },
+};
+const WHR_TONE: Record<WhrLevel, { label: string; hex: string; text: string; box: string; chip: string }> = {
+  low: { label: 'Lower risk', hex: '#10b981', text: 'text-emerald-400', box: 'bg-emerald-500/10 border-emerald-500/40', chip: 'bg-emerald-500/20 text-emerald-300' },
+  increased: { label: 'Increased risk', hex: '#facc15', text: 'text-yellow-300', box: 'bg-yellow-400/10 border-yellow-400/40', chip: 'bg-yellow-400/20 text-yellow-200' },
+  high: { label: 'High risk', hex: '#ef4444', text: 'text-red-400', box: 'bg-red-500/10 border-red-500/50', chip: 'bg-red-500/20 text-red-300' },
+};
+
 interface SidePoint {
   date: string;
   left?: number;
@@ -653,6 +669,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
   const [mcgillOpen, setMcgillOpen] = useState(false);
+  const [clientSex, setClientSex] = useState<'male' | 'female' | undefined>(undefined);
   const [showCoreAchievementsPopup, setShowCoreAchievementsPopup] = useState(false);
   const [showMuscEndAchievementsPopup, setShowMuscEndAchievementsPopup] = useState(false);
   const muscEndRoadmapListRef = useRef<HTMLDivElement | null>(null);
@@ -831,6 +848,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     );
 
     return () => unsubscribe();
+  }, [clientId]);
+
+  // Gender comes from the client's health questionnaire; it decides which
+  // waist-to-hip risk bands apply.
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'intokine_prq_records', `PRQ-${clientId}`));
+        const sex = String((snap.exists() ? (snap.data() as { sex?: string }).sex : '') || '').trim().toLowerCase();
+        if (!cancelled) setClientSex(sex.startsWith('m') ? 'male' : sex.startsWith('f') || sex.startsWith('w') ? 'female' : undefined);
+      } catch (e) {
+        console.warn('Could not read gender for waist-to-hip risk:', e);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [clientId]);
 
   useEffect(() => {
@@ -1140,16 +1175,25 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   })}
                 </div>
 
-                {latestRatio !== undefined && (
-                  <button
-                    type="button"
-                    onClick={() => setOpenBodyPartPopup('waistToHipRatio')}
-                    className="w-full bg-[#242426] border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
-                  >
-                    <span className="text-xs font-bold text-white">Waist : Hip Ratio</span>
-                    <span className="text-base font-black text-emerald-400 font-mono">{latestRatio}</span>
-                  </button>
-                )}
+                {latestRatio !== undefined && (() => {
+                  const level = clientSex ? whrRisk(latestRatio, clientSex) : undefined;
+                  const tone = level ? WHR_TONE[level] : undefined;
+                  return (
+                    <button
+                      type="button"
+                      onClick={() => setOpenBodyPartPopup('waistToHipRatio')}
+                      className={`w-full rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform border ${tone ? tone.box : 'bg-[#242426] border-white/[0.08]'}`}
+                      style={tone ? { animation: 'whrBlink 1.4s ease-in-out infinite' } : undefined}
+                    >
+                      <span className="text-left">
+                        <span className="text-xs font-bold text-white block">Waist : Hip Ratio</span>
+                        {tone && <span className={`text-[10px] font-bold ${tone.text}`}>{tone.label} · tap for details</span>}
+                      </span>
+                      <span className={`text-base font-black font-mono ${tone ? tone.text : 'text-white'}`}>{latestRatio}</span>
+                    </button>
+                  );
+                })()}
+                <style>{`@keyframes whrBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }`}</style>
 
                 {openBodyPartPopup && (
                   <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenBodyPartPopup(null)}>
@@ -1160,9 +1204,41 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         </h4>
                         <button type="button" onClick={() => setOpenBodyPartPopup(null)} className="text-white/40 text-lg leading-none px-1">×</button>
                       </div>
+                      {openBodyPartPopup === 'waistToHipRatio' && latestRatio !== undefined && (() => {
+                        const level = clientSex ? whrRisk(latestRatio, clientSex) : undefined;
+                        const tone = level ? WHR_TONE[level] : undefined;
+                        const sexes: ('male' | 'female')[] = clientSex ? [clientSex] : ['male', 'female'];
+                        return (
+                          <div className="mb-3 space-y-2">
+                            {tone && (
+                              <div className={`rounded-xl border px-3 py-2 flex items-center justify-between ${tone.box}`}>
+                                <span className={`text-xs font-bold ${tone.text}`}>{tone.label}</span>
+                                <span className={`text-base font-black font-mono ${tone.text}`}>{latestRatio}</span>
+                              </div>
+                            )}
+                            {sexes.map((sx) => (
+                              <div key={sx}>
+                                <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-1">{sx === 'male' ? 'Men' : 'Women'}</span>
+                                <div className="space-y-1">
+                                  {(['low', 'increased', 'high'] as WhrLevel[]).map((lv) => {
+                                    const active = clientSex === sx && level === lv;
+                                    return (
+                                      <div key={lv} className={`flex items-center justify-between rounded-lg px-3 py-1.5 border ${active ? WHR_TONE[lv].box : 'bg-[#1c1c1e] border-white/[0.06]'}`}>
+                                        <span className={`text-[11px] font-bold ${WHR_TONE[lv].text}`}>{WHR_TONE[lv].label}</span>
+                                        <span className="text-[11px] text-white/70 font-mono">{WHR_RANGES[sx][lv]}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ))}
+                            {!clientSex && <p className="text-[10px] text-white/40">Complete the gender question in your health questionnaire to see your own risk level.</p>}
+                          </div>
+                        );
+                      })()}
                       <MiniLineChart
                         data={openBodyPartPopup === 'waistToHipRatio' ? ratioHistory : historyFor(openBodyPartPopup as keyof AssessmentSnapshot)}
-                        color={openBodyPartPopup === 'waistToHipRatio' ? '#10b981' : '#6ccbde'}
+                        color={openBodyPartPopup === 'waistToHipRatio' ? (clientSex && latestRatio !== undefined ? WHR_TONE[whrRisk(latestRatio, clientSex)].hex : '#10b981') : '#6ccbde'}
                         unit={openBodyPartPopup === 'waistToHipRatio' ? '' : 'in'}
                       />
                     </div>
