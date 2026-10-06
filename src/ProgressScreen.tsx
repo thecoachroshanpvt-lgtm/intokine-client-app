@@ -1051,7 +1051,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                                 g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
                                 g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
-                                'bg-white/10 text-white/50'
+                                'bg-rose-500/20 text-rose-300'
                               }`}>
                                 {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
                               </span>
@@ -1216,7 +1216,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
                             {latest && (
                               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${latest[t.key] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
-                                {latest[t.key] ? 'Pass' : 'Needs Work'}
+                                {latest[t.key] ? 'Pass' : 'In Progress'}
                               </span>
                             )}
                           </div>
