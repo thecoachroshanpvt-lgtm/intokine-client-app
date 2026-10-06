@@ -314,6 +314,38 @@ const XRayBackground: React.FC<{ type: XRayType }> = ({ type }) => {
   );
 };
 
+/** Latest score out of 10 as a segment meter, with previous scores and the change since last time. */
+const ScoreMeter: React.FC<{ data: { date: string; value: number }[]; color: string }> = ({ data, color }) => {
+  if (data.length === 0) {
+    return <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">Not enough data yet</div>;
+  }
+  const last = data[data.length - 1];
+  const prev = data.length > 1 ? data[data.length - 2] : null;
+  const diff = prev ? Math.round((last.value - prev.value) * 10) / 10 : null;
+  const filled = Math.max(0, Math.min(10, Math.round(last.value)));
+  return (
+    <div className="py-1">
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="text-lg font-black text-white font-mono">{last.value}<span className="text-[11px] text-white/40 font-light"> / 10</span></span>
+        <span className="text-[10px] text-white/40">{last.date}</span>
+      </div>
+      <div className="grid grid-cols-10 gap-1 mb-2">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <span key={i} className="h-2.5 rounded-[3px]" style={{ background: i < filled ? color : 'rgba(255,255,255,0.08)' }} />
+        ))}
+      </div>
+      {data.length > 1 && (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] text-white/40 font-mono truncate">{data.slice(-5).map((d) => d.value).join(' → ')}</span>
+          {diff !== null && diff !== 0 && (
+            <span className={`text-[10px] font-bold font-mono ${diff > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{diff > 0 ? '+' : ''}{diff}</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [topTab, setTopTab] = useState<TopTab>('bca');
   const [perfCategory, setPerfCategory] = useState<PerformanceCategory>('hub');
@@ -1009,7 +1041,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     {inProgress.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {inProgress.map((g) => {
-                          const score = latestScoreFor(g.activityName);
                           return (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
                             <div className="flex items-center justify-between mb-2">
@@ -1022,7 +1053,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                 {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
                               </span>
                             </div>
-                            <SegmentMeter value={score ?? 0} max={10} />
+                            <ScoreMeter data={historyFor(g.activityName)} color="#6ccbde" />
                             {g.observation && (
                               <p className="text-[11px] text-white/40 font-light mt-2 pt-2 border-t border-white/[0.06]">{g.observation}</p>
                             )}
@@ -1183,35 +1214,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               </span>
                             )}
                           </div>
-                          {scoreData.length === 0 ? (
-                            <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">Not enough data yet</div>
-                          ) : (() => {
-                            const last = scoreData[scoreData.length - 1];
-                            const prev = scoreData.length > 1 ? scoreData[scoreData.length - 2] : null;
-                            const diff = prev ? Math.round((last.value - prev.value) * 10) / 10 : null;
-                            const filled = Math.max(0, Math.min(10, Math.round(last.value)));
-                            return (
-                              <div className="py-1">
-                                <div className="flex items-baseline justify-between mb-2">
-                                  <span className="text-lg font-black text-white font-mono">{last.value}<span className="text-[11px] text-white/40 font-light"> / 10</span></span>
-                                  <span className="text-[10px] text-white/40">{last.date}</span>
-                                </div>
-                                <div className="grid grid-cols-10 gap-1 mb-2">
-                                  {Array.from({ length: 10 }).map((_, i) => (
-                                    <span key={i} className="h-2.5 rounded-[3px]" style={{ background: i < filled ? t.color : 'rgba(255,255,255,0.08)' }} />
-                                  ))}
-                                </div>
-                                {scoreData.length > 1 && (
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-[10px] text-white/40 font-mono truncate">{scoreData.slice(-5).map((d) => d.value).join(' → ')}</span>
-                                    {diff !== null && diff !== 0 && (
-                                      <span className={`text-[10px] font-bold font-mono ${diff > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{diff > 0 ? '+' : ''}{diff}</span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
+                          <ScoreMeter data={scoreData} color={t.color} />
                           {goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview && (
                             <div className="mt-3 pt-3 border-t border-white/[0.06]">
                               <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
