@@ -358,7 +358,6 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
   <div>
     {items.map((it, i) => {
       const last = i === items.length - 1;
-      const filled = Math.max(0, Math.min(10, Math.round(Number(it.score) || 0)));
       const nodeSize = compact ? 'w-8 h-8 text-[11px]' : 'w-10 h-10 text-sm';
       return (
         <div key={it.id} className="flex gap-3">
@@ -377,11 +376,6 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
               <div className="flex items-start justify-between gap-2 pl-1">
                 <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
                 <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
-              </div>
-              <div className="grid grid-cols-10 gap-[3px] mt-2 pl-1">
-                {Array.from({ length: 10 }).map((_, k) => (
-                  <span key={k} className="h-1.5 rounded-sm" style={{ background: k < filled ? '#6ccbde' : 'rgba(255,255,255,0.08)' }} />
-                ))}
               </div>
               <div className="flex items-center gap-2 mt-2 pl-1">
                 <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Achieved</span>
