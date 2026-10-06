@@ -650,7 +650,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               return h.length > 0 ? h[h.length - 1].value : undefined;
             };
 
-            const ratioHistory = historyFor('waistToHipRatio');
+            // Worked out from the Waist and Hips values themselves (using the
+            // latest value of the other at each point), so it always agrees with
+            // what is currently saved; older records fall back to their stored ratio.
+            const ratioHistory = (() => {
+              const out: { date: string; value: number }[] = [];
+              let waist: number | undefined;
+              let hips: number | undefined;
+              chronological.forEach((a) => {
+                if (a.waistCircumferenceIn != null) waist = a.waistCircumferenceIn;
+                if (a.hipsCircumferenceIn != null) hips = a.hipsCircumferenceIn;
+                if (a.waistCircumferenceIn != null || a.hipsCircumferenceIn != null) {
+                  if (waist && hips) out.push({ date: a.date, value: Number((waist / hips).toFixed(2)) });
+                } else if (a.waistToHipRatio != null) {
+                  out.push({ date: a.date, value: a.waistToHipRatio });
+                }
+              });
+              return out;
+            })();
             const latestRatio = ratioHistory.length > 0 ? ratioHistory[ratioHistory.length - 1].value : undefined;
 
             const hasAnyCircData = bodyParts.some((p) => historyFor(p.key).length > 0) || ratioHistory.length > 0;
