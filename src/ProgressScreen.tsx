@@ -1071,7 +1071,35 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               </span>
                             )}
                           </div>
-                          <MiniLineChart data={scoreData} color={t.color} unit="/10" fixedMin={0} fixedMax={10} />
+                          {scoreData.length === 0 ? (
+                            <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">Not enough data yet</div>
+                          ) : (() => {
+                            const last = scoreData[scoreData.length - 1];
+                            const prev = scoreData.length > 1 ? scoreData[scoreData.length - 2] : null;
+                            const diff = prev ? Math.round((last.value - prev.value) * 10) / 10 : null;
+                            const filled = Math.max(0, Math.min(10, Math.round(last.value)));
+                            return (
+                              <div className="py-1">
+                                <div className="flex items-baseline justify-between mb-2">
+                                  <span className="text-lg font-black text-white font-mono">{last.value}<span className="text-[11px] text-white/40 font-light"> / 10</span></span>
+                                  <span className="text-[10px] text-white/40">{last.date}</span>
+                                </div>
+                                <div className="grid grid-cols-10 gap-1 mb-2">
+                                  {Array.from({ length: 10 }).map((_, i) => (
+                                    <span key={i} className="h-2.5 rounded-[3px]" style={{ background: i < filled ? t.color : 'rgba(255,255,255,0.08)' }} />
+                                  ))}
+                                </div>
+                                {scoreData.length > 1 && (
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-[10px] text-white/40 font-mono truncate">{scoreData.slice(-5).map((d) => d.value).join(' → ')}</span>
+                                    {diff !== null && diff !== 0 && (
+                                      <span className={`text-[10px] font-bold font-mono ${diff > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{diff > 0 ? '+' : ''}{diff}</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                           {goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview && (
                             <div className="mt-3 pt-3 border-t border-white/[0.06]">
                               <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
