@@ -549,7 +549,108 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 };
 
 /** Full-page celebration shown when every activity in a category has been passed. */
-const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
+/** Winding route-style roadmap (like a map route): start at the bottom, climb stop by stop to the summit. */
+const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
+  const [openId, setOpenId] = React.useState<string | null>(null);
+  const openItem = items.find((x) => x.id === openId) || null;
+  const STEP = 132;
+  const TOP = 110;
+  const H = TOP + items.length * STEP + 80;
+  const XS = [32, 70, 40, 74, 28, 66, 44, 72];
+  const pts = items.map((_, i) => ({ x: XS[(i * 3 + (i >> 1)) % XS.length], y: H - 90 - (i + 1) * STEP + 40 }));
+  const start = { x: 50, y: H - 30 };
+  const summit = { x: 50, y: 40 };
+  const all = [start, ...pts, summit];
+  let d = `M ${all[0].x} ${all[0].y}`;
+  for (let i = 1; i < all.length; i++) {
+    const a = all[i - 1];
+    const b = all[i];
+    const my = (a.y + b.y) / 2;
+    d += ` C ${a.x} ${my}, ${b.x} ${my}, ${b.x} ${b.y}`;
+  }
+  return (
+    <div className="relative" style={{ height: H }}>
+      <style>{`@keyframes routeFlow{to{stroke-dashoffset:-28}}`}</style>
+      <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none">
+        <path d={d} fill="none" stroke="rgba(108,203,222,0.14)" strokeWidth="16" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={d} fill="none" stroke="#6ccbde" strokeWidth="5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={d} fill="none" stroke="#fff" strokeOpacity="0.85" strokeWidth="1.5" strokeDasharray="4 10" strokeLinecap="round" vectorEffect="non-scaling-stroke" style={{ animation: 'routeFlow 1.2s linear infinite' }} />
+      </svg>
+      <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${summit.x}%`, top: summit.y }}>
+        <div className="w-12 h-12 rounded-full bg-[#242426] border-2 border-[#6ccbde] flex items-center justify-center text-xl shadow-[0_0_24px_rgba(108,203,222,0.45)]">🏆</div>
+        <span className="mt-1 inline-block text-[9px] font-bold uppercase tracking-widest text-[#6ccbde]">Summit</span>
+        <span className="block mx-auto h-[2px] w-6 rounded-full bg-[#ec2226]" />
+      </div>
+      <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${start.x}%`, top: start.y }}>
+        <div className="w-4 h-4 rounded-full bg-white border-4 border-[#6ccbde] mx-auto" />
+        <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Start</span>
+      </div>
+      {items.map((it, i) => {
+        const pt = pts[i];
+        const left = pt.x < 50;
+        return (
+          <React.Fragment key={it.id}>
+            <button
+              type="button"
+              onClick={() => setOpenId(it.id)}
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#6ccbde] text-[#0a0a0b] text-sm font-bold flex items-center justify-center border-4 border-[#1c1c1e] shadow-[0_0_16px_rgba(108,203,222,0.5)] active:scale-95 transition-transform"
+              style={{ left: `${pt.x}%`, top: pt.y }}
+            >
+              {i + 1}
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenId(it.id)}
+              className="absolute -translate-y-1/2 bg-[#242426] border border-white/[0.08] hover:border-[#6ccbde]/40 rounded-xl px-3 py-2 text-left transition active:scale-[0.98]"
+              style={left ? { left: `calc(${pt.x}% + 28px)`, top: pt.y, maxWidth: '42%' } : { right: `calc(${100 - pt.x}% + 28px)`, top: pt.y, maxWidth: '42%' }}
+            >
+              <span className="text-[11px] font-bold text-white uppercase tracking-wide block leading-tight">{it.name}</span>
+              <span className="flex items-center gap-1.5 mt-1">
+                <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
+                <span className="text-[10px] text-[#6ccbde] font-mono font-bold">{it.scoreText}</span>
+              </span>
+            </button>
+          </React.Fragment>
+        );
+      })}
+      {openItem && (
+        <div className="fixed inset-0 z-[60] bg-black/70 flex items-end justify-center" onClick={() => setOpenId(null)}>
+          <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-t-2xl w-full max-w-md max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
+                <span className="text-[10px] text-white/40 font-mono">{openItem.date}{openItem.scoreText ? ` · ${openItem.scoreText}` : ''}</span>
+              </div>
+              <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
+            </div>
+            <div className="p-4 space-y-3">
+              <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
+              {openItem.note && <p className="text-xs text-white/70 leading-relaxed whitespace-pre-line">“{openItem.note}”</p>}
+              {openItem.rows && openItem.rows.length > 0 && (
+                <div>
+                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{openItem.rowsTitle || 'Roadmap'}</span>
+                  <div className="space-y-2">
+                    {openItem.rows.map((r, k) => (
+                      <div key={k} className="bg-[#242426] border border-white/[0.06] rounded-lg p-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[11px] text-white font-semibold">{r.text}</span>
+                          {r.date && <span className="text-[10px] text-white/40 font-mono shrink-0">{r.date}</span>}
+                        </div>
+                        {r.note && <p className="text-[11px] text-[#6ccbde] leading-relaxed mt-1 whitespace-pre-line">{r.note}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => (
   <div className="space-y-4">
     <div className="relative overflow-hidden bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.12), #242426 70%)' }}>
       <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
@@ -559,7 +660,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ t
       <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
     </div>
     <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4">
-      <AchievementsTimeline items={items} />
+      {route ? <SkillRouteMap items={items} /> : <AchievementsTimeline items={items} />}
     </div>
   </div>
 );
@@ -673,8 +774,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
   const [mcgillOpen, setMcgillOpen] = useState(false);
   const [showSkillAchievementsPopup, setShowSkillAchievementsPopup] = useState(false);
-  const skillRoadmapListRef = useRef<HTMLDivElement | null>(null);
-  const [skillRoadmapMaxHeight, setSkillRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const [clientSex, setClientSex] = useState<'male' | 'female' | undefined>(undefined);
   const [showCoreAchievementsPopup, setShowCoreAchievementsPopup] = useState(false);
   const [showMuscEndAchievementsPopup, setShowMuscEndAchievementsPopup] = useState(false);
@@ -724,24 +823,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showPostureAchievementsPopup]);
-
-  useEffect(() => {
-    if (!showSkillAchievementsPopup) {
-      setSkillRoadmapMaxHeight(undefined);
-      return;
-    }
-    const raf = requestAnimationFrame(() => {
-      const container = skillRoadmapListRef.current;
-      if (!container) return;
-      container.scrollTop = 0;
-      const children = Array.from(container.children).slice(0, 3);
-      if (children.length === 0) return;
-      const containerRect = container.getBoundingClientRect();
-      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
-      setSkillRoadmapMaxHeight(lastRect.bottom - containerRect.top);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [showSkillAchievementsPopup]);
 
   useEffect(() => {
     if (!showMuscEndAchievementsPopup) {
@@ -1332,7 +1413,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         });
 
         if (activeRoadmaps.length === 0 && achievedSkills.length > 0) {
-          return <AchievementsPage title="Skills complete" items={skillItems} />;
+          return <AchievementsPage route title="Skills complete" items={skillItems} />;
         }
 
         return (
@@ -1351,15 +1432,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               </button>
             )}
             {showSkillAchievementsPopup && (
-              <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowSkillAchievementsPopup(false)}>
-                <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                  <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+              <div className="fixed inset-0 z-50 bg-[#0f0f10] overflow-y-auto">
+                <div className="sticky top-0 z-10 bg-[#0f0f10]/95 backdrop-blur border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+                  <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
+                  <div>
                     <h3 className="text-sm font-bold text-white">Skill achievements</h3>
-                    <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                    <span className="text-[10px] text-white/40">{achievedSkills.length} skill{achievedSkills.length === 1 ? '' : 's'} mastered - your road to the top</span>
                   </div>
-                  <div ref={skillRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: skillRoadmapMaxHeight }}>
-                    <AchievementsTimeline compact items={skillItems} />
-                  </div>
+                </div>
+                <div className="max-w-md mx-auto px-4 py-6">
+                  <SkillRouteMap items={skillItems} />
                 </div>
               </div>
             )}
