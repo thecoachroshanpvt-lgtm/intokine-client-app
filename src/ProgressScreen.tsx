@@ -93,6 +93,7 @@ interface AssessmentSnapshot {
   postureScore?: number;
   customActivityScores?: Record<string, number>;
   activityObservations?: Record<string, string>;
+  activitySides?: Record<string, { left?: number; right?: number }>;
 
   // Flexibility & Mobility
   thomasTestPass?: boolean;
@@ -491,6 +492,77 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ t
     </div>
   </div>
 );
+
+interface SidePoint {
+  date: string;
+  left?: number;
+  right?: number;
+}
+
+/** Left vs right comparison: paired bars per assessment, plus the latest gap between the two sides. */
+const SideComparison: React.FC<{ data: SidePoint[]; unit?: string }> = ({ data, unit = 's' }) => {
+  const pts = data.filter((d) => d.left != null || d.right != null).slice(-6);
+  if (pts.length === 0) {
+    return <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">Not enough data yet</div>;
+  }
+  const LEFT = '#ec2226';
+  const RIGHT = '#6ccbde';
+  const width = 300;
+  const height = 130;
+  const padX = 10;
+  const top = 18;
+  const bottom = 22;
+  const plotH = height - top - bottom;
+  const maxVal = Math.max(1, ...pts.map((d) => Math.max(d.left ?? 0, d.right ?? 0)));
+  const groupW = (width - padX * 2) / pts.length;
+  const barW = Math.min(22, groupW / 2 - 4);
+  const latest = pts[pts.length - 1];
+  const l = latest.left;
+  const r = latest.right;
+  let summary: { text: string; tone: string } | null = null;
+  if (l != null && r != null) {
+    const gap = Math.abs(l - r);
+    const stronger = Math.max(l, r);
+    const pct = stronger > 0 ? Math.round((gap / stronger) * 100) : 0;
+    summary = gap === 0 || pct <= 5
+      ? { text: 'Balanced - both sides are even', tone: 'text-emerald-300' }
+      : { text: `${l > r ? 'Left' : 'Right'} side is stronger by ${Math.round(gap * 10) / 10}${unit} (${pct}%)`, tone: 'text-amber-300' };
+  }
+  return (
+    <div>
+      <div className="flex items-center gap-3 mb-1">
+        <span className="flex items-center gap-1 text-[10px] text-white/50"><span className="w-2 h-2 rounded-sm" style={{ background: LEFT }} />Left</span>
+        <span className="flex items-center gap-1 text-[10px] text-white/50"><span className="w-2 h-2 rounded-sm" style={{ background: RIGHT }} />Right</span>
+      </div>
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height: `${height}px` }} preserveAspectRatio="none">
+        <line x1={padX} x2={width - padX} y1={top + plotH} y2={top + plotH} stroke="white" strokeOpacity="0.1" />
+        {pts.map((d, i) => {
+          const cx = padX + groupW * i + groupW / 2;
+          const bars: { v?: number; x: number; c: string }[] = [
+            { v: d.left, x: cx - barW - 1, c: LEFT },
+            { v: d.right, x: cx + 1, c: RIGHT },
+          ];
+          return (
+            <g key={i}>
+              {bars.map((b, k) => {
+                if (b.v == null) return null;
+                const h = Math.max(2, (b.v / maxVal) * plotH);
+                return (
+                  <g key={k}>
+                    <rect x={b.x} y={top + plotH - h} width={barW} height={h} rx="2" fill={b.c} fillOpacity="0.9" />
+                    <text x={b.x + barW / 2} y={top + plotH - h - 3} fontSize="8" fill="white" fillOpacity="0.85" textAnchor="middle" fontFamily="monospace">{b.v}</text>
+                  </g>
+                );
+              })}
+              <text x={cx} y={height - 6} fontSize="7" fill="white" fillOpacity="0.35" textAnchor="middle">{d.date.slice(5)}</text>
+            </g>
+          );
+        })}
+      </svg>
+      {summary && <div className={`text-[11px] font-semibold mt-1 ${summary.tone}`}>{summary.text}</div>}
+    </div>
+  );
+};
 
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [topTab, setTopTab] = useState<TopTab>('bca');
@@ -1316,36 +1388,46 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
-                const leftData = chronological.filter((a) => a.unipedalStanceLeftSeconds != null).map((a) => ({ date: a.date, value: a.unipedalStanceLeftSeconds as number }));
-                const rightData = chronological.filter((a) => a.unipedalStanceRightSeconds != null).map((a) => ({ date: a.date, value: a.unipedalStanceRightSeconds as number }));
+                const sideData: SidePoint[] = chronological
+                  .filter((a) => a.unipedalStanceLeftSeconds != null || a.unipedalStanceRightSeconds != null)
+                  .map((a) => ({ date: a.date, left: a.unipedalStanceLeftSeconds as number | undefined, right: a.unipedalStanceRightSeconds as number | undefined }));
                 const customGoals = goals.filter((g) => g.activityName.startsWith('Balance:') && g.activityName !== 'Balance: Unipedal Stance Test');
+                const palette = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'];
                 return (
                   <div className="space-y-3">
-                    <div className="text-xs font-bold text-white/60">Unipedal Stance Test</div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Leg</span>
-                        <MiniLineChart data={leftData} color="#ec2226" unit="s" />
-                      </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Leg</span>
-                        <MiniLineChart data={rightData} color="#6ccbde" unit="s" />
-                      </div>
+                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Unipedal Stance Test</span>
+                      <SideComparison data={sideData} unit="s" />
                     </div>
                     {customGoals.length > 0 && (
-                      <div className="space-y-2">
-                        {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Balance: ', '')}</span>
-                            {g.valueType === 'unilateral_time' ? (
-                              <span className="text-[11px] text-white/40 font-light">Left: {g.valueLeft || '—'}s · Right: {g.valueRight || '—'}s</span>
-                            ) : (
-                              g.value && <span className="text-[11px] text-white/40 font-light">Time: <span className="font-mono">{g.value}s</span></span>
-                            )}
-                          </div>
-                        ))}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {customGoals.map((g, idx) => {
+                          const color = palette[idx % palette.length];
+                          const label = g.activityName.replace('Balance: ', '');
+                          if (g.valueType === 'unilateral_time') {
+                            const sides: SidePoint[] = chronological
+                              .filter((a) => a.activitySides?.[g.activityName] != null)
+                              .map((a) => ({ date: a.date, left: a.activitySides![g.activityName].left, right: a.activitySides![g.activityName].right }));
+                            return (
+                              <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
+                                <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+                                <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label}</span>
+                                <SideComparison data={sides} unit="s" />
+                              </div>
+                            );
+                          }
+                          const data = chronological
+                            .filter((a) => a.customActivityScores?.[g.activityName] != null)
+                            .map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }));
+                          return (
+                            <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label}</span>
+                              <MiniLineChart data={data} color={color} unit="s" />
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
