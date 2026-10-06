@@ -549,24 +549,21 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 };
 
 /** Full-page celebration shown when every activity in a category has been passed. */
-/** Winding route-style roadmap (like a map route): start at the bottom, climb stop by stop to the summit. */
+/** Straight route-style roadmap: start at the bottom, climb stop by stop to the summit. */
 const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
   const [openId, setOpenId] = React.useState<string | null>(null);
   const openItem = items.find((x) => x.id === openId) || null;
   const STEP = 132;
   const TOP = 110;
   const H = TOP + items.length * STEP + 80;
-  const XS = [32, 70, 40, 74, 28, 66, 44, 72];
-  const pts = items.map((_, i) => ({ x: XS[(i * 3 + (i >> 1)) % XS.length], y: H - 90 - (i + 1) * STEP + 40 }));
+  const pts = items.map((_, i) => ({ x: 50, y: H - 90 - (i + 1) * STEP + 40 }));
   const start = { x: 50, y: H - 30 };
   const summit = { x: 50, y: 40 };
   const all = [start, ...pts, summit];
   let d = `M ${all[0].x} ${all[0].y}`;
   for (let i = 1; i < all.length; i++) {
-    const a = all[i - 1];
     const b = all[i];
-    const my = (a.y + b.y) / 2;
-    d += ` C ${a.x} ${my}, ${b.x} ${my}, ${b.x} ${b.y}`;
+    d += ` L ${b.x} ${b.y}`;
   }
   return (
     <div className="relative" style={{ height: H }}>
@@ -587,7 +584,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
       </div>
       {items.map((it, i) => {
         const pt = pts[i];
-        const left = pt.x < 50;
+        const left = i % 2 === 0;
         return (
           <React.Fragment key={it.id}>
             <button
@@ -602,7 +599,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
               type="button"
               onClick={() => setOpenId(it.id)}
               className="absolute -translate-y-1/2 bg-[#242426] border border-white/[0.08] hover:border-[#6ccbde]/40 rounded-xl px-3 py-2 text-left transition active:scale-[0.98]"
-              style={left ? { left: `calc(${pt.x}% + 28px)`, top: pt.y, maxWidth: '42%' } : { right: `calc(${100 - pt.x}% + 28px)`, top: pt.y, maxWidth: '42%' }}
+              style={left ? { left: `calc(${pt.x}% + 28px)`, top: pt.y, maxWidth: 'calc(50% - 36px)' } : { right: `calc(${100 - pt.x}% + 28px)`, top: pt.y, maxWidth: 'calc(50% - 36px)' }}
             >
               <span className="text-[11px] font-bold text-white uppercase tracking-wide block leading-tight">{it.name}</span>
               <span className="flex items-center gap-1.5 mt-1">
