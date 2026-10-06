@@ -92,6 +92,7 @@ interface AssessmentSnapshot {
   // Posture
   postureScore?: number;
   customActivityScores?: Record<string, number>;
+  activityObservations?: Record<string, string>;
 
   // Flexibility & Mobility
   thomasTestPass?: boolean;
@@ -313,6 +314,17 @@ const XRayBackground: React.FC<{ type: XRayType }> = ({ type }) => {
   );
 };
 
+/** The coach's note saved with one result (custom activities: activityObservations; standard tests: their own observation field). */
+const resultNote = (a: AssessmentSnapshot, activityName: string, scoreKey?: keyof AssessmentSnapshot): string | undefined => {
+  const fromMap = a.activityObservations?.[activityName];
+  if (fromMap && fromMap.trim()) return fromMap.trim();
+  if (scoreKey) {
+    const v = (a as unknown as Record<string, unknown>)[String(scoreKey).replace(/Score$/, 'Observation')];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return undefined;
+};
+
 /** Latest score out of 10 as a segment meter, with previous scores and the change since last time. */
 const ScoreMeter: React.FC<{ data: { date: string; value: number }[]; color: string }> = ({ data, color }) => {
   if (data.length === 0) {
@@ -352,7 +364,7 @@ interface RoadmapItem {
   date?: string;
   note?: string;
   status?: string;
-  history?: { date: string; value: number }[];
+  history?: { date: string; value: number; note?: string }[];
 }
 
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
@@ -428,19 +440,27 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                     const prevV = k > 0 ? hist[k - 1].value : null;
                     const d = prevV !== null ? Math.round((h.value - prevV) * 10) / 10 : null;
                     return (
-                      <div key={`${h.date}-${k}`} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
-                        <span className="text-[11px] text-white/50 font-mono">{h.date}</span>
-                        <span className="flex items-center gap-2">
-                          {d !== null && d !== 0 && <span className={`text-[10px] font-bold font-mono ${d > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{d > 0 ? '+' : ''}{d}</span>}
-                          <span className="text-xs font-black text-white font-mono">{h.value}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
-                        </span>
+                      <div key={`${h.date}-${k}`} className="flex flex-col items-start bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-[11px] text-white/50 font-mono">{h.date}</span>
+                          <span className="flex items-center gap-2">
+                            {d !== null && d !== 0 && <span className={`text-[10px] font-bold font-mono ${d > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{d > 0 ? '+' : ''}{d}</span>}
+                            <span className="text-xs font-black text-white font-mono">{h.value}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
+                          </span>
+                        </div>
+                        {h.note && (
+                          <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
+                            <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+                            <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{h.note}</p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
               </div>
             )}
-            {openItem.note && (
+            {openItem.note && !hist.some((h) => (h.note || '').trim() === openItem.note!.trim()) && (
               <div className="pt-3 border-t border-white/[0.06]">
                 <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{openItem.note}</p>
@@ -1101,7 +1121,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const historyFor = (activityName: string) =>
                   chronological
                     .filter((a) => a.customActivityScores?.[activityName] != null)
-                    .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![activityName], note: resultNote(a, activityName) }));
                 const latestScoreFor = (activityName: string) => {
                   const h = historyFor(activityName);
                   return h.length > 0 ? h[h.length - 1].value : undefined;
@@ -1199,10 +1219,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const customGoals = goals.filter((g) => g.activityName.startsWith('Flexibility & Mobility:') && !tests.some((t) => `Flexibility & Mobility: ${t.label}` === g.activityName));
                 const FLEX = 'Flexibility & Mobility: ';
                 const achieved = goals.filter((g) => g.activityName.startsWith(FLEX) && (g.status === 'Pass' || g.status === 'AlreadyFit')).reverse();
-                const flexHistoryFor = (g: GoalEntry): { date: string; value: number }[] => {
+                const flexHistoryFor = (g: GoalEntry): { date: string; value: number; note?: string }[] => {
                   const t = tests.find((x) => `${FLEX}${x.label}` === g.activityName);
-                  if (t) return chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
-                  return chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }));
+                  if (t) return chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number, note: resultNote(a, g.activityName, t.scoreKey) }));
+                  return chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName], note: resultNote(a, g.activityName) }));
                 };
                 const flexScoreFor = (g: GoalEntry) => {
                   if (g.value) return g.value;
@@ -1432,11 +1452,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const historyFor = (activityName: string) => {
                   const standard = standardTests.find((t) => t.name === activityName);
                   if (standard) {
-                    return chronological.filter((a) => a[standard.scoreKey] != null).map((a) => ({ date: a.date, value: a[standard.scoreKey] as number }));
+                    return chronological.filter((a) => a[standard.scoreKey] != null).map((a) => ({ date: a.date, value: a[standard.scoreKey] as number, note: resultNote(a, activityName, standard.scoreKey) }));
                   }
                   return chronological
                     .filter((a) => a.customActivityScores?.[activityName] != null)
-                    .map((a) => ({ date: a.date, value: a.customActivityScores![activityName] }));
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![activityName], note: resultNote(a, activityName) }));
                 };
                 const latestScoreFor = (activityName: string) => {
                   const h = historyFor(activityName);
