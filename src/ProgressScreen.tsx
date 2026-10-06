@@ -23,6 +23,7 @@ interface GoalEntry {
   dateAdded: string;
   dateAchieved?: string;
   observation?: string;
+  coachReview?: string;
   value?: string;
   valueType?: 'time_seconds' | 'score_10' | 'distance_km' | 'duration_minutes' | 'steps' | 'ratio' | 'reps' | 'unilateral_time' | 'bilateral_time' | 'circuits';
   valueLeft?: string;
@@ -1071,6 +1072,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             )}
                           </div>
                           <MiniLineChart data={scoreData} color={t.color} unit="/10" />
+                          {goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview && (
+                            <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                              <p className="text-[11px] text-white/40 font-light whitespace-pre-line">{goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview}</p>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -1078,6 +1085,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
                         <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
                         {g.value && <span className="text-[11px] text-white/40 font-light">Score: <span className="font-mono">{g.value}/10</span></span>}
+                        {g.coachReview && (
+                          <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <p className="text-[11px] text-white/40 font-light whitespace-pre-line">{g.coachReview}</p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
