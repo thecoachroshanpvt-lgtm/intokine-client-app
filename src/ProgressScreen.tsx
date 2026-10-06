@@ -567,20 +567,17 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
   }
   return (
     <div className="relative" style={{ height: H }}>
-      <style>{`@keyframes routeFlow{to{stroke-dashoffset:-28}}`}</style>
       <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none">
         <path d={d} fill="none" stroke="rgba(108,203,222,0.14)" strokeWidth="16" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         <path d={d} fill="none" stroke="#6ccbde" strokeWidth="5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        <path d={d} fill="none" stroke="#fff" strokeOpacity="0.85" strokeWidth="1.5" strokeDasharray="4 10" strokeLinecap="round" vectorEffect="non-scaling-stroke" style={{ animation: 'routeFlow 1.2s linear infinite' }} />
+        <path d={d} fill="none" stroke="#fff" strokeOpacity="0.85" strokeWidth="1.5" strokeDasharray="4 10" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${summit.x}%`, top: summit.y }}>
         <div className="w-12 h-12 rounded-full bg-[#242426] border-2 border-[#6ccbde] flex items-center justify-center text-xl shadow-[0_0_24px_rgba(108,203,222,0.45)]">🏆</div>
-        <span className="mt-1 inline-block text-[9px] font-bold uppercase tracking-widest text-[#6ccbde]">Summit</span>
-        <span className="block mx-auto h-[2px] w-6 rounded-full bg-[#ec2226]" />
+        <span className="block mx-auto mt-1.5 h-[2px] w-6 rounded-full bg-[#ec2226]" />
       </div>
       <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${start.x}%`, top: start.y }}>
         <div className="w-4 h-4 rounded-full bg-white border-4 border-[#6ccbde] mx-auto" />
-        <span className="text-[9px] font-bold uppercase tracking-widest text-white/50">Start</span>
       </div>
       {items.map((it, i) => {
         const pt = pts[i];
