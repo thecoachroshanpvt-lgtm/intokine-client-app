@@ -366,6 +366,12 @@ interface RoadmapItem {
   note?: string;
   status?: string;
   history?: { date: string; value: number; note?: string }[];
+  /** Unit shown after values; defaults to '/10' for scored activities. */
+  unit?: string;
+  /** Text shown instead of `score` (e.g. 'L 30s · R 25s'). */
+  scoreText?: string;
+  /** For left/right activities: results per date, drawn as a side comparison. */
+  sides?: SidePoint[];
 }
 
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
@@ -378,6 +384,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, [openItem]);
+  const unit = openItem?.unit ?? '/10';
   const hist = openItem?.history || [];
   const firstScore = hist.length > 0 ? hist[0].value : null;
   const lastScore = hist.length > 0 ? hist[hist.length - 1].value : null;
@@ -402,7 +409,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
             <button type="button" onClick={() => setOpenId(it.id)} className="w-full text-left border border-white/[0.08] rounded-xl p-3 relative overflow-hidden active:scale-[0.98] transition-transform" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.14), rgba(108,203,222,0.14))' }}>
               <div className="flex items-start justify-between gap-2 px-1">
                 <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
-                <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
+                <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.scoreText ?? it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">{it.scoreText ? '' : (it.unit ?? '/10')}</span></span>
               </div>
               <div className="flex items-center gap-2 mt-2 px-1">
                 <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
@@ -429,11 +436,38 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
               </span>
               {openItem.date && <span className="text-[10px] text-white/40 font-mono">{openItem.date}</span>}
             </div>
-            <MiniLineChart data={hist} color="#6ccbde" unit="/10" fixedMin={0} fixedMax={10} />
-            {hist.length > 0 && (
+            {openItem.sides ? (
+              <SideComparison data={openItem.sides} unit="s" />
+            ) : unit === '/10' ? (
+              <MiniLineChart data={hist} color="#6ccbde" unit="/10" fixedMin={0} fixedMax={10} />
+            ) : (
+              <MiniLineChart data={hist} color="#6ccbde" unit={unit} />
+            )}
+            {openItem.sides && openItem.sides.length > 0 && (
+              <div>
+                <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Result journey</span>
+                <div className="space-y-1.5">
+                  {openItem.sides.map((d, k) => (
+                    <div key={`${d.date}-${k}`} className="flex flex-col items-start bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[11px] text-white/50 font-mono">{d.date}</span>
+                        <span className="text-xs font-black text-white font-mono">L {d.left ?? '—'}{unit} · R {d.right ?? '—'}{unit}</span>
+                      </div>
+                      {d.note && (
+                        <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
+                          <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+                          <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{d.note}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!openItem.sides && hist.length > 0 && (
               <div>
                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">
-                  Score journey{totalGain !== null && hist.length > 1 && totalGain !== 0 ? ` (${totalGain > 0 ? '+' : ''}${totalGain} overall)` : ''}
+                  {unit === '/10' ? 'Score journey' : 'Result journey'}{totalGain !== null && hist.length > 1 && totalGain !== 0 ? ` (${totalGain > 0 ? '+' : ''}${totalGain} overall)` : ''}
                 </span>
                 <div className="space-y-1.5">
                   {hist.map((h, k) => {
@@ -445,7 +479,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                           <span className="text-[11px] text-white/50 font-mono">{h.date}</span>
                           <span className="flex items-center gap-2">
                             {d !== null && d !== 0 && <span className={`text-[10px] font-bold font-mono ${d > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{d > 0 ? '+' : ''}{d}</span>}
-                            <span className="text-xs font-black text-white font-mono">{h.value}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
+                            <span className="text-xs font-black text-white font-mono">{h.value}<span className="text-[10px] text-white/40 font-normal">{unit}</span></span>
                           </span>
                         </div>
                         {h.note && (
@@ -460,7 +494,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                 </div>
               </div>
             )}
-            {openItem.note && !hist.some((h) => (h.note || '').trim() === openItem.note!.trim()) && (
+            {openItem.note && !(openItem.sides || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !hist.some((h) => (h.note || '').trim() === openItem.note!.trim()) && (
               <div className="pt-3 border-t border-white/[0.06]">
                 <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{openItem.note}</p>
@@ -497,6 +531,7 @@ interface SidePoint {
   date: string;
   left?: number;
   right?: number;
+  note?: string;
 }
 
 /** Left vs right comparison: paired bars per assessment, plus the latest gap between the two sides. */
@@ -575,6 +610,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showPostureAchievementsPopup, setShowPostureAchievementsPopup] = useState(false);
   const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
+  const [showBalanceAchievementsPopup, setShowBalanceAchievementsPopup] = useState(false);
+  const balanceRoadmapListRef = useRef<HTMLDivElement | null>(null);
+  const [balanceRoadmapMaxHeight, setBalanceRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const flexRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [flexRoadmapMaxHeight, setFlexRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const movementRoadmapListRef = useRef<HTMLDivElement | null>(null);
@@ -583,13 +621,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup;
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup;
     if (anyPopupOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = previousOverflow; };
     }
-  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup]);
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup]);
 
   useEffect(() => {
     if (!showPostureAchievementsPopup) {
@@ -614,6 +652,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showPostureAchievementsPopup]);
+
+  useEffect(() => {
+    if (!showBalanceAchievementsPopup) {
+      setBalanceRoadmapMaxHeight(undefined);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      const container = balanceRoadmapListRef.current;
+      if (!container) return;
+      container.scrollTop = 0;
+      const children = Array.from(container.children).slice(0, 3);
+      if (children.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
+      setBalanceRoadmapMaxHeight(lastRect.bottom - containerRect.top);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showBalanceAchievementsPopup]);
 
   useEffect(() => {
     if (!showFlexAchievementsPopup) {
@@ -1388,43 +1444,98 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
+                const BAL = 'Balance: ';
+                const STD = 'Balance: Unipedal Stance Test';
                 const sideData: SidePoint[] = chronological
                   .filter((a) => a.unipedalStanceLeftSeconds != null || a.unipedalStanceRightSeconds != null)
-                  .map((a) => ({ date: a.date, left: a.unipedalStanceLeftSeconds as number | undefined, right: a.unipedalStanceRightSeconds as number | undefined }));
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Balance:') && g.activityName !== 'Balance: Unipedal Stance Test');
+                  .map((a) => ({ date: a.date, left: a.unipedalStanceLeftSeconds as number | undefined, right: a.unipedalStanceRightSeconds as number | undefined, note: resultNote(a, STD) }));
+                const customGoals = goals.filter((g) => g.activityName.startsWith(BAL) && g.activityName !== STD);
                 const palette = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'];
+                const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
+                const stdGoal = goals.find((g) => g.activityName === STD);
+                const customSides = (g: GoalEntry): SidePoint[] =>
+                  chronological
+                    .filter((a) => a.activitySides?.[g.activityName] != null)
+                    .map((a) => ({ date: a.date, left: a.activitySides![g.activityName].left, right: a.activitySides![g.activityName].right, note: resultNote(a, g.activityName) }));
+                const customHistory = (g: GoalEntry) =>
+                  chronological
+                    .filter((a) => a.customActivityScores?.[g.activityName] != null)
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName], note: resultNote(a, g.activityName) }));
+                const isSided = (g: GoalEntry) => g.activityName === STD || g.valueType === 'unilateral_time';
+                const sidesFor = (g: GoalEntry) => (g.activityName === STD ? sideData : customSides(g));
+                const toItem = (g: GoalEntry): RoadmapItem => {
+                  const base = { id: g.id, name: g.activityName.replace(BAL, ''), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, unit: 's' };
+                  if (isSided(g)) {
+                    const sd = sidesFor(g);
+                    const lastS = sd[sd.length - 1];
+                    return { ...base, sides: sd, scoreText: lastS ? `L ${lastS.left ?? '—'}s · R ${lastS.right ?? '—'}s` : undefined };
+                  }
+                  const h = customHistory(g);
+                  return { ...base, history: h, score: h.length > 0 ? h[h.length - 1].value : undefined };
+                };
+                const allGoals = [...(stdGoal ? [stdGoal] : []), ...customGoals];
+                const achieved = allGoals.filter(isPassedGoal).reverse();
+                const showStd = !isPassedGoal(stdGoal) && (sideData.length > 0 || (customGoals.length === 0 && achieved.length === 0));
+                const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
+
+                if (!showStd && visibleCustom.length === 0 && achieved.length > 0) {
+                  return <AchievementsPage title="Balance complete" items={[...achieved].reverse().map(toItem)} />;
+                }
+
                 return (
                   <div className="space-y-3">
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Unipedal Stance Test</span>
-                      <SideComparison data={sideData} unit="s" />
-                    </div>
-                    {customGoals.length > 0 && (
+                    {achieved.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowBalanceAchievementsPopup(true)}
+                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                      >
+                        <div>
+                          <span className="text-sm font-bold text-white block">Balance achievements</span>
+                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
+                        </div>
+                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                      </button>
+                    )}
+                    {showBalanceAchievementsPopup && (
+                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowBalanceAchievementsPopup(false)}>
+                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white">Balance achievements</h3>
+                            <button type="button" onClick={() => setShowBalanceAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
+                          </div>
+                          <div ref={balanceRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: balanceRoadmapMaxHeight }}>
+                            <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {showStd && (
+                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Unipedal Stance Test</span>
+                        <SideComparison data={sideData} unit="s" />
+                      </div>
+                    )}
+                    {visibleCustom.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {customGoals.map((g, idx) => {
+                        {visibleCustom.map((g, idx) => {
                           const color = palette[idx % palette.length];
-                          const label = g.activityName.replace('Balance: ', '');
+                          const label = g.activityName.replace(BAL, '');
                           if (g.valueType === 'unilateral_time') {
-                            const sides: SidePoint[] = chronological
-                              .filter((a) => a.activitySides?.[g.activityName] != null)
-                              .map((a) => ({ date: a.date, left: a.activitySides![g.activityName].left, right: a.activitySides![g.activityName].right }));
                             return (
                               <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
                                 <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label}</span>
-                                <SideComparison data={sides} unit="s" />
+                                <SideComparison data={customSides(g)} unit="s" />
                               </div>
                             );
                           }
-                          const data = chronological
-                            .filter((a) => a.customActivityScores?.[g.activityName] != null)
-                            .map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }));
                           return (
                             <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label}</span>
-                              <MiniLineChart data={data} color={color} unit="s" />
+                              <MiniLineChart data={customHistory(g)} color={color} unit="s" />
                             </div>
                           );
                         })}
