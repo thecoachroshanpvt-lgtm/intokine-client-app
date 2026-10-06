@@ -351,10 +351,25 @@ interface RoadmapItem {
   score?: string | number;
   date?: string;
   note?: string;
+  status?: string;
+  history?: { date: string; value: number }[];
 }
 
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
-const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }> = ({ items, compact }) => (
+const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }> = ({ items, compact }) => {
+  const [openId, setOpenId] = React.useState<string | null>(null);
+  const openItem = items.find((x) => x.id === openId) || null;
+  React.useEffect(() => {
+    if (!openItem) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [openItem]);
+  const hist = openItem?.history || [];
+  const firstScore = hist.length > 0 ? hist[0].value : null;
+  const lastScore = hist.length > 0 ? hist[hist.length - 1].value : null;
+  const totalGain = firstScore !== null && lastScore !== null ? Math.round((lastScore - firstScore) * 10) / 10 : null;
+  return (
   <div>
     {items.map((it, i) => {
       const last = i === items.length - 1;
@@ -371,7 +386,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
             {!last && <div className="w-[3px] flex-1 mt-1 rounded-full" style={{ background: 'rgba(108,203,222,0.3)' }} />}
           </div>
           <div className={`flex-1 ${compact ? 'pb-4' : 'pb-5'}`}>
-            <div className="bg-[#1c1c1e] border border-white/[0.08] rounded-xl p-3 relative overflow-hidden">
+            <button type="button" onClick={() => setOpenId(it.id)} className="w-full text-left bg-[#1c1c1e] border border-white/[0.08] rounded-xl p-3 relative overflow-hidden active:scale-[0.98] transition-transform">
               <span className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ background: '#ec2226' }} />
               <div className="flex items-start justify-between gap-2 pl-1">
                 <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
@@ -382,13 +397,62 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                 {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
               </div>
               {it.note && <p className="text-[11px] text-white/70 font-normal leading-relaxed mt-2 pl-1 whitespace-pre-line">“{it.note}”</p>}
-            </div>
+              <span className="absolute top-3 right-3 text-[#6ccbde] text-base leading-none">›</span>
+            </button>
           </div>
         </div>
       );
     })}
+    {openItem && (
+      <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5" onClick={(e) => { e.stopPropagation(); setOpenId(null); }}>
+        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+            <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
+            <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className={`text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${openItem.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                {openItem.status === 'AlreadyFit' ? 'Already Fit' : 'Achieved'}
+              </span>
+              {openItem.date && <span className="text-[10px] text-white/40 font-mono">{openItem.date}</span>}
+            </div>
+            <ScoreMeter data={hist} color="#6ccbde" />
+            {hist.length > 0 && (
+              <div>
+                <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">
+                  Score journey{totalGain !== null && hist.length > 1 && totalGain !== 0 ? ` (${totalGain > 0 ? '+' : ''}${totalGain} overall)` : ''}
+                </span>
+                <div className="space-y-1.5">
+                  {hist.map((h, k) => {
+                    const prevV = k > 0 ? hist[k - 1].value : null;
+                    const d = prevV !== null ? Math.round((h.value - prevV) * 10) / 10 : null;
+                    return (
+                      <div key={`${h.date}-${k}`} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                        <span className="text-[11px] text-white/50 font-mono">{h.date}</span>
+                        <span className="flex items-center gap-2">
+                          {d !== null && d !== 0 && <span className={`text-[10px] font-bold font-mono ${d > 0 ? 'text-emerald-300' : 'text-rose-300'}`}>{d > 0 ? '+' : ''}{d}</span>}
+                          <span className="text-xs font-black text-white font-mono">{h.value}<span className="text-[10px] text-white/40 font-normal">/10</span></span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            {openItem.note && (
+              <div className="pt-3 border-t border-white/[0.06]">
+                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{openItem.note}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
   </div>
-);
+  );
+};
 
 /** Full-page celebration shown when every activity in a category has been passed. */
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
@@ -1052,7 +1116,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 if (inProgress.length === 0 && achieved.length > 0) {
                   return (
-                    <AchievementsPage title="Posture complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
+                    <AchievementsPage title="Posture complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                   );
                 }
 
@@ -1111,7 +1175,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
                           <div ref={postureRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: postureRoadmapMaxHeight }}>
-                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
+                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                           </div>
                         </div>
                       </div>
@@ -1135,6 +1199,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const customGoals = goals.filter((g) => g.activityName.startsWith('Flexibility & Mobility:') && !tests.some((t) => `Flexibility & Mobility: ${t.label}` === g.activityName));
                 const FLEX = 'Flexibility & Mobility: ';
                 const achieved = goals.filter((g) => g.activityName.startsWith(FLEX) && (g.status === 'Pass' || g.status === 'AlreadyFit')).reverse();
+                const flexHistoryFor = (g: GoalEntry): { date: string; value: number }[] => {
+                  const t = tests.find((x) => `${FLEX}${x.label}` === g.activityName);
+                  if (t) return chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
+                  return chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }));
+                };
                 const flexScoreFor = (g: GoalEntry) => {
                   if (g.value) return g.value;
                   const t = tests.find((x) => `${FLEX}${x.label}` === g.activityName);
@@ -1148,7 +1217,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 if (visibleTests.length === 0 && visibleCustom.length === 0 && achieved.length > 0) {
                   const ordered = [...achieved].reverse();
                   return (
-                    <AchievementsPage title="Flexibility & Mobility complete" items={ordered.map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
+                    <AchievementsPage title="Flexibility & Mobility complete" items={ordered.map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
                   );
                 }
 
@@ -1175,7 +1244,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <button type="button" onClick={() => setShowFlexAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
                           <div ref={flexRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: flexRoadmapMaxHeight }}>
-                            <AchievementsTimeline compact items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
+                            <AchievementsTimeline compact items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
                           </div>
                         </div>
                       </div>
@@ -1388,7 +1457,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 if (inProgress.length === 0 && achieved.length > 0) {
                   return (
-                    <AchievementsPage title="Movement complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
+                    <AchievementsPage title="Movement complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                   );
                 }
 
@@ -1447,7 +1516,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <button type="button" onClick={() => setShowMovementAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
                           <div ref={movementRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: movementRoadmapMaxHeight }}>
-                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation }))} />
+                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                           </div>
                         </div>
                       </div>
