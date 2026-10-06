@@ -404,24 +404,24 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
           <div className="flex flex-col items-center">
             <div
               className={`${nodeSize} rounded-full flex items-center justify-center font-black shrink-0`}
-              style={{ background: '#6ccbde', color: '#0c3b47', boxShadow: '0 0 0 3px rgba(108,203,222,0.12)' }}
+              style={{ background: 'linear-gradient(135deg, #fde68a, #f5b301 55%, #b45309)', color: '#3b2a00', boxShadow: '0 0 0 3px rgba(245,179,1,0.18), 0 4px 14px rgba(245,179,1,0.35)' }}
             >
               {last ? '🏆' : i + 1}
             </div>
-            {!last && <div className="w-[3px] flex-1 mt-1 rounded-full" style={{ background: 'rgba(108,203,222,0.3)' }} />}
+            {!last && <div className="w-[3px] flex-1 mt-1 rounded-full" style={{ background: 'linear-gradient(to bottom, rgba(245,179,1,0.65), rgba(245,158,11,0.2))' }} />}
           </div>
           <div className={`flex-1 ${compact ? 'pb-4' : 'pb-5'}`}>
-            <button type="button" onClick={() => setOpenId(it.id)} className="w-full text-left border border-white/[0.08] rounded-xl p-3 relative overflow-hidden active:scale-[0.98] transition-transform" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.14), rgba(108,203,222,0.14))' }}>
+            <button type="button" onClick={() => setOpenId(it.id)} className="w-full text-left border border-amber-400/30 rounded-xl p-3 relative overflow-hidden active:scale-[0.98] transition-transform" style={{ background: 'linear-gradient(135deg, rgba(245,179,1,0.16), #1c1c1e 60%)' }}>
               <div className="flex items-start justify-between gap-2 px-1">
                 <span className="text-xs font-black text-white uppercase tracking-wide">{it.name}</span>
-                <span className="text-sm font-black text-[#6ccbde] font-mono whitespace-nowrap">{it.scoreText ?? it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">{it.scoreText ? '' : (it.unit ?? '/10')}</span></span>
+                <span className="text-sm font-black text-amber-300 font-mono whitespace-nowrap pr-4">{it.scoreText ?? it.score ?? '—'}<span className="text-[10px] text-white/40 font-normal">{it.scoreText ? '' : (it.unit ?? '/10')}</span></span>
               </div>
               <div className="flex items-center gap-2 mt-2 px-1">
                 <span className="text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
                 {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
               </div>
               {it.note && <p className="text-[11px] text-white/70 font-normal leading-relaxed mt-2 px-1 whitespace-pre-line">“{it.note}”</p>}
-              <span className="absolute top-3 right-3 text-[#6ccbde] text-base leading-none">›</span>
+              <span className="absolute top-3 right-3 text-amber-300 text-base leading-none">›</span>
             </button>
           </div>
         </div>
@@ -453,9 +453,9 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
                 ))}
               </div>
             ) : unit === '/10' ? (
-              <MiniLineChart data={hist} color="#6ccbde" unit="/10" fixedMin={0} fixedMax={10} />
+              <MiniLineChart data={hist} color="#f5b301" unit="/10" fixedMin={0} fixedMax={10} />
             ) : (
-              <MiniLineChart data={hist} color="#6ccbde" unit={unit} />
+              <MiniLineChart data={hist} color="#f5b301" unit={unit} />
             )}
             {openItem.rows && openItem.rows.length > 0 && (
               <div>
@@ -546,17 +546,18 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 /** Full-page celebration shown when every activity in a category has been passed. */
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ title, items }) => (
   <div className="space-y-5">
-    <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-white/[0.1]" style={{ background: 'linear-gradient(135deg, rgba(236,34,38,0.14), rgba(108,203,222,0.14))' }}>
-      <div className="w-16 h-16 mx-auto mb-3 rounded-full flex items-center justify-center" style={{ background: 'rgba(108,203,222,0.12)', border: '1px solid rgba(108,203,222,0.35)' }}>
+    <div className="relative overflow-hidden rounded-2xl p-6 text-center border border-amber-400/30" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245,179,1,0.30), #242426 68%)' }}>
+      <div className="w-16 h-16 mx-auto mb-2 rounded-full flex items-center justify-center" style={{ background: 'rgba(245,179,1,0.14)', border: '1px solid rgba(245,179,1,0.55)', boxShadow: '0 0 26px rgba(245,179,1,0.35)' }}>
         <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-12 h-12 object-contain" />
       </div>
-      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#6ccbde] block mb-1">Level complete</span>
+      <span className="text-sm tracking-[0.35em] text-amber-300 block mb-1">★ ★ ★</span>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300 block mb-1">Level complete</span>
       <h2 className="text-lg font-black text-white uppercase tracking-wide mb-1">{title}</h2>
       <p className="text-xs text-white/60">
         <span className="font-black text-white font-mono">{items.length}</span> activit{items.length === 1 ? 'y' : 'ies'} conquered - here's your road to the top.
       </p>
     </div>
-    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-5">
+    <div className="bg-[#242426] border border-amber-400/15 rounded-2xl p-5">
       <AchievementsTimeline items={items} />
     </div>
   </div>
@@ -1339,13 +1340,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <button
                 type="button"
                 onClick={() => setShowSkillAchievementsPopup(true)}
-                className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                className="w-full text-left bg-gradient-to-r from-amber-400/15 via-[#242426] to-[#242426] border border-amber-400/40 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
               >
                 <div>
-                  <span className="text-sm font-bold text-white block">Skill achievements</span>
+                  <span className="text-sm font-bold text-white block">🏆 Skill achievements</span>
                   <span className="text-[11px] text-white/40">{achievedSkills.length} skill{achievedSkills.length === 1 ? '' : 's'} mastered</span>
                 </div>
-                <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                <span className="text-amber-300 text-lg leading-none pl-3">›</span>
               </button>
             )}
             {showSkillAchievementsPopup && (
@@ -1512,13 +1513,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowPostureAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-gradient-to-r from-amber-400/15 via-[#242426] to-[#242426] border border-amber-400/40 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-bold text-white block">Posture achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Posture achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
-                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                        <span className="text-amber-300 text-lg leading-none pl-3">›</span>
                       </button>
                     )}
 
@@ -1613,13 +1614,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowFlexAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-gradient-to-r from-amber-400/15 via-[#242426] to-[#242426] border border-amber-400/40 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-bold text-white block">Flexibility & Mobility achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Flexibility & Mobility achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
-                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                        <span className="text-amber-300 text-lg leading-none pl-3">›</span>
                       </button>
                     )}
                     {showFlexAchievementsPopup && (
@@ -1727,13 +1728,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowBalanceAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-gradient-to-r from-amber-400/15 via-[#242426] to-[#242426] border border-amber-400/40 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-bold text-white block">Balance achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Balance achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
-                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                        <span className="text-amber-300 text-lg leading-none pl-3">›</span>
                       </button>
                     )}
                     {showBalanceAchievementsPopup && (
@@ -1926,13 +1927,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowCoreAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-gradient-to-r from-amber-400/15 via-[#242426] to-[#242426] border border-amber-400/40 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-bold text-white block">Core Endurance achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Core Endurance achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
-                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                        <span className="text-amber-300 text-lg leading-none pl-3">›</span>
                       </button>
                     )}
                     {showCoreAchievementsPopup && (
@@ -2061,13 +2062,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowMovementAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-gradient-to-r from-amber-400/15 via-[#242426] to-[#242426] border border-amber-400/40 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-bold text-white block">Movement achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Movement achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
-                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                        <span className="text-amber-300 text-lg leading-none pl-3">›</span>
                       </button>
                     )}
 
@@ -2228,13 +2229,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button
                         type="button"
                         onClick={() => setShowMuscEndAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                        className="w-full text-left bg-gradient-to-r from-amber-400/15 via-[#242426] to-[#242426] border border-amber-400/40 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
                       >
                         <div>
-                          <span className="text-sm font-bold text-white block">Muscular Endurance achievements</span>
+                          <span className="text-sm font-bold text-white block">🏆 Muscular Endurance achievements</span>
                           <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
                         </div>
-                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                        <span className="text-amber-300 text-lg leading-none pl-3">›</span>
                       </button>
                     )}
                     {showMuscEndAchievementsPopup && (
