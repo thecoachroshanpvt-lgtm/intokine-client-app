@@ -1515,6 +1515,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Unipedal Stance Test</span>
                         <SideComparison data={sideData} unit="s" />
+                        {(stdGoal?.coachReview || stdGoal?.observation) && (
+                          <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(stdGoal?.coachReview || stdGoal?.observation)}</p>
+                          </div>
+                        )}
                       </div>
                     )}
                     {visibleCustom.length > 0 && (
@@ -1528,6 +1534,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                 <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label}</span>
                                 <SideComparison data={customSides(g)} unit="s" />
+                                {(g.coachReview || g.observation) && (
+                          <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(g.coachReview || g.observation)}</p>
+                          </div>
+                        )}
                               </div>
                             );
                           }
@@ -1536,6 +1548,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label}</span>
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
+                              {(g.coachReview || g.observation) && (
+                          <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(g.coachReview || g.observation)}</p>
+                          </div>
+                        )}
                             </div>
                           );
                         })}
