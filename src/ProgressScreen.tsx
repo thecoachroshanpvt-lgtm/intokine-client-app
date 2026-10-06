@@ -403,9 +403,9 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
           <div className="flex flex-col items-center">
             <div
               className={`${compact ? 'w-7 h-7 text-[11px]' : 'w-8 h-8 text-xs'} rounded-full flex items-center justify-center font-bold shrink-0`}
-              style={last ? { background: '#ec2226', color: '#fff' } : { background: 'rgba(108,203,222,0.15)', color: '#6ccbde', border: '1px solid rgba(108,203,222,0.5)' }}
+              style={{ background: 'rgba(108,203,222,0.15)', color: '#6ccbde', border: '1px solid rgba(108,203,222,0.5)' }}
             >
-              {last ? '🏆' : i + 1}
+              {i + 1}
             </div>
             {!last && <div className="w-px flex-1 mt-1 bg-[#6ccbde]/25" />}
           </div>
@@ -416,7 +416,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
               className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-xl p-3 transition active:scale-[0.99]"
             >
               <div className="flex items-start justify-between gap-3">
-                <span className="text-xs font-bold text-white uppercase tracking-wide">{it.name}</span>
+                <span className="text-xs font-bold text-white uppercase tracking-wide">{it.name}<span className="block h-[2px] w-6 mt-1 rounded-full bg-[#ec2226]" /></span>
                 <span className="shrink-0 text-[#6ccbde] font-mono font-bold text-sm">
                   {it.scoreText ?? it.score ?? '—'}
                   {!it.scoreText && <span className="text-[10px] text-white/40 font-normal">{it.unit ?? '/10'}</span>}
