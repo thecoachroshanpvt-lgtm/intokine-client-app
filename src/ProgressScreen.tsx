@@ -417,7 +417,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
               </span>
               {openItem.date && <span className="text-[10px] text-white/40 font-mono">{openItem.date}</span>}
             </div>
-            <ScoreMeter data={hist} color="#6ccbde" />
+            <MiniLineChart data={hist} color="#6ccbde" unit="/10" fixedMin={0} fixedMax={10} />
             {hist.length > 0 && (
               <div>
                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">
