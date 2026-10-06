@@ -654,6 +654,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
   const [mcgillOpen, setMcgillOpen] = useState(false);
   const [showCoreAchievementsPopup, setShowCoreAchievementsPopup] = useState(false);
+  const [showMuscEndAchievementsPopup, setShowMuscEndAchievementsPopup] = useState(false);
+  const muscEndRoadmapListRef = useRef<HTMLDivElement | null>(null);
+  const [muscEndRoadmapMaxHeight, setMuscEndRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const coreRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [coreRoadmapMaxHeight, setCoreRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const [showBalanceAchievementsPopup, setShowBalanceAchievementsPopup] = useState(false);
@@ -667,13 +670,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup;
+    const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup;
     if (anyPopupOpen) {
       const previousOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
       return () => { document.body.style.overflow = previousOverflow; };
     }
-  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup]);
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup, showMuscEndAchievementsPopup]);
 
   useEffect(() => {
     if (!showPostureAchievementsPopup) {
@@ -698,6 +701,24 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     });
     return () => cancelAnimationFrame(raf);
   }, [showPostureAchievementsPopup]);
+
+  useEffect(() => {
+    if (!showMuscEndAchievementsPopup) {
+      setMuscEndRoadmapMaxHeight(undefined);
+      return;
+    }
+    const raf = requestAnimationFrame(() => {
+      const container = muscEndRoadmapListRef.current;
+      if (!container) return;
+      container.scrollTop = 0;
+      const children = Array.from(container.children).slice(0, 3);
+      if (children.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
+      setMuscEndRoadmapMaxHeight(lastRect.bottom - containerRect.top);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [showMuscEndAchievementsPopup]);
 
   useEffect(() => {
     if (!showCoreAchievementsPopup) {
@@ -2005,39 +2026,97 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
-                const pushUpsData = chronological.filter((a) => a.pushUpsReps != null).map((a) => ({ date: a.date, value: a.pushUpsReps as number }));
-                const pullUpsData = chronological.filter((a) => a.pullUpMaxReps != null).map((a) => ({ date: a.date, value: a.pullUpMaxReps as number }));
-                const squatsData = chronological.filter((a) => a.bodyweightSquatsReps != null).map((a) => ({ date: a.date, value: a.bodyweightSquatsReps as number }));
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Muscular Endurance:'));
+                const ME = 'Muscular Endurance: ';
+                const standards: { key: keyof AssessmentSnapshot; label: string; color: string }[] = [
+                  { key: 'pushUpsReps', label: 'Push-Ups', color: '#ec2226' },
+                  { key: 'pullUpMaxReps', label: 'Pull-Ups', color: '#f59e0b' },
+                  { key: 'bodyweightSquatsReps', label: 'Bodyweight Squats', color: '#6ccbde' },
+                ];
+                const standardNames = standards.map((x) => `${ME}${x.label}`);
+                const customGoals = goals.filter((g) => g.activityName.startsWith(ME) && !standardNames.includes(g.activityName));
+                const palette = ['#a78bfa', '#ec2226', '#f59e0b', '#6ccbde'];
+                const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
+                const standardHistory = (x: { key: keyof AssessmentSnapshot; label: string }) =>
+                  chronological
+                    .filter((a) => a[x.key] != null)
+                    .map((a) => ({ date: a.date, value: a[x.key] as number, note: resultNote(a, `${ME}${x.label}`) }));
+                const customHistory = (g: GoalEntry) =>
+                  chronological
+                    .filter((a) => a.customActivityScores?.[g.activityName] != null)
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName], note: resultNote(a, g.activityName) }));
+                const reviewFor = (name: string) => {
+                  const g = goals.find((x) => x.activityName === name);
+                  return g?.coachReview || g?.observation;
+                };
+                const ReviewBlock: React.FC<{ text?: string }> = ({ text }) =>
+                  text ? (
+                    <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                      <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                      <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{text}</p>
+                    </div>
+                  ) : null;
+                const toItem = (g: GoalEntry): RoadmapItem => {
+                  const h = customHistory(g);
+                  return { id: g.id, name: g.activityName.replace(ME, ''), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, unit: ' reps', history: h, score: h.length > 0 ? h[h.length - 1].value : undefined };
+                };
+                const achieved = customGoals.filter(isPassedGoal).reverse();
+                const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
+                const visibleStandards = standards.filter((x) => standardHistory(x).length > 0);
+                const nothingElse = visibleCustom.length === 0 && achieved.length === 0;
+
+                if (visibleStandards.length === 0 && visibleCustom.length === 0 && achieved.length > 0) {
+                  return <AchievementsPage title="Muscular Endurance complete" items={[...achieved].reverse().map(toItem)} />;
+                }
+
                 return (
                   <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Push-Ups</span>
-                        <MiniLineChart data={pushUpsData} color="#ec2226" unit="reps" />
-                      </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Pull-Ups</span>
-                        <MiniLineChart data={pullUpsData} color="#f59e0b" unit="reps" />
-                      </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
-                        <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Bodyweight Squats</span>
-                        <MiniLineChart data={squatsData} color="#6ccbde" unit="reps" />
-                      </div>
-                    </div>
-                    {customGoals.length > 0 && (
-                      <div className="space-y-2">
-                        {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Muscular Endurance: ', '')}</span>
-                            {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} reps</span></span>}
+                    {achieved.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowMuscEndAchievementsPopup(true)}
+                        className="w-full text-left bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform"
+                      >
+                        <div>
+                          <span className="text-sm font-bold text-white block">Muscular Endurance achievements</span>
+                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
+                        </div>
+                        <span className="text-[#6ccbde] text-lg leading-none pl-3">›</span>
+                      </button>
+                    )}
+                    {showMuscEndAchievementsPopup && (
+                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMuscEndAchievementsPopup(false)}>
+                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white">Muscular Endurance achievements</h3>
+                            <button type="button" onClick={() => setShowMuscEndAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                        ))}
+                          <div ref={muscEndRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: muscEndRoadmapMaxHeight }}>
+                            <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
+                          </div>
+                        </div>
                       </div>
                     )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {(visibleStandards.length > 0 ? visibleStandards : nothingElse ? standards : []).map((x) => (
+                        <div key={String(x.key)} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${x.color}, transparent)` }} />
+                          <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{x.label}</span>
+                          <MiniLineChart data={standardHistory(x)} color={x.color} unit="reps" />
+                          <ReviewBlock text={reviewFor(`${ME}${x.label}`)} />
+                        </div>
+                      ))}
+                      {visibleCustom.map((g, idx) => {
+                        const color = palette[idx % palette.length];
+                        return (
+                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(ME, '')}</span>
+                            <MiniLineChart data={customHistory(g)} color={color} unit="reps" />
+                            <ReviewBlock text={g.coachReview || g.observation} />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 );
               })()}
