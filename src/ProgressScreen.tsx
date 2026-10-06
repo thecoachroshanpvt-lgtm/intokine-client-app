@@ -527,6 +527,14 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[] }> = ({ t
   </div>
 );
 
+/** McGill's ratios and their normal ranges; `out` is true when a value is outside the normal range. */
+const MCGILL_RATIOS: { key: 'mcgillFlexorExtensorRatio' | 'mcgillRightLeftSideRatio' | 'mcgillRightToExtensorRatio' | 'mcgillLeftToExtensorRatio'; label: string; normal: string; out: (n: number) => boolean }[] = [
+  { key: 'mcgillFlexorExtensorRatio', label: 'Flexor-Extensor Ratio', normal: '< 1.0', out: (n) => n >= 1.0 },
+  { key: 'mcgillRightLeftSideRatio', label: 'Right-Left Side Ratio', normal: '0.95 - 1.05', out: (n) => n < 0.95 || n > 1.05 },
+  { key: 'mcgillRightToExtensorRatio', label: 'Right to Extensor Ratio', normal: '< 0.75', out: (n) => n >= 0.75 },
+  { key: 'mcgillLeftToExtensorRatio', label: 'Left to Extensor Ratio', normal: '< 0.75', out: (n) => n >= 0.75 },
+];
+
 interface SidePoint {
   date: string;
   left?: number;
@@ -610,6 +618,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showPostureAchievementsPopup, setShowPostureAchievementsPopup] = useState(false);
   const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
+  const [mcgillOpen, setMcgillOpen] = useState(false);
   const [showBalanceAchievementsPopup, setShowBalanceAchievementsPopup] = useState(false);
   const balanceRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [balanceRoadmapMaxHeight, setBalanceRoadmapMaxHeight] = useState<number | undefined>(undefined);
@@ -805,7 +814,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
   const BackButton = () => (
     <button
-      onClick={() => setPerfCategory('hub')}
+      onClick={() => { setMcgillOpen(false); setPerfCategory('hub'); }}
       className="text-xs font-bold text-[#6ccbde] hover:text-white flex items-center gap-1 mb-3"
     >
       ← Back to Performance Categories
@@ -1575,9 +1584,19 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const leftData = chronological.filter((a) => a.mcgillLeftSideBridgeSeconds != null).map((a) => ({ date: a.date, value: a.mcgillLeftSideBridgeSeconds as number }));
                 const latest = [...chronological].reverse().find((a) => a.mcgillFlexorExtensorRatio || a.mcgillRightLeftSideRatio || a.mcgillRightToExtensorRatio || a.mcgillLeftToExtensorRatio);
                 const customGoals = goals.filter((g) => g.activityName.startsWith('Core Endurance & Stability:') && g.activityName !== "Core Endurance & Stability: McGill's Test");
-                return (
-                  <div className="space-y-3">
-                    <div className="text-xs font-bold text-white/60">McGill's Core Endurance Test</div>
+                const lastOf = (d: { date: string; value: number }[]) => (d.length > 0 ? d[d.length - 1].value : undefined);
+                const outCount = latest ? MCGILL_RATIOS.filter((r) => { const v = latest[r.key]; const n = v ? parseFloat(v) : NaN; return Number.isFinite(n) && r.out(n); }).length : 0;
+                const hasRatios = latest ? MCGILL_RATIOS.some((r) => !!latest[r.key]) : false;
+                const lastDate = [flexorData, extensorData, rightData, leftData].map((d) => (d.length > 0 ? d[d.length - 1].date : '')).sort().pop() || '';
+                const hasMcgill = flexorData.length + extensorData.length + rightData.length + leftData.length > 0;
+
+                if (mcgillOpen) {
+                  return (
+                    <div className="space-y-3">
+                      <button onClick={() => setMcgillOpen(false)} className="text-xs font-bold text-[#6ccbde] hover:text-white flex items-center gap-1">
+                        ← Back to Core Endurance &amp; Stability
+                      </button>
+                      <div className="text-sm font-bold text-white">McGill's Core Endurance Test</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
@@ -1602,25 +1621,57 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     </div>
                     {latest && (
                       <div className="grid grid-cols-2 gap-3">
-                        {([
-                          { label: 'Flexor-Extensor Ratio', value: latest.mcgillFlexorExtensorRatio, normal: '< 1.0', out: (n: number) => n >= 1.0 },
-                          { label: 'Right-Left Side Ratio', value: latest.mcgillRightLeftSideRatio, normal: '0.95 - 1.05', out: (n: number) => n < 0.95 || n > 1.05 },
-                          { label: 'Right to Extensor Ratio', value: latest.mcgillRightToExtensorRatio, normal: '< 0.75', out: (n: number) => n >= 0.75 },
-                          { label: 'Left to Extensor Ratio', value: latest.mcgillLeftToExtensorRatio, normal: '< 0.75', out: (n: number) => n >= 0.75 },
-                        ] as { label: string; value?: string; normal: string; out: (n: number) => boolean }[]).map((r) => {
-                          if (!r.value) return null;
-                          const num = parseFloat(r.value);
+                        {MCGILL_RATIOS.map((r) => {
+                          const val = latest[r.key];
+                          if (!val) return null;
+                          const num = parseFloat(val);
                           const alert = Number.isFinite(num) && r.out(num);
                           return (
-                            <div key={r.label} className={`rounded-2xl p-3 border ${alert ? 'bg-rose-500/10 border-rose-500/50' : 'bg-[#242426] border-white/[0.06]'}`}>
+                            <div key={r.key} className={`rounded-2xl p-3 border ${alert ? 'bg-rose-500/10 border-rose-500/50' : 'bg-[#242426] border-white/[0.06]'}`}>
                               <span className={`text-[9px] uppercase font-bold block ${alert ? 'text-rose-300' : 'text-white/40'}`}>{r.label}</span>
-                              <span className={`text-sm font-mono ${alert ? 'text-rose-300 font-bold' : 'text-white'}`}>{r.value}</span>
+                              <span className={`text-sm font-mono ${alert ? 'text-rose-300 font-bold' : 'text-white'}`}>{val}</span>
                               {alert && <span className="text-[9px] text-rose-300/80 block mt-1">⚠ Not in normal range ({r.normal})</span>}
                             </div>
                           );
                         })}
                       </div>
                     )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => setMcgillOpen(true)}
+                      className="w-full text-left bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden active:scale-[0.98] transition-transform"
+                    >
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div>
+                          <span className="text-sm font-bold text-white block">McGill's Core Endurance Test</span>
+                          <span className="text-[10px] text-white/40 font-mono">{hasMcgill ? `Last tested ${lastDate}` : 'No results yet'}</span>
+                        </div>
+                        <span className="text-[#6ccbde] text-lg leading-none">›</span>
+                      </div>
+                      {hasMcgill && (
+                        <div className="grid grid-cols-4 gap-2 mb-3">
+                          {([['Flexor', lastOf(flexorData)], ['Extensor', lastOf(extensorData)], ['Right', lastOf(rightData)], ['Left', lastOf(leftData)]] as [string, number | undefined][]).map(([lbl, v]) => (
+                            <div key={lbl} className="bg-[#1c1c1e] border border-white/[0.06] rounded-xl px-2 py-2 text-center">
+                              <span className="text-[9px] text-white/40 uppercase font-bold block">{lbl}</span>
+                              <span className="text-sm font-black text-white font-mono">{v ?? '—'}{v != null && <span className="text-[9px] text-white/40 font-normal">s</span>}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {hasRatios && (
+                        <span className={`inline-block text-[10px] font-bold px-2.5 py-1 rounded-full ${outCount > 0 ? 'bg-rose-500/20 text-rose-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
+                          {outCount > 0 ? `⚠ ${outCount} ratio${outCount === 1 ? '' : 's'} outside normal range` : 'All ratios in normal range'}
+                        </span>
+                      )}
+                      <span className="text-[10px] text-white/30 block mt-3">Tap to see graphs and details</span>
+                    </button>
                     {customGoals.length > 0 && (
                       <div className="space-y-2">
                         {customGoals.map((g) => (
