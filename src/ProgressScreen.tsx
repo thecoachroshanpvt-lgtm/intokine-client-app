@@ -551,51 +551,11 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
 };
 
 /** Full-page celebration shown when every activity in a category has been passed. */
-/** Sets the browser/status-bar colour by swapping in a fresh theme-color meta (some browsers ignore attribute edits). Returns a restore function. */
-const applyThemeColor = (color: string): (() => void) => {
-  const old = Array.from(document.querySelectorAll('meta[name="theme-color"]'));
-  const prevValues = old.map((m) => m.getAttribute('content') || '');
-  old.forEach((m) => m.remove());
-  const fresh = document.createElement('meta');
-  fresh.setAttribute('name', 'theme-color');
-  fresh.setAttribute('content', color);
-  document.head.appendChild(fresh);
-  return () => {
-    fresh.remove();
-    prevValues.forEach((v) => {
-      const m = document.createElement('meta');
-      m.setAttribute('name', 'theme-color');
-      m.setAttribute('content', v);
-      document.head.appendChild(m);
-    });
-  };
-};
-
 /** Straight route-style roadmap: start at the bottom, climb stop by stop to the summit. */
 const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) => void; badge?: string }> = ({ items, onSelect, badge = 'Achieved' }) => {
   const [ownId, setOwnId] = React.useState<string | null>(null);
   const setOpenId = (id: string | null) => { if (id !== null && onSelect) onSelect(id); else setOwnId(id); };
   const openItem = items.find((x) => x.id === ownId) || null;
-  React.useEffect(() => {
-    if (!openItem) return;
-    // The strip behind the clock/status icons sits outside the dimmed layer and
-    // shows the html/body background, so give it the dimmed colour while open.
-    const dim = '#050506';
-    const restoreTheme = applyThemeColor(dim);
-    const htmlEl = document.documentElement;
-    const bodyEl = document.body;
-    const prevHtmlBg = htmlEl.style.backgroundColor;
-    const prevBodyBg = bodyEl.style.backgroundColor;
-    htmlEl.style.setProperty('background-color', dim, 'important');
-    bodyEl.style.setProperty('background-color', dim, 'important');
-    return () => {
-      restoreTheme();
-      htmlEl.style.removeProperty('background-color');
-      bodyEl.style.removeProperty('background-color');
-      htmlEl.style.backgroundColor = prevHtmlBg;
-      bodyEl.style.backgroundColor = prevBodyBg;
-    };
-  }, [openItem]);
   const STEP = 132;
   const TOP = 110;
   const H = TOP + items.length * STEP + 80;
@@ -827,31 +787,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [movementRoadmapMaxHeight, setMovementRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const postureRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
-
-  // While the full-screen skill route page is open, colour the browser's top
-  // (status) bar to match it, then restore the app's colour on close.
-  useEffect(() => {
-    if (!showSkillAchievementsPopup) return;
-    const restoreTheme = applyThemeColor('#0f0f10');
-    // Let the full-screen page (and its dimmed popup layer) extend under the
-    // phone's status bar, so no un-dimmed strip is left at the top.
-    const vp = document.querySelector('meta[name="viewport"]');
-    const prevVp = vp ? vp.getAttribute('content') : null;
-    if (vp && prevVp && !/viewport-fit/.test(prevVp)) vp.setAttribute('content', `${prevVp}, viewport-fit=cover`);
-    // The strip above a fixed page is the html/body background, so match it too.
-    const htmlEl = document.documentElement;
-    const bodyEl = document.body;
-    const prevHtmlBg = htmlEl.style.backgroundColor;
-    const prevBodyBg = bodyEl.style.backgroundColor;
-    htmlEl.style.backgroundColor = '#0f0f10';
-    bodyEl.style.backgroundColor = '#0f0f10';
-    return () => {
-      restoreTheme();
-      if (vp && prevVp !== null) vp.setAttribute('content', prevVp);
-      htmlEl.style.backgroundColor = prevHtmlBg;
-      bodyEl.style.backgroundColor = prevBodyBg;
-    };
-  }, [showSkillAchievementsPopup]);
 
   useEffect(() => {
     const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup || showSkillAchievementsPopup;
@@ -1495,7 +1430,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             )}
             {showSkillAchievementsPopup && createPortal(
               <div className="fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
-                <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 pb-3 flex items-center gap-3" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
+                <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
                   <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
                   <div>
                     <h3 className="text-sm font-bold text-white">Skill achievements</h3>
