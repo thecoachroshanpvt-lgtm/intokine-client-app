@@ -60,9 +60,35 @@ interface VisiblePlan {
 
 interface TodaySession {
   id: string;
+  date: string;
   time: string;
+  coachName: string;
   sessionType: string;
+  location: string;
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
+}
+
+// Local calendar date (YYYY-MM-DD) - toISOString() is UTC and shifts the day
+// for anyone ahead of UTC during the first hours of the day.
+function toDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseDateKey(key: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+// "14:00" -> { clock: "2:00", period: "PM" }; anything unexpected is shown as-is.
+function formatTime(t: string): { clock: string; period: string } | null {
+  const m = /^(\d{1,2}):(\d{2})/.exec((t || '').trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  if (h > 23) return null;
+  return { clock: `${h % 12 === 0 ? 12 : h % 12}:${m[2]}`, period: h >= 12 ? 'PM' : 'AM' };
 }
 
 // Resizes and compresses an uploaded profile photo before storing it
@@ -168,7 +194,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     const { db } = initializeClientFirebaseApp();
     if (!db) return;
 
-    const todayKey = new Date().toISOString().split('T')[0];
+    const todayKey = toDateKey(new Date());
     // Query by clientId only, matching the Firestore rule exactly -
     // same proven pattern as the Schedule tab. Adding a second date
     // filter directly into the query can require a composite index
@@ -181,7 +207,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     );
 
     const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
-      const allSessions = snapshot.docs.map((d) => d.data() as TodaySession & { date: string });
+      const allSessions = snapshot.docs.map((d) => d.data() as TodaySession);
       setTodaySessions(allSessions.filter((s) => s.date === todayKey));
       setCompletedSessions(allSessions.filter((s) => s.status === 'Completed').length);
     });
@@ -319,23 +345,52 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         </div>
       )}
 
-      {/* Today's status */}
-      <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
-        <span className="text-[11px] text-white/40 uppercase font-semibold">Today</span>
+      {/* Today's sessions - same card design as the Schedule tab */}
+      <div className="space-y-2">
+        <span className="text-[11px] text-white/40 uppercase font-semibold block">Today</span>
         {todaySessions.length === 0 ? (
-          <p className="text-sm text-white/50 font-light">Nothing scheduled for today.</p>
+          <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+            <p className="text-sm text-white/50 font-light leading-relaxed">Nothing scheduled for today.</p>
+          </div>
         ) : (
-          todaySessions.map((s) => (
-            <div key={s.id} className="flex items-center justify-between">
-              <span className="text-sm text-white">{s.time && `${s.time} · `}{s.sessionType}</span>
-              <span
-                className="text-[10px] font-semibold px-2 py-0.5 rounded-full border"
-                style={{ color: statusColor(s.status), borderColor: `${statusColor(s.status)}40`, backgroundColor: `${statusColor(s.status)}15` }}
-              >
-                {s.status.toUpperCase()}
-              </span>
-            </div>
-          ))
+          todaySessions.map((s) => {
+            const d = parseDateKey(s.date);
+            const t = formatTime(s.time);
+            const color = statusColor(s.status);
+            return (
+              <div key={s.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+                    {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
+                  </div>
+                  <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
+                    {d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-1">
+                    {t ? (
+                      <>
+                        <span className="text-base font-semibold font-mono text-white leading-none">{t.clock}</span>
+                        <span className="text-[10px] font-bold text-white/50">{t.period}</span>
+                      </>
+                    ) : (
+                      <span className="text-sm font-bold text-white">{s.time || 'Time TBC'}</span>
+                    )}
+                  </div>
+                  <div className="text-xs font-semibold text-white/80 mt-1 truncate">{s.sessionType}</div>
+                  <div className="text-[11px] text-white/40 font-light truncate">{s.location} · Coach {s.coachName}</div>
+                </div>
+                <span
+                  className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
+                  style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
+                >
+                  {s.status.toUpperCase()}
+                </span>
+              </div>
+            );
+          })
         )}
       </div>
 
