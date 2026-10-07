@@ -600,7 +600,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
             >
               <span className="text-[11px] font-bold text-white uppercase tracking-wide block leading-tight">{it.name}</span>
               <span className="flex items-center gap-1.5 mt-1">
-                <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
+                <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Achieved</span>
                 <span className="text-[10px] text-[#6ccbde] font-mono font-bold">{it.scoreText}</span>
               </span>
             </button>
@@ -618,7 +618,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
               <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
             </div>
             <div className="p-4 space-y-3">
-              <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
+              <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Achieved</span>
               {openItem.note && <p className="text-xs text-white/70 leading-relaxed whitespace-pre-line">“{openItem.note}”</p>}
               {openItem.rows && openItem.rows.length > 0 && (
                 <div>
