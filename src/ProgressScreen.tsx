@@ -1430,7 +1430,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             )}
             {showSkillAchievementsPopup && createPortal(
               <div className="anim-page fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
-                <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 pb-3 flex items-center gap-3" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
+                <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
                   <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
                   <div>
                     <h3 className="text-sm font-bold text-white">Skill achievements</h3>
