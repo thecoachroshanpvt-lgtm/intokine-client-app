@@ -110,6 +110,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
+  const [completedSessions, setCompletedSessions] = useState(0);
   const [selectedWorkout, setSelectedWorkout] = useState<VisiblePlan | null>(null);
 
   useEffect(() => {
@@ -182,6 +183,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
       const allSessions = snapshot.docs.map((d) => d.data() as TodaySession & { date: string });
       setTodaySessions(allSessions.filter((s) => s.date === todayKey));
+      setCompletedSessions(allSessions.filter((s) => s.status === 'Completed').length);
     });
 
     return () => unsubscribe();
@@ -215,7 +217,8 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     const totalWeeks = Math.max(1, Math.round((end - start) / (1000 * 60 * 60 * 24 * 7)));
     const currentWeek = Math.min(totalWeeks, Math.max(1, Math.ceil((now - start) / (1000 * 60 * 60 * 24 * 7))));
     const percent = Math.min(1, Math.max(0, (now - start) / (end - start)));
-    return { totalWeeks, currentWeek, percent, phase: getPhase(percent) };
+    const expired = now > end;
+    return { totalWeeks, currentWeek, percent, phase: getPhase(percent), expired };
   })();
 
   const statusColor = (status: TodaySession['status']) => {
@@ -285,11 +288,26 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
       </div>
       {photoError && <p className="text-xs text-[#ec2226] font-light">{photoError}</p>}
 
+      {/* Package expired notification */}
+      {journey?.expired && (
+        <div className="bg-[#ec2226]/10 border border-[#ec2226]/40 rounded-2xl p-4 flex items-start gap-3" role="alert">
+          <span className="w-2 h-2 mt-1.5 rounded-full bg-[#ec2226] shrink-0" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
+          <div>
+            <p className="text-sm font-bold text-white">Package expired</p>
+            <p className="text-[11px] text-white/60 font-light mt-0.5 leading-relaxed">
+              Your package ended on {renewalDate}. You completed <span className="font-mono">{completedSessions}</span> session{completedSessions === 1 ? '' : 's'}. Please contact your coach to renew.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Journey roadmap */}
       {journey && (
         <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-white">{journey.phase}</span>
+            <span className="text-sm font-semibold text-white">
+              <span className="font-mono">{completedSessions}</span> session{completedSessions === 1 ? '' : 's'} done
+            </span>
             <span className="text-[11px] text-white/40 font-mono">Week {journey.currentWeek} of {journey.totalWeeks}</span>
           </div>
           <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
