@@ -134,6 +134,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [startDate, setStartDate] = useState<string | null>(null);
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
   const [packageSessions, setPackageSessions] = useState<number | null>(null);
+  const [packageBaseline, setPackageBaseline] = useState<number | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
@@ -184,6 +185,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           setStartDate(data.startDate || null);
           setRenewalDate(data.renewalDate || null);
           setPackageSessions(typeof data.packageSessions === 'number' && data.packageSessions > 0 ? data.packageSessions : null);
+          setPackageBaseline(typeof data.packageBaseline === 'number' ? data.packageBaseline : null);
           setProfilePhoto(data.profilePhotoBase64 || null);
         }
       },
@@ -239,7 +241,11 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   };
 
   // Only sessions in the current package count - renewing starts a new package, so this restarts at 0.
-  const completedSessions = allSessionsList.filter((s) => (s.status === 'Completed' || s.attendanceStatus === 'Present') && (!startDate || s.date >= startDate)).length;
+  const doneSessionsAll = allSessionsList.filter(
+    (s) => (s.status === 'Completed' || s.attendanceStatus === 'Present') && (packageBaseline !== null || !startDate || s.date >= startDate)
+  ).length;
+  // After a renewal the coach side records how many were already done, so the new package starts at 0 exactly.
+  const completedSessions = packageBaseline !== null ? Math.max(0, doneSessionsAll - packageBaseline) : doneSessionsAll;
 
   const journey = (() => {
     // Package measured in sessions: finished when that many sessions are done.
