@@ -648,7 +648,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
 
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => (
   <div className="space-y-4">
-    <div className="relative overflow-hidden bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.12), #242426 70%)' }}>
+    <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
       <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
       <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Level complete</p>
       <h2 className="text-lg font-bold text-white mt-1">{title}</h2>
