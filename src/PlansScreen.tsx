@@ -136,7 +136,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
-  const [completedSessions, setCompletedSessions] = useState(0);
+  const [allSessionsList, setAllSessionsList] = useState<TodaySession[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<VisiblePlan | null>(null);
 
   useEffect(() => {
@@ -209,7 +209,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
       const allSessions = snapshot.docs.map((d) => d.data() as TodaySession);
       setTodaySessions(allSessions.filter((s) => s.date === todayKey));
-      setCompletedSessions(allSessions.filter((s) => s.status === 'Completed').length);
+      setAllSessionsList(allSessions);
     });
 
     return () => unsubscribe();
@@ -234,6 +234,9 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
       setUploadingPhoto(false);
     }
   };
+
+  // Only sessions in the current package count - renewing starts a new package, so this restarts at 0.
+  const completedSessions = allSessionsList.filter((s) => s.status === 'Completed' && (!startDate || s.date >= startDate)).length;
 
   const journey = (() => {
     if (!startDate || !renewalDate) return null;
