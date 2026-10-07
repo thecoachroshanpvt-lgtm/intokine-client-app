@@ -580,7 +580,19 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
     if (!openItem) return;
     // Dimmed overlay: darken the status bar to match it.
     const restore = applyThemeColor('#040405');
-    return restore;
+    // The strip above the page (outside the dimmed layer) shows the html/body
+    // background, so give it the same dimmed colour while the popup is open.
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const prevHtmlBg = htmlEl.style.backgroundColor;
+    const prevBodyBg = bodyEl.style.backgroundColor;
+    htmlEl.style.backgroundColor = '#040405';
+    bodyEl.style.backgroundColor = '#040405';
+    return () => {
+      restore();
+      htmlEl.style.backgroundColor = prevHtmlBg;
+      bodyEl.style.backgroundColor = prevBodyBg;
+    };
   }, [openItem]);
   const STEP = 132;
   const TOP = 110;
