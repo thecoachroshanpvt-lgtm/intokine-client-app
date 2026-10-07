@@ -576,6 +576,26 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
   const [ownId, setOwnId] = React.useState<string | null>(null);
   const setOpenId = (id: string | null) => { if (id !== null && onSelect) onSelect(id); else setOwnId(id); };
   const openItem = items.find((x) => x.id === ownId) || null;
+  React.useEffect(() => {
+    if (!openItem) return;
+    // The strip behind the clock/status icons sits outside the dimmed layer and
+    // shows the html/body background, so give it the dimmed colour while open.
+    const dim = '#050506';
+    const restoreTheme = applyThemeColor(dim);
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const prevHtmlBg = htmlEl.style.backgroundColor;
+    const prevBodyBg = bodyEl.style.backgroundColor;
+    htmlEl.style.setProperty('background-color', dim, 'important');
+    bodyEl.style.setProperty('background-color', dim, 'important');
+    return () => {
+      restoreTheme();
+      htmlEl.style.removeProperty('background-color');
+      bodyEl.style.removeProperty('background-color');
+      htmlEl.style.backgroundColor = prevHtmlBg;
+      bodyEl.style.backgroundColor = prevBodyBg;
+    };
+  }, [openItem]);
   const STEP = 132;
   const TOP = 110;
   const H = TOP + items.length * STEP + 80;
