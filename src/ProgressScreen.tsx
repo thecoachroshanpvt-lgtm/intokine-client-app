@@ -1015,7 +1015,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     {bcaRows.map((row) => {
                       const cur = row.current;
                       const inRange = cur !== undefined && row.nMin !== undefined && row.nMax !== undefined ? cur >= row.nMin && cur <= row.nMax : null;
-                      const valueTone = inRange === null ? 'text-white' : inRange ? 'text-emerald-300' : 'text-amber-300';
+                      const valueTone = inRange === false ? 'text-[#ec2226]' : 'text-white';
                       return (
                         <div key={row.label} className="px-4 py-3">
                           <div className="flex items-center justify-between">
@@ -1023,7 +1023,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <span className={`text-lg font-black font-mono ${valueTone}`}>{cur !== undefined ? `${cur}${row.unit}` : '—'}</span>
                           </div>
                           <div className="flex items-center justify-between mt-1 text-[11px] font-mono">
-                            <span className="text-emerald-300/80">Normal {row.normal}</span>
+                            <span className="text-white/50">Normal {row.normal}</span>
                             <span className="text-[#6ccbde]">Goal {row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
                           </div>
                         </div>
