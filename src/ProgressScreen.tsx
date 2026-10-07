@@ -776,6 +776,28 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showMuscEndAchievementsPopup, setShowMuscEndAchievementsPopup] = useState(false);
   const [showBalanceAchievementsPopup, setShowBalanceAchievementsPopup] = useState(false);
 
+  // Phones leave a strip (home-indicator / status area) outside the dimmed popup
+  // layer that shows the page background. Darken it to match while a popup is open.
+  useEffect(() => {
+    const open = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup;
+    if (!open) return;
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const prev = [htmlEl.style.backgroundColor, bodyEl.style.backgroundColor, htmlEl.style.transition, bodyEl.style.transition];
+    htmlEl.style.transition = 'background-color 0.15s ease-out';
+    bodyEl.style.transition = 'background-color 0.15s ease-out';
+    htmlEl.style.setProperty('background-color', '#080808', 'important');
+    bodyEl.style.setProperty('background-color', '#080808', 'important');
+    return () => {
+      htmlEl.style.removeProperty('background-color');
+      bodyEl.style.removeProperty('background-color');
+      htmlEl.style.backgroundColor = prev[0];
+      bodyEl.style.backgroundColor = prev[1];
+      htmlEl.style.transition = prev[2];
+      bodyEl.style.transition = prev[3];
+    };
+  }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup, showMuscEndAchievementsPopup]);
+
   useEffect(() => {
     const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup || showSkillAchievementsPopup;
     if (anyPopupOpen) {
