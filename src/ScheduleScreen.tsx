@@ -147,7 +147,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
           <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
             {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
           </div>
-          <div className="text-2xl font-bold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
+          <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
             {d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}
           </div>
@@ -156,7 +156,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
           <div className="flex items-baseline gap-1">
             {t ? (
               <>
-                <span className="text-2xl font-bold font-mono text-white leading-none">{t.clock}</span>
+                <span className="text-base font-semibold font-mono text-white leading-none">{t.clock}</span>
                 <span className="text-[10px] font-bold text-white/50">{t.period}</span>
               </>
             ) : (
