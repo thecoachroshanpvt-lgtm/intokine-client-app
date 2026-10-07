@@ -119,7 +119,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
   };
 
   return (
-    <div className="min-h-screen bg-[#1c1c1c]" style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+    <div className="min-h-screen bg-[#1c1c1c] pb-20">
       {/* Header */}
       <div
         className="px-5 pt-8 pb-6 relative overflow-hidden"
@@ -312,7 +312,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
       )}
 
       {/* Bottom navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1c1c1c]/95 backdrop-blur-md border-t border-white/[0.08]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1c1c1c]/95 backdrop-blur-md border-t border-white/[0.08]">
         <div className="flex items-center justify-around max-w-4xl mx-auto px-2 py-2">
           {[
             {
