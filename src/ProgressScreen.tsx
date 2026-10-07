@@ -833,6 +833,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   useEffect(() => {
     if (!showSkillAchievementsPopup) return;
     const restoreTheme = applyThemeColor('#0f0f10');
+    // Let the full-screen page (and its dimmed popup layer) extend under the
+    // phone's status bar, so no un-dimmed strip is left at the top.
+    const vp = document.querySelector('meta[name="viewport"]');
+    const prevVp = vp ? vp.getAttribute('content') : null;
+    if (vp && prevVp && !/viewport-fit/.test(prevVp)) vp.setAttribute('content', `${prevVp}, viewport-fit=cover`);
     // The strip above a fixed page is the html/body background, so match it too.
     const htmlEl = document.documentElement;
     const bodyEl = document.body;
@@ -842,6 +847,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     bodyEl.style.backgroundColor = '#0f0f10';
     return () => {
       restoreTheme();
+      if (vp && prevVp !== null) vp.setAttribute('content', prevVp);
       htmlEl.style.backgroundColor = prevHtmlBg;
       bodyEl.style.backgroundColor = prevBodyBg;
     };
@@ -1489,7 +1495,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             )}
             {showSkillAchievementsPopup && createPortal(
               <div className="fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
-                <div className="sticky top-0 z-10 bg-[#0f0f10]/95 backdrop-blur border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+                <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 pb-3 flex items-center gap-3" style={{ paddingTop: 'calc(env(safe-area-inset-top) + 12px)' }}>
                   <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
                   <div>
                     <h3 className="text-sm font-bold text-white">Skill achievements</h3>
