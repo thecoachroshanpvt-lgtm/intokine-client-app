@@ -133,6 +133,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [plansLoading, setPlansLoading] = useState(true);
   const [startDate, setStartDate] = useState<string | null>(null);
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
+  const [packageSessions, setPackageSessions] = useState<number | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
@@ -182,6 +183,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           const data = clientDoc.data();
           setStartDate(data.startDate || null);
           setRenewalDate(data.renewalDate || null);
+          setPackageSessions(typeof data.packageSessions === 'number' && data.packageSessions > 0 ? data.packageSessions : null);
           setProfilePhoto(data.profilePhotoBase64 || null);
         }
       },
@@ -240,6 +242,18 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const completedSessions = allSessionsList.filter((s) => (s.status === 'Completed' || s.attendanceStatus === 'Present') && (!startDate || s.date >= startDate)).length;
 
   const journey = (() => {
+    // Package measured in sessions: finished when that many sessions are done.
+    if (packageSessions) {
+      const percent = Math.min(1, completedSessions / packageSessions);
+      return {
+        mode: 'sessions' as const,
+        totalWeeks: 0,
+        currentWeek: 0,
+        percent,
+        phase: getPhase(percent),
+        expired: completedSessions >= packageSessions,
+      };
+    }
     if (!startDate || !renewalDate) return null;
     const start = new Date(startDate).getTime();
     const end = new Date(renewalDate).getTime();
@@ -248,7 +262,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     const currentWeek = Math.min(totalWeeks, Math.max(1, Math.ceil((now - start) / (1000 * 60 * 60 * 24 * 7))));
     const percent = Math.min(1, Math.max(0, (now - start) / (end - start)));
     const expired = now > end;
-    return { totalWeeks, currentWeek, percent, phase: getPhase(percent), expired };
+    return { mode: 'dates' as const, totalWeeks, currentWeek, percent, phase: getPhase(percent), expired };
   })();
 
   const statusColor = (status: TodaySession['status']) => {
@@ -325,7 +339,11 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           <div>
             <p className="text-sm font-bold text-white">Package expired</p>
             <p className="text-[11px] text-white/60 font-light mt-0.5 leading-relaxed">
-              Your package ended on {renewalDate}. You completed <span className="font-mono">{completedSessions}</span> session{completedSessions === 1 ? '' : 's'}. Please contact your coach to renew.
+              {journey.mode === 'sessions' ? (
+                <>You completed all <span className="font-mono">{packageSessions}</span> sessions in your package. Please contact your coach to renew.</>
+              ) : (
+                <>Your package ended on {renewalDate}. You completed <span className="font-mono">{completedSessions}</span> session{completedSessions === 1 ? '' : 's'}. Please contact your coach to renew.</>
+              )}
             </p>
           </div>
         </div>
@@ -336,9 +354,14 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-sm font-semibold text-white">
-              <span className="font-mono">{completedSessions}</span> session{completedSessions === 1 ? '' : 's'} done
+              <span className="font-mono">{completedSessions}</span>
+              {journey.mode === 'sessions' ? <> of <span className="font-mono">{packageSessions}</span> sessions done</> : <> session{completedSessions === 1 ? '' : 's'} done</>}
             </span>
-            <span className="text-[11px] text-white/40 font-mono">Week {journey.currentWeek} of {journey.totalWeeks}</span>
+            <span className="text-[11px] text-white/40 font-mono">
+              {journey.mode === 'sessions'
+                ? `${Math.max(0, (packageSessions || 0) - completedSessions)} left`
+                : `Week ${journey.currentWeek} of ${journey.totalWeeks}`}
+            </span>
           </div>
           <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
             <div
