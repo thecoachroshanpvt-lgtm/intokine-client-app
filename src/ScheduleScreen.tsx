@@ -24,8 +24,27 @@ interface ScheduledSession {
 
 type ViewMode = 'today' | 'week' | 'month';
 
+// Local calendar date (YYYY-MM-DD). toISOString() would use UTC and shift the
+// day for anyone ahead of UTC (e.g. Dubai) during the first hours of the day.
 function toDateKey(d: Date): string {
-  return d.toISOString().split('T')[0];
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseDateKey(key: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+}
+
+// "14:00" -> { clock: "2:00", period: "PM" }; anything unexpected is shown as-is.
+function formatTime(t: string): { clock: string; period: string } | null {
+  const m = /^(\d{1,2}):(\d{2})/.exec((t || '').trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  if (h > 23) return null;
+  return { clock: `${h % 12 === 0 ? 12 : h % 12}:${m[2]}`, period: h >= 12 ? 'PM' : 'AM' };
 }
 
 function startOfWeek(d: Date): Date {
@@ -118,24 +137,44 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     return map;
   }, [sessions]);
 
-  const renderSessionCard = (s: ScheduledSession) => (
-    <div key={s.id} className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <div className="text-sm font-semibold text-white">{s.date} {s.time && `· ${s.time}`}</div>
-          <div className="text-xs text-white/50 font-light mt-0.5">
-            {s.sessionType} · {s.location} · Coach {s.coachName}
+  const renderSessionCard = (s: ScheduledSession) => {
+    const d = parseDateKey(s.date);
+    const t = formatTime(s.time);
+    const color = statusColor(s.status);
+    return (
+      <div key={s.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+        <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+            {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
+          </div>
+          <div className="font-header text-2xl text-white leading-none mt-1.5 mb-1 tabular-nums">{d ? d.getDate() : '—'}</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
+            {d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}
           </div>
         </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-1">
+            {t ? (
+              <>
+                <span className="font-header text-2xl text-white leading-none tabular-nums tracking-wide">{t.clock}</span>
+                <span className="text-[10px] font-bold text-white/50">{t.period}</span>
+              </>
+            ) : (
+              <span className="text-sm font-bold text-white">{s.time || 'Time TBC'}</span>
+            )}
+          </div>
+          <div className="text-xs font-semibold text-white/80 mt-1 truncate">{s.sessionType}</div>
+          <div className="text-[11px] text-white/40 font-light truncate">{s.location} · Coach {s.coachName}</div>
+        </div>
         <span
-          className="text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap"
-          style={{ color: statusColor(s.status), borderColor: `${statusColor(s.status)}40`, backgroundColor: `${statusColor(s.status)}15` }}
+          className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
+          style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
         >
           {s.status.toUpperCase()}
         </span>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
