@@ -48,14 +48,14 @@ html, body {
   to { opacity: 1; }
 }
 @keyframes popRise {
-  from { opacity: 0; transform: translateY(14px) scale(0.97); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
-.anim-overlay { animation: popFade 0.22s ease-out both; }
-.anim-card { animation: popRise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; will-change: transform, opacity; }
+.anim-overlay { animation: popFade 0.15s ease-out both; }
+.anim-card { animation: popRise 0.2s cubic-bezier(0.32, 0.72, 0, 1) both; }
 /* Lists whose height is measured right after opening fade in once measured, so there is no visible jump. */
-.anim-list { animation: popFade 0.2s ease-out 0.08s both; }
-.anim-page { animation: popFade 0.25s ease-out both; }
+.anim-list { animation: popFade 0.12s ease-out 0.05s both; }
+.anim-page { animation: popFade 0.18s ease-out both; }
 button { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .anim-overlay, .anim-card, .anim-list, .anim-page { animation: none; }
