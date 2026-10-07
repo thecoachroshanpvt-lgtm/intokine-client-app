@@ -610,7 +610,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
         );
       })}
       {openItem && createPortal(
-        <div className="fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenId(null)}>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-5" style={{ background: 'rgba(15,15,16,0.8)' }} onClick={() => setOpenId(null)}>
           <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
               <div>
