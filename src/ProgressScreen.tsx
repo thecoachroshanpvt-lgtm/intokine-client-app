@@ -388,7 +388,8 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
     if (!openItem) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    document.body.setAttribute('data-popup-open', '1');
+    return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
   }, [openItem]);
   const unit = openItem?.unit ?? '/10';
   const hist = openItem?.history || [];
@@ -776,26 +777,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showMuscEndAchievementsPopup, setShowMuscEndAchievementsPopup] = useState(false);
   const [showBalanceAchievementsPopup, setShowBalanceAchievementsPopup] = useState(false);
 
-  // Phones leave a strip (home-indicator / status area) outside the dimmed popup
-  // layer that shows the page background. Darken it to match while a popup is open.
+  // While a popup is open the bottom navigation stays above its dimmed layer
+  // (see index.css), so it blends with the phone's home-indicator strip.
   useEffect(() => {
     const open = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup;
     if (!open) return;
-    const htmlEl = document.documentElement;
-    const bodyEl = document.body;
-    const prev = [htmlEl.style.backgroundColor, bodyEl.style.backgroundColor, htmlEl.style.transition, bodyEl.style.transition];
-    htmlEl.style.transition = 'background-color 0.15s ease-out';
-    bodyEl.style.transition = 'background-color 0.15s ease-out';
-    htmlEl.style.setProperty('background-color', '#080808', 'important');
-    bodyEl.style.setProperty('background-color', '#080808', 'important');
-    return () => {
-      htmlEl.style.removeProperty('background-color');
-      bodyEl.style.removeProperty('background-color');
-      htmlEl.style.backgroundColor = prev[0];
-      bodyEl.style.backgroundColor = prev[1];
-      htmlEl.style.transition = prev[2];
-      bodyEl.style.transition = prev[3];
-    };
+    document.body.setAttribute('data-popup-open', '1');
+    return () => { document.body.removeAttribute('data-popup-open'); };
   }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup, showMuscEndAchievementsPopup]);
 
   useEffect(() => {
