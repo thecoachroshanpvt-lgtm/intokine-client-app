@@ -792,7 +792,18 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     const meta = document.querySelector('meta[name="theme-color"]');
     const prev = meta ? meta.getAttribute('content') : null;
     if (meta) meta.setAttribute('content', '#0f0f10');
-    return () => { if (meta && prev !== null) meta.setAttribute('content', prev); };
+    // The strip above a fixed page is the html/body background, so match it too.
+    const htmlEl = document.documentElement;
+    const bodyEl = document.body;
+    const prevHtmlBg = htmlEl.style.backgroundColor;
+    const prevBodyBg = bodyEl.style.backgroundColor;
+    htmlEl.style.backgroundColor = '#0f0f10';
+    bodyEl.style.backgroundColor = '#0f0f10';
+    return () => {
+      if (meta && prev !== null) meta.setAttribute('content', prev);
+      htmlEl.style.backgroundColor = prevHtmlBg;
+      bodyEl.style.backgroundColor = prevBodyBg;
+    };
   }, [showSkillAchievementsPopup]);
 
   useEffect(() => {
