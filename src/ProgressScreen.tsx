@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   initializeClientFirebaseApp,
@@ -774,19 +774,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [clientSex, setClientSex] = useState<'male' | 'female' | undefined>(undefined);
   const [showCoreAchievementsPopup, setShowCoreAchievementsPopup] = useState(false);
   const [showMuscEndAchievementsPopup, setShowMuscEndAchievementsPopup] = useState(false);
-  const muscEndRoadmapListRef = useRef<HTMLDivElement | null>(null);
-  const [muscEndRoadmapMaxHeight, setMuscEndRoadmapMaxHeight] = useState<number | undefined>(undefined);
-  const coreRoadmapListRef = useRef<HTMLDivElement | null>(null);
-  const [coreRoadmapMaxHeight, setCoreRoadmapMaxHeight] = useState<number | undefined>(undefined);
   const [showBalanceAchievementsPopup, setShowBalanceAchievementsPopup] = useState(false);
-  const balanceRoadmapListRef = useRef<HTMLDivElement | null>(null);
-  const [balanceRoadmapMaxHeight, setBalanceRoadmapMaxHeight] = useState<number | undefined>(undefined);
-  const flexRoadmapListRef = useRef<HTMLDivElement | null>(null);
-  const [flexRoadmapMaxHeight, setFlexRoadmapMaxHeight] = useState<number | undefined>(undefined);
-  const movementRoadmapListRef = useRef<HTMLDivElement | null>(null);
-  const [movementRoadmapMaxHeight, setMovementRoadmapMaxHeight] = useState<number | undefined>(undefined);
-  const postureRoadmapListRef = useRef<HTMLDivElement | null>(null);
-  const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup || showSkillAchievementsPopup;
@@ -796,122 +784,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
       return () => { document.body.style.overflow = previousOverflow; };
     }
   }, [openBodyPartPopup, showWhereYouStandPopup, showPostureAchievementsPopup, showMovementAchievementsPopup, showFlexAchievementsPopup, showBalanceAchievementsPopup, showCoreAchievementsPopup, showMuscEndAchievementsPopup, showSkillAchievementsPopup]);
-
-  useEffect(() => {
-    if (!showPostureAchievementsPopup) {
-      setPostureRoadmapMaxHeight(undefined);
-      return;
-    }
-    // Measures the real rendered height of the first 3 entries (not a
-    // guessed pixel value) since entry height varies depending on
-    // whether a coach observation is present and how long it is -
-    // a fixed guess either cuts entries off or never triggers
-    // scrolling at all when entries turn out shorter than expected.
-    const raf = requestAnimationFrame(() => {
-      const container = postureRoadmapListRef.current;
-      if (!container) return;
-      container.scrollTop = 0;
-      const children = Array.from(container.children).slice(0, 3);
-      if (children.length === 0) return;
-      const containerRect = container.getBoundingClientRect();
-      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
-      const height = lastRect.bottom - containerRect.top;
-      setPostureRoadmapMaxHeight(height);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [showPostureAchievementsPopup]);
-
-  useEffect(() => {
-    if (!showMuscEndAchievementsPopup) {
-      setMuscEndRoadmapMaxHeight(undefined);
-      return;
-    }
-    const raf = requestAnimationFrame(() => {
-      const container = muscEndRoadmapListRef.current;
-      if (!container) return;
-      container.scrollTop = 0;
-      const children = Array.from(container.children).slice(0, 3);
-      if (children.length === 0) return;
-      const containerRect = container.getBoundingClientRect();
-      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
-      setMuscEndRoadmapMaxHeight(lastRect.bottom - containerRect.top);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [showMuscEndAchievementsPopup]);
-
-  useEffect(() => {
-    if (!showCoreAchievementsPopup) {
-      setCoreRoadmapMaxHeight(undefined);
-      return;
-    }
-    const raf = requestAnimationFrame(() => {
-      const container = coreRoadmapListRef.current;
-      if (!container) return;
-      container.scrollTop = 0;
-      const children = Array.from(container.children).slice(0, 3);
-      if (children.length === 0) return;
-      const containerRect = container.getBoundingClientRect();
-      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
-      setCoreRoadmapMaxHeight(lastRect.bottom - containerRect.top);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [showCoreAchievementsPopup]);
-
-  useEffect(() => {
-    if (!showBalanceAchievementsPopup) {
-      setBalanceRoadmapMaxHeight(undefined);
-      return;
-    }
-    const raf = requestAnimationFrame(() => {
-      const container = balanceRoadmapListRef.current;
-      if (!container) return;
-      container.scrollTop = 0;
-      const children = Array.from(container.children).slice(0, 3);
-      if (children.length === 0) return;
-      const containerRect = container.getBoundingClientRect();
-      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
-      setBalanceRoadmapMaxHeight(lastRect.bottom - containerRect.top);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [showBalanceAchievementsPopup]);
-
-  useEffect(() => {
-    if (!showFlexAchievementsPopup) {
-      setFlexRoadmapMaxHeight(undefined);
-      return;
-    }
-    // Same approach as the posture popup: show the first 3 entries, scroll for the rest.
-    const raf = requestAnimationFrame(() => {
-      const container = flexRoadmapListRef.current;
-      if (!container) return;
-      container.scrollTop = 0;
-      const children = Array.from(container.children).slice(0, 3);
-      if (children.length === 0) return;
-      const containerRect = container.getBoundingClientRect();
-      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
-      setFlexRoadmapMaxHeight(lastRect.bottom - containerRect.top);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [showFlexAchievementsPopup]);
-
-  useEffect(() => {
-    if (!showMovementAchievementsPopup) {
-      setMovementRoadmapMaxHeight(undefined);
-      return;
-    }
-    const raf = requestAnimationFrame(() => {
-      const container = movementRoadmapListRef.current;
-      if (!container) return;
-      container.scrollTop = 0;
-      const children = Array.from(container.children).slice(0, 3);
-      if (children.length === 0) return;
-      const containerRect = container.getBoundingClientRect();
-      const lastRect = (children[children.length - 1] as HTMLElement).getBoundingClientRect();
-      const height = lastRect.bottom - containerRect.top;
-      setMovementRoadmapMaxHeight(height);
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [showMovementAchievementsPopup]);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -1642,7 +1514,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <h3 className="text-sm font-bold text-white">Posture achievements</h3>
                             <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={postureRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: postureRoadmapMaxHeight }}>
+                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                             <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                           </div>
                         </div>
@@ -1711,7 +1583,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <h3 className="text-sm font-bold text-white">Flexibility & Mobility achievements</h3>
                             <button type="button" onClick={() => setShowFlexAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={flexRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: flexRoadmapMaxHeight }}>
+                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
                           </div>
                         </div>
@@ -1825,7 +1697,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <h3 className="text-sm font-bold text-white">Balance achievements</h3>
                             <button type="button" onClick={() => setShowBalanceAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={balanceRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: balanceRoadmapMaxHeight }}>
+                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
                           </div>
                         </div>
@@ -2024,7 +1896,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <h3 className="text-sm font-bold text-white">Core Endurance achievements</h3>
                             <button type="button" onClick={() => setShowCoreAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={coreRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: coreRoadmapMaxHeight }}>
+                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
                           </div>
                         </div>
@@ -2191,7 +2063,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <h3 className="text-sm font-bold text-white">Movement achievements</h3>
                             <button type="button" onClick={() => setShowMovementAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={movementRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: movementRoadmapMaxHeight }}>
+                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                             <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                           </div>
                         </div>
@@ -2326,7 +2198,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <h3 className="text-sm font-bold text-white">Muscular Endurance achievements</h3>
                             <button type="button" onClick={() => setShowMuscEndAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={muscEndRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: muscEndRoadmapMaxHeight }}>
+                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
                           </div>
                         </div>
