@@ -381,7 +381,7 @@ interface RoadmapItem {
 }
 
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
-const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }> = ({ items, compact }) => {
+const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; route?: boolean }> = ({ items, compact, route }) => {
   const [openId, setOpenId] = React.useState<string | null>(null);
   const openItem = items.find((x) => x.id === openId) || null;
   React.useEffect(() => {
@@ -397,7 +397,8 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
   const totalGain = firstScore !== null && lastScore !== null ? Math.round((lastScore - firstScore) * 10) / 10 : null;
   return (
   <div>
-    {items.map((it, i) => {
+    {route && <SkillRouteMap items={items} badge="Solved" onSelect={setOpenId} />}
+    {!route && items.map((it, i) => {
       const last = i === items.length - 1;
       return (
         <div key={it.id} className="flex gap-3">
@@ -551,9 +552,10 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean }
 
 /** Full-page celebration shown when every activity in a category has been passed. */
 /** Straight route-style roadmap: start at the bottom, climb stop by stop to the summit. */
-const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
-  const [openId, setOpenId] = React.useState<string | null>(null);
-  const openItem = items.find((x) => x.id === openId) || null;
+const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) => void; badge?: string }> = ({ items, onSelect, badge = 'Achieved' }) => {
+  const [ownId, setOwnId] = React.useState<string | null>(null);
+  const setOpenId = (id: string | null) => { if (id !== null && onSelect) onSelect(id); else setOwnId(id); };
+  const openItem = items.find((x) => x.id === ownId) || null;
   const STEP = 132;
   const TOP = 110;
   const H = TOP + items.length * STEP + 80;
@@ -600,8 +602,8 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
             >
               <span className="text-[11px] font-bold text-white uppercase tracking-wide block leading-tight">{it.name}</span>
               <span className="flex items-center gap-1.5 mt-1">
-                <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Achieved</span>
-                <span className="text-[10px] text-[#6ccbde] font-mono font-bold">{it.scoreText}</span>
+                <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">{badge}</span>
+                <span className="text-[10px] text-[#6ccbde] font-mono font-bold">{it.scoreText ?? (it.score !== undefined ? `${it.score}${it.unit ?? '/10'}` : '')}</span>
               </span>
             </button>
           </React.Fragment>
@@ -618,7 +620,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
               <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
             </div>
             <div className="p-4 space-y-3">
-              <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Achieved</span>
+              <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">{badge}</span>
               {openItem.note && <p className="text-xs text-white/70 leading-relaxed whitespace-pre-line">“{openItem.note}”</p>}
               {openItem.rows && openItem.rows.length > 0 && (
                 <div>
@@ -654,7 +656,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
     </div>
     <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4">
-      {route ? <SkillRouteMap items={items} /> : <AchievementsTimeline items={items} />}
+      {route ? <SkillRouteMap items={items} /> : <AchievementsTimeline route items={items} />}
     </div>
   </div>
 );
