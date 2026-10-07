@@ -17,9 +17,25 @@ export const ClientLoginScreen: React.FC = () => {
       if (!auth) throw new Error('Could not connect. Please try again.');
       await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
     } catch (err: any) {
-      const message = err?.code === 'auth/invalid-credential' || err?.code === 'auth/wrong-password' || err?.code === 'auth/user-not-found'
-        ? 'Incorrect email or password. Please try again.'
-        : 'Could not sign in. Please check your connection and try again.';
+      const code: string = err?.code || '';
+      let message: string;
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        message = 'Incorrect email or password. Please try again.';
+      } else if (code === 'auth/invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (code === 'auth/user-disabled') {
+        message = 'This account has been disabled. Please contact your coach.';
+      } else if (code === 'auth/too-many-requests') {
+        message = 'Too many attempts. Please wait a few minutes and try again.';
+      } else if (code === 'auth/network-request-failed') {
+        message = 'No internet connection. Please check your connection and try again.';
+      } else if (code === 'auth/web-storage-unsupported' || code === 'auth/operation-not-supported-in-this-environment') {
+        message = 'Your browser is blocking storage. Open this link in Safari or Chrome (not inside another app) and turn off Private Browsing.';
+      } else if (code.startsWith('auth/requests-from') || code === 'auth/api-key-not-valid.-please-pass-a-valid-api-key.' || code === 'auth/invalid-api-key' || code === 'auth/operation-not-allowed' || code === 'auth/unauthorized-domain') {
+        message = `This app link is not authorised yet. Please tell your coach (${code}).`;
+      } else {
+        message = `Could not sign in${code ? ` (${code})` : ''}. Please try again.`;
+      }
       setError(message);
     } finally {
       setLoading(false);
