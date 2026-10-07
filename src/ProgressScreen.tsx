@@ -608,8 +608,8 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
         );
       })}
       {openItem && (
-        <div className="fixed inset-0 z-[60] bg-black/70 flex items-end justify-center" onClick={() => setOpenId(null)}>
-          <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-t-2xl w-full max-w-md max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenId(null)}>
+          <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
               <div>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
