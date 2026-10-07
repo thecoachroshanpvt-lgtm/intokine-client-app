@@ -66,6 +66,7 @@ interface TodaySession {
   sessionType: string;
   location: string;
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
+  attendanceStatus?: string;
 }
 
 // Local calendar date (YYYY-MM-DD) - toISOString() is UTC and shifts the day
@@ -236,7 +237,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   };
 
   // Only sessions in the current package count - renewing starts a new package, so this restarts at 0.
-  const completedSessions = allSessionsList.filter((s) => s.status === 'Completed' && (!startDate || s.date >= startDate)).length;
+  const completedSessions = allSessionsList.filter((s) => (s.status === 'Completed' || s.attendanceStatus === 'Present') && (!startDate || s.date >= startDate)).length;
 
   const journey = (() => {
     if (!startDate || !renewalDate) return null;
