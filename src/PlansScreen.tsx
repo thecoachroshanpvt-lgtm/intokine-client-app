@@ -174,21 +174,21 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
     const { db } = initializeClientFirebaseApp();
     if (!db) return;
 
-    const fetchClientRecord = async () => {
-      try {
-        const clientDoc = await getDoc(doc(db, 'intokine_clients', clientId));
+    // Live listener: a renewal or date change made in Coach OS / Owner OS shows up here without reopening the app.
+    const unsubscribe = onSnapshot(
+      doc(db, 'intokine_clients', clientId),
+      (clientDoc) => {
         if (clientDoc.exists()) {
           const data = clientDoc.data();
           setStartDate(data.startDate || null);
           setRenewalDate(data.renewalDate || null);
           setProfilePhoto(data.profilePhotoBase64 || null);
         }
-      } catch (e) {
-        console.warn('Could not load client record:', e);
-      }
-    };
+      },
+      (e) => console.warn('Could not load client record:', e)
+    );
 
-    fetchClientRecord();
+    return () => unsubscribe();
   }, [clientId]);
 
   useEffect(() => {
