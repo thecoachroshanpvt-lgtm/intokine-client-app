@@ -63,3 +63,9 @@ button { -webkit-tap-highlight-color: transparent; }
 
 /* Bottom navigation stays above popup layers (z-50/60) while one is open. */
 body[data-popup-open] .bottom-nav { z-index: 70; }
+
+/* Numbers use Barlow digits (see index.html); keep the "mono" number style on the same font. */
+.font-mono {
+  font-family: "Barlow", "Raleway", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
