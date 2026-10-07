@@ -576,12 +576,6 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
   const [ownId, setOwnId] = React.useState<string | null>(null);
   const setOpenId = (id: string | null) => { if (id !== null && onSelect) onSelect(id); else setOwnId(id); };
   const openItem = items.find((x) => x.id === ownId) || null;
-  React.useEffect(() => {
-    if (!openItem) return;
-    // Dimmed overlay: darken the status bar to match it.
-    const restore = applyThemeColor('#040405');
-    return restore;
-  }, [openItem]);
   const STEP = 132;
   const TOP = 110;
   const H = TOP + items.length * STEP + 80;
@@ -636,7 +630,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
         );
       })}
       {openItem && createPortal(
-        <div className="fixed top-0 left-0 right-0 bottom-0 z-[110] bg-black/70 flex items-center justify-center p-5" style={{ minHeight: '100dvh' }} onClick={() => setOpenId(null)}>
+        <div className="fixed z-[110] bg-black/70 flex items-center justify-center p-5" style={{ top: -120, left: 0, right: 0, bottom: -120 }} onClick={() => setOpenId(null)}>
           <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
               <div>
@@ -1474,8 +1468,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               </button>
             )}
             {showSkillAchievementsPopup && createPortal(
-              <div className="fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
-                <div className="sticky top-0 z-10 bg-[#0f0f10]/95 backdrop-blur border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+              <div className="fixed z-[100] bg-[#0f0f10] overflow-y-auto" style={{ top: -120, left: 0, right: 0, bottom: -120, paddingTop: 120, paddingBottom: 120 }}>
+                <div className="sticky z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3" style={{ top: 120 }}>
                   <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
                   <div>
                     <h3 className="text-sm font-bold text-white">Skill achievements</h3>
