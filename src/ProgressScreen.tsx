@@ -435,8 +435,8 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
       );
     })}
     {openItem && (
-      <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5" onClick={(e) => { e.stopPropagation(); setOpenId(null); }}>
-        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5" onClick={(e) => { e.stopPropagation(); setOpenId(null); }}>
+        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
             <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
             <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
@@ -610,8 +610,8 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
         );
       })}
       {openItem && createPortal(
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-5" style={{ background: 'rgba(15,15,16,0.8)' }} onClick={() => setOpenId(null)}>
-          <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="anim-overlay fixed inset-0 z-[110] flex items-center justify-center p-5" style={{ background: 'rgba(15,15,16,0.8)' }} onClick={() => setOpenId(null)}>
+          <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
               <div>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
@@ -1121,8 +1121,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             )}
 
             {showWhereYouStandPopup && (
-              <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowWhereYouStandPopup(false)}>
-                <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowWhereYouStandPopup(false)}>
+                <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                   <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
                     <h3 className="text-sm font-bold text-white">Where you stand</h3>
                     <button type="button" onClick={() => setShowWhereYouStandPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
@@ -1298,7 +1298,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 <style>{`@keyframes whrBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }`}</style>
 
                 {openBodyPartPopup && (
-                  <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenBodyPartPopup(null)}>
+                  <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenBodyPartPopup(null)}>
                     <div className="bg-[#242426] border border-white/[0.1] rounded-2xl p-4 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="text-sm font-bold text-white">
@@ -1429,7 +1429,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               </button>
             )}
             {showSkillAchievementsPopup && createPortal(
-              <div className="fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
+              <div className="anim-page fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
                 <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
                   <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
                   <div>
@@ -1636,13 +1636,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     )}
 
                     {showPostureAchievementsPopup && (
-                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowPostureAchievementsPopup(false)}>
-                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowPostureAchievementsPopup(false)}>
+                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Posture achievements</h3>
                             <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={postureRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: postureRoadmapMaxHeight }}>
+                          <div ref={postureRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: postureRoadmapMaxHeight }}>
                             <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                           </div>
                         </div>
@@ -1705,13 +1705,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </button>
                     )}
                     {showFlexAchievementsPopup && (
-                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowFlexAchievementsPopup(false)}>
-                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowFlexAchievementsPopup(false)}>
+                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Flexibility & Mobility achievements</h3>
                             <button type="button" onClick={() => setShowFlexAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={flexRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: flexRoadmapMaxHeight }}>
+                          <div ref={flexRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: flexRoadmapMaxHeight }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
                           </div>
                         </div>
@@ -1819,13 +1819,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </button>
                     )}
                     {showBalanceAchievementsPopup && (
-                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowBalanceAchievementsPopup(false)}>
-                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowBalanceAchievementsPopup(false)}>
+                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Balance achievements</h3>
                             <button type="button" onClick={() => setShowBalanceAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={balanceRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: balanceRoadmapMaxHeight }}>
+                          <div ref={balanceRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: balanceRoadmapMaxHeight }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
                           </div>
                         </div>
@@ -2018,13 +2018,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </button>
                     )}
                     {showCoreAchievementsPopup && (
-                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowCoreAchievementsPopup(false)}>
-                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowCoreAchievementsPopup(false)}>
+                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Core Endurance achievements</h3>
                             <button type="button" onClick={() => setShowCoreAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={coreRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: coreRoadmapMaxHeight }}>
+                          <div ref={coreRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: coreRoadmapMaxHeight }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
                           </div>
                         </div>
@@ -2185,13 +2185,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     )}
 
                     {showMovementAchievementsPopup && (
-                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMovementAchievementsPopup(false)}>
-                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMovementAchievementsPopup(false)}>
+                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Movement achievements</h3>
                             <button type="button" onClick={() => setShowMovementAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={movementRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: movementRoadmapMaxHeight }}>
+                          <div ref={movementRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: movementRoadmapMaxHeight }}>
                             <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                           </div>
                         </div>
@@ -2320,13 +2320,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </button>
                     )}
                     {showMuscEndAchievementsPopup && (
-                      <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMuscEndAchievementsPopup(false)}>
-                        <div className="bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMuscEndAchievementsPopup(false)}>
+                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Muscular Endurance achievements</h3>
                             <button type="button" onClick={() => setShowMuscEndAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                           </div>
-                          <div ref={muscEndRoadmapListRef} className="p-4 overflow-y-auto" style={{ maxHeight: muscEndRoadmapMaxHeight }}>
+                          <div ref={muscEndRoadmapListRef} className="anim-list p-4 overflow-y-auto" style={{ maxHeight: muscEndRoadmapMaxHeight }}>
                             <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
                           </div>
                         </div>
