@@ -60,3 +60,6 @@ button { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   .anim-overlay, .anim-card, .anim-list, .anim-page { animation: none; }
 }
+
+/* Bottom navigation stays above popup layers (z-50/60) while one is open. */
+body[data-popup-open] .bottom-nav { z-index: 70; }
