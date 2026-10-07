@@ -653,7 +653,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Level complete</p>
       <h2 className="text-lg font-bold text-white mt-1">{title}</h2>
       <p className="text-xs text-white/50 mt-1">{items.length} of {items.length} activities solved</p>
-      <div className="mt-3 h-1.5 bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
+      <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
     </div>
     <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4">
       {route ? <SkillRouteMap items={items} /> : <AchievementsTimeline route items={items} />}
