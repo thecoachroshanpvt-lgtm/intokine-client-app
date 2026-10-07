@@ -960,6 +960,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             unit,
             current: num(valueKey),
             normal: from !== undefined && to !== undefined ? `${from}-${to}` : String(from ?? to ?? '—'),
+            nMin: from,
+            nMax: to,
             goal: num(`${prefix}Goal` as keyof AssessmentSnapshot),
           };
         };
@@ -1002,38 +1004,74 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               </button>
             )}
 
-            {showWhereYouStandPopup && (
+            {showWhereYouStandPopup && (() => {
+              const inRange = (r: typeof bcaRows[number]) => r.current !== undefined && r.nMin !== undefined && r.nMax !== undefined && r.current >= r.nMin && r.current <= r.nMax;
+              const measurable = bcaRows.filter((r) => r.current !== undefined && r.nMin !== undefined && r.nMax !== undefined);
+              const okCount = measurable.filter(inRange).length;
+              return (
               <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6" onClick={() => setShowWhereYouStandPopup(false)}>
-                <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-[18rem] max-h-[72vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                  <div className="px-3 py-2 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
-                    <h3 className="text-xs font-bold text-white">Where you stand</h3>
-                    <button type="button" onClick={() => setShowWhereYouStandPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
-                  </div>
-                  <div className="divide-y divide-white/[0.05]">
-                    {bcaRows.map((row) => (
-                      <div key={row.label} className="px-3 py-2 space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] font-bold text-white">{row.label}</span>
-                          <span className="text-sm font-black text-white font-mono">
-                            {row.current !== undefined ? `${row.current}${row.unit}` : '—'}
-                          </span>
+                <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-xs max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="relative px-4 pt-4 pb-3 border-b border-white/[0.06] sticky top-0 bg-[#1c1c1e] z-10" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.10), #1c1c1e)' }}>
+                    <button type="button" onClick={() => setShowWhereYouStandPopup(false)} className="absolute top-3 right-3 text-white/40 text-lg leading-none px-1">×</button>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde] block">Your progress</span>
+                    <h3 className="text-base font-bold text-white mt-0.5">Where you stand</h3>
+                    {measurable.length > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full bg-emerald-400" style={{ width: `${(okCount / measurable.length) * 100}%` }} />
                         </div>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <div className="rounded-lg px-2.5 py-1" style={{ background: 'rgba(52, 211, 153, 0.08)' }}>
-                            <span className="text-[9px] text-emerald-400/70 uppercase font-bold tracking-wide block">Normal</span>
-                            <span className="text-[11px] font-bold text-emerald-300 font-mono">{row.normal}</span>
-                          </div>
-                          <div className="rounded-lg px-2.5 py-1" style={{ background: 'rgba(108, 203, 222, 0.08)' }}>
-                            <span className="text-[9px] text-[#6ccbde]/70 uppercase font-bold tracking-wide block">Goal</span>
-                            <span className="text-[11px] font-bold text-[#6ccbde] font-mono">{row.goal !== undefined ? `${row.goal}${row.unit}` : '—'}</span>
-                          </div>
-                        </div>
+                        <span className="text-[10px] font-bold text-white/60 font-mono">{okCount}/{measurable.length} healthy</span>
                       </div>
-                    ))}
+                    )}
+                  </div>
+                  <div className="p-3 space-y-2.5">
+                    {bcaRows.map((row) => {
+                      const hasRange = row.nMin !== undefined && row.nMax !== undefined;
+                      const cur = row.current;
+                      const status = cur === undefined || !hasRange ? null : cur < (row.nMin as number) ? 'below' : cur > (row.nMax as number) ? 'above' : 'ok';
+                      const tone = status === 'ok' ? { text: 'text-emerald-300', chip: 'bg-emerald-500/20 text-emerald-300', hex: '#34d399', label: 'In healthy range' } : status ? { text: 'text-amber-300', chip: 'bg-amber-500/20 text-amber-300', hex: '#fbbf24', label: status === 'below' ? 'Below range' : 'Above range' } : { text: 'text-white', chip: '', hex: '#6ccbde', label: '' };
+                      const pts = [cur, row.nMin, row.nMax, row.goal].filter((v): v is number => v !== undefined);
+                      const lo = pts.length ? Math.min(...pts) : 0;
+                      const hi = pts.length ? Math.max(...pts) : 1;
+                      const pad = (hi - lo) * 0.25 || 1;
+                      const sMin = lo - pad;
+                      const sMax = hi + pad;
+                      const pos = (v: number) => `${Math.max(0, Math.min(100, ((v - sMin) / (sMax - sMin)) * 100))}%`;
+                      const toGoal = cur !== undefined && row.goal !== undefined ? Math.round(Math.abs(cur - row.goal) * 10) / 10 : undefined;
+                      return (
+                        <div key={row.label} className="bg-[#242426] border border-white/[0.06] rounded-xl px-3 py-2.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block">{row.label}</span>
+                              <span className={`text-xl font-black font-mono leading-tight ${tone.text}`}>{cur !== undefined ? `${cur}${row.unit}` : '—'}</span>
+                            </div>
+                            {status && <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${tone.chip}`}>{tone.label}</span>}
+                          </div>
+                          {cur !== undefined && pts.length > 1 && (
+                            <div className="relative h-5 mt-2">
+                              <div className="absolute left-0 right-0 top-2 h-1.5 rounded-full bg-white/10" />
+                              {hasRange && <div className="absolute top-2 h-1.5 rounded-full bg-emerald-400/50" style={{ left: pos(row.nMin as number), width: `calc(${pos(row.nMax as number)} - ${pos(row.nMin as number)})` }} />}
+                              {row.goal !== undefined && <div className="absolute top-0.5 w-0.5 h-4 bg-[#6ccbde]" style={{ left: pos(row.goal) }} />}
+                              <div className="absolute top-1 w-3.5 h-3.5 -ml-[7px] rounded-full border-2 border-[#1c1c1e]" style={{ left: pos(cur), background: tone.hex, boxShadow: `0 0 8px ${tone.hex}` }} />
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between mt-1 text-[10px] font-mono">
+                            <span className="text-emerald-300/80">Normal {row.normal}</span>
+                            <span className="text-[#6ccbde]">{row.goal !== undefined ? `Goal ${row.goal}${row.unit}` : 'No goal set'}</span>
+                          </div>
+                          {toGoal !== undefined && (
+                            <p className="text-[11px] mt-1.5 font-semibold text-white/70">
+                              {toGoal === 0 ? '🎯 Goal reached - keep it up!' : `${toGoal}${row.unit} to your goal - you can do it!`}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
-            )}
+              );
+            })()}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
