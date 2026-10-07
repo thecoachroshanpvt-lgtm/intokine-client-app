@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   initializeClientFirebaseApp,
   collection,
@@ -568,8 +569,8 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
   return (
     <div className="relative" style={{ height: H }}>
       <svg className="absolute inset-0 w-full h-full" viewBox={`0 0 100 ${H}`} preserveAspectRatio="none">
-        <path d={d} fill="none" stroke="rgba(108,203,222,0.14)" strokeWidth="16" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-        <path d={d} fill="none" stroke="#6ccbde" strokeWidth="5" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={d} fill="none" stroke="rgba(108,203,222,0.14)" strokeWidth="10" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <path d={d} fill="none" stroke="#6ccbde" strokeWidth="3" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${summit.x}%`, top: summit.y }}>
         <div className="w-12 h-12 rounded-full bg-[#242426] border-2 border-[#6ccbde] flex items-center justify-center text-xl shadow-[0_0_24px_rgba(108,203,222,0.45)]">🏆</div>
@@ -1424,8 +1425,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
               </button>
             )}
-            {showSkillAchievementsPopup && (
-              <div className="fixed inset-0 z-50 bg-[#0f0f10] overflow-y-auto">
+            {showSkillAchievementsPopup && createPortal(
+              <div className="fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
                 <div className="sticky top-0 z-10 bg-[#0f0f10]/95 backdrop-blur border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
                   <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
                   <div>
@@ -1436,7 +1437,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 <div className="max-w-md mx-auto px-4 py-6">
                   <SkillRouteMap items={skillItems} />
                 </div>
-              </div>
+              </div>,
+              document.body
             )}
             {[...activeRoadmaps].reverse().map(([skillName, steps]) => (
               <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
