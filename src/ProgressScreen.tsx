@@ -551,11 +551,37 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
 };
 
 /** Full-page celebration shown when every activity in a category has been passed. */
+/** Sets the browser/status-bar colour by swapping in a fresh theme-color meta (some browsers ignore attribute edits). Returns a restore function. */
+const applyThemeColor = (color: string): (() => void) => {
+  const old = Array.from(document.querySelectorAll('meta[name="theme-color"]'));
+  const prevValues = old.map((m) => m.getAttribute('content') || '');
+  old.forEach((m) => m.remove());
+  const fresh = document.createElement('meta');
+  fresh.setAttribute('name', 'theme-color');
+  fresh.setAttribute('content', color);
+  document.head.appendChild(fresh);
+  return () => {
+    fresh.remove();
+    prevValues.forEach((v) => {
+      const m = document.createElement('meta');
+      m.setAttribute('name', 'theme-color');
+      m.setAttribute('content', v);
+      document.head.appendChild(m);
+    });
+  };
+};
+
 /** Straight route-style roadmap: start at the bottom, climb stop by stop to the summit. */
 const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) => void; badge?: string }> = ({ items, onSelect, badge = 'Achieved' }) => {
   const [ownId, setOwnId] = React.useState<string | null>(null);
   const setOpenId = (id: string | null) => { if (id !== null && onSelect) onSelect(id); else setOwnId(id); };
   const openItem = items.find((x) => x.id === ownId) || null;
+  React.useEffect(() => {
+    if (!openItem) return;
+    // Dimmed overlay: darken the status bar to match it.
+    const restore = applyThemeColor('#040405');
+    return restore;
+  }, [openItem]);
   const STEP = 132;
   const TOP = 110;
   const H = TOP + items.length * STEP + 80;
@@ -792,9 +818,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   // (status) bar to match it, then restore the app's colour on close.
   useEffect(() => {
     if (!showSkillAchievementsPopup) return;
-    const meta = document.querySelector('meta[name="theme-color"]');
-    const prev = meta ? meta.getAttribute('content') : null;
-    if (meta) meta.setAttribute('content', '#0f0f10');
+    const restoreTheme = applyThemeColor('#0f0f10');
     // The strip above a fixed page is the html/body background, so match it too.
     const htmlEl = document.documentElement;
     const bodyEl = document.body;
@@ -803,7 +827,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     htmlEl.style.backgroundColor = '#0f0f10';
     bodyEl.style.backgroundColor = '#0f0f10';
     return () => {
-      if (meta && prev !== null) meta.setAttribute('content', prev);
+      restoreTheme();
       htmlEl.style.backgroundColor = prevHtmlBg;
       bodyEl.style.backgroundColor = prevBodyBg;
     };
