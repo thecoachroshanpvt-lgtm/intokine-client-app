@@ -5,13 +5,6 @@ html, body {
   padding: 0;
 }
 
-/* The page extends under the phone's status bar (viewport-fit=cover), so
-   normal content is pushed down by the safe-area while full-screen layers
-   (popups, pages) can cover the whole screen. */
-body {
-  padding-top: env(safe-area-inset-top);
-}
-
 /* Hides the scrollbar on the PRQ date wheel picker columns, while
    keeping the actual scroll/snap behavior fully intact - Firefox is
    handled inline via scrollbarWidth, this covers Safari and Chrome. */
