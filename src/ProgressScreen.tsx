@@ -380,10 +380,22 @@ interface RoadmapItem {
   rowsTitle?: string;
 }
 
+/** While active, lets fixed full-screen layers (popups) extend under the phone's status bar so their dimmed backdrop leaves no un-dimmed strip at the top. */
+const useViewportCover = (active: boolean) => {
+  useEffect(() => {
+    if (!active) return;
+    const vp = document.querySelector('meta[name="viewport"]');
+    const prev = vp ? vp.getAttribute('content') : null;
+    if (vp && prev && !/viewport-fit/.test(prev)) vp.setAttribute('content', `${prev}, viewport-fit=cover`);
+    return () => { if (vp && prev !== null) vp.setAttribute('content', prev); };
+  }, [active]);
+};
+
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
 const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; route?: boolean }> = ({ items, compact, route }) => {
   const [openId, setOpenId] = React.useState<string | null>(null);
   const openItem = items.find((x) => x.id === openId) || null;
+  useViewportCover(!!openItem);
   React.useEffect(() => {
     if (!openItem) return;
     const prev = document.body.style.overflow;
@@ -852,6 +864,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
       bodyEl.style.backgroundColor = prevBodyBg;
     };
   }, [showSkillAchievementsPopup]);
+
+  useViewportCover(!!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup);
 
   useEffect(() => {
     const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup || showSkillAchievementsPopup;
