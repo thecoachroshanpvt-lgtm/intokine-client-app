@@ -785,6 +785,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const postureRoadmapListRef = useRef<HTMLDivElement | null>(null);
   const [postureRoadmapMaxHeight, setPostureRoadmapMaxHeight] = useState<number | undefined>(undefined);
 
+  // While the full-screen skill route page is open, colour the browser's top
+  // (status) bar to match it, then restore the app's colour on close.
+  useEffect(() => {
+    if (!showSkillAchievementsPopup) return;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = meta ? meta.getAttribute('content') : null;
+    if (meta) meta.setAttribute('content', '#0f0f10');
+    return () => { if (meta && prev !== null) meta.setAttribute('content', prev); };
+  }, [showSkillAchievementsPopup]);
+
   useEffect(() => {
     const anyPopupOpen = !!openBodyPartPopup || showWhereYouStandPopup || showPostureAchievementsPopup || showMovementAchievementsPopup || showFlexAchievementsPopup || showBalanceAchievementsPopup || showCoreAchievementsPopup || showMuscEndAchievementsPopup || showSkillAchievementsPopup;
     if (anyPopupOpen) {
