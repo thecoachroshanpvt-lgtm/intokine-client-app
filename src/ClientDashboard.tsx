@@ -312,7 +312,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
       )}
 
       {/* Bottom navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1c1c1c]/95 backdrop-blur-md border-t border-white/[0.08]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-[#1c1c1c]/95 backdrop-blur-md border-t border-white/[0.08]">
         <div className="flex items-center justify-around max-w-4xl mx-auto px-2 py-2">
           {[
             {
