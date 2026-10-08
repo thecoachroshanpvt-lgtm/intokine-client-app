@@ -427,35 +427,34 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         )}
       </div>
 
-      {/* Today's suggested workout - self-guided, tap to open the training page */}
-      {(() => {
-        const todayKey = new Date().toISOString().split('T')[0];
-        // Every workout the coach sends is self-guided, so any shared plan dated today is today's workout.
-        const todaysSuggestedWorkout = plans.find((p) => p.date === todayKey);
-        if (!todaysSuggestedWorkout) return null;
-        const done = !!todaysSuggestedWorkout.clientCompletedAt;
-        return (
-          <button
-            onClick={() => setSelectedWorkout(todaysSuggestedWorkout)}
-            className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 border border-white/[0.12] hover:border-white/25 rounded-2xl p-4 space-y-1.5 transition"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">
-                {done ? 'Suggested Workout · Done' : "Today's Suggested Workout"}
-              </span>
-              <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full">
-                {done ? '✓' : 'Tap to start →'}
-              </span>
-            </div>
-            <p className="text-sm font-bold text-white">{todaysSuggestedWorkout.planTitle}</p>
-            <p className="text-[11px] text-white/50 font-light">
-              {todaysSuggestedWorkout.category}
-              {todaysSuggestedWorkout.durationMinutes ? ` · ${todaysSuggestedWorkout.durationMinutes} mins` : ''}
-              {' · Do this on your own today'}
-            </p>
-          </button>
-        );
-      })()}
+      {/* Today's workouts - self-guided, tap to open the training page. Shown once here, not repeated in the list below. */}
+      {plans
+        .filter((p) => p.date === toDateKey(new Date()))
+        .map((todaysWorkout) => {
+          const done = !!todaysWorkout.clientCompletedAt;
+          return (
+            <button
+              key={todaysWorkout.id}
+              onClick={() => setSelectedWorkout(todaysWorkout)}
+              className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 border border-white/[0.12] hover:border-white/25 rounded-2xl p-4 space-y-1.5 transition"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">
+                  {done ? "Today's Workout · Done" : "Today's Workout"}
+                </span>
+                <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full">
+                  {done ? '✓' : 'Tap to start →'}
+                </span>
+              </div>
+              <p className="text-sm font-bold text-white">{todaysWorkout.planTitle}</p>
+              <p className="text-[11px] text-white/50 font-light">
+                {todaysWorkout.category}
+                {todaysWorkout.durationMinutes ? ` · ${todaysWorkout.durationMinutes} mins` : ''}
+                {' · Do this on your own today'}
+              </p>
+            </button>
+          );
+        })}
 
       {/* Training plans */}
       {plansLoading ? (
@@ -468,7 +467,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {plans.map((plan) => {
+          {plans.filter((p) => p.date !== toDateKey(new Date())).map((plan) => {
             const isSuggested = true; // every workout shared by the coach opens the training page
             const done = !!plan.clientCompletedAt;
             return (
@@ -507,7 +506,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                 {isSuggested && (
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">
-                      Self-Guided Workout
+                      {plan.date > toDateKey(new Date()) ? 'Upcoming' : 'Workout'}
                     </span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${done ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white'}`}>
                       {done ? '✓ Done' : 'Tap to start →'}
