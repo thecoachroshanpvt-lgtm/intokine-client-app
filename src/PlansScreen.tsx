@@ -485,7 +485,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
       {/* Training plans */}
       {plansLoading ? (
         <div className="text-center py-12 text-white/40 text-sm font-light">Loading your plans...</div>
-      ) : plans.length === 0 ? (
+      ) : plans.filter((p) => p.date >= toDateKey(new Date())).length === 0 ? (
         <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
           <p className="text-sm text-white/50 font-light leading-relaxed">
             Nothing shared yet — your coach will share your training plans here once they're ready.
@@ -493,7 +493,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {plans.filter((p) => p.date !== toDateKey(new Date())).map((plan) => {
+          {plans.filter((p) => p.date > toDateKey(new Date())).map((plan) => {
             const isSuggested = true; // every workout shared by the coach opens the training page
             const done = !!plan.clientCompletedAt;
             return (
