@@ -378,83 +378,103 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         </div>
       )}
 
-      {/* Today's sessions - same card design as the Schedule tab */}
-      <div className="space-y-2">
-        <span className="text-[11px] text-white/40 uppercase font-semibold block">Today</span>
-        {todaySessions.length === 0 ? (
-          <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
-            <p className="text-sm text-white/50 font-light leading-relaxed">Nothing scheduled for today.</p>
+      {/* Today - the suggested workout assigned for today (do it any time) plus any coach session */}
+      {(() => {
+        const todayKey = toDateKey(new Date());
+        const todaysWorkouts = plans.filter((p) => p.date === todayKey);
+        const d = parseDateKey(todayKey);
+        const dateTile = (
+          <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+              {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
+            </div>
+            <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
+              {d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}
+            </div>
           </div>
-        ) : (
-          todaySessions.map((s) => {
-            const d = parseDateKey(s.date);
-            const t = formatTime(s.time);
-            const color = statusColor(s.status);
-            return (
-              <div key={s.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
-                <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
-                    {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
-                  </div>
-                  <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
-                    {d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-1">
-                    {t ? (
-                      <>
-                        <span className="text-base font-semibold font-mono text-white leading-none">{t.clock}</span>
-                        <span className="text-[10px] font-bold text-white/50">{t.period}</span>
-                      </>
-                    ) : (
-                      <span className="text-sm font-bold text-white">{s.time || 'Time TBC'}</span>
-                    )}
-                  </div>
-                  <div className="text-xs font-semibold text-white/80 mt-1 truncate">{s.sessionType}</div>
-                  <div className="text-[11px] text-white/40 font-light truncate">{s.location} · Coach {s.coachName}</div>
-                </div>
-                <span
-                  className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
-                  style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
-                >
-                  {s.status.toUpperCase()}
-                </span>
-              </div>
-            );
-          })
-        )}
-      </div>
+        );
+        return (
+          <div className="space-y-2">
+            <span className="text-[11px] text-white/40 uppercase font-semibold block">Today</span>
 
-      {/* Today's workouts - self-guided, tap to open the training page. Shown once here, not repeated in the list below. */}
-      {plans
-        .filter((p) => p.date === toDateKey(new Date()))
-        .map((todaysWorkout) => {
-          const done = !!todaysWorkout.clientCompletedAt;
-          return (
-            <button
-              key={todaysWorkout.id}
-              onClick={() => setSelectedWorkout(todaysWorkout)}
-              className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 border border-white/[0.12] hover:border-white/25 rounded-2xl p-4 space-y-1.5 transition"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">
-                  {done ? "Today's Workout · Done" : "Today's Workout"}
-                </span>
-                <span className="text-[10px] font-bold text-white bg-white/10 px-2 py-0.5 rounded-full">
-                  {done ? '✓' : 'Tap to start →'}
-                </span>
+            {todaysWorkouts.map((w) => {
+              const done = !!w.clientCompletedAt;
+              const color = done ? '#34d399' : '#ec2226';
+              return (
+                <button
+                  key={w.id}
+                  type="button"
+                  onClick={() => setSelectedWorkout(w)}
+                  className="w-full text-left bg-[#242426] hover:bg-[#2b2b2e] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3 transition"
+                >
+                  {dateTile}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">Suggested workout</div>
+                    <div className="text-sm font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
+                    <div className="text-[11px] text-white/40 font-light truncate">
+                      Do it any time today
+                      {w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}
+                    </div>
+                  </div>
+                  <span
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
+                    style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
+                  >
+                    {done ? 'DONE' : 'ASSIGNED'}
+                  </span>
+                </button>
+              );
+            })}
+
+            {todaySessions.map((s) => {
+              const sd = parseDateKey(s.date);
+              const t = formatTime(s.time);
+              const color = statusColor(s.status);
+              return (
+                <div key={s.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                  <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+                      {sd ? sd.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
+                    </div>
+                    <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{sd ? sd.getDate() : '—'}</div>
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
+                      {sd ? sd.toLocaleDateString(undefined, { month: 'short' }) : ''}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none mb-1.5">Session with coach</div>
+                    <div className="flex items-baseline gap-1">
+                      {t ? (
+                        <>
+                          <span className="text-base font-semibold font-mono text-white leading-none">{t.clock}</span>
+                          <span className="text-[10px] font-bold text-white/50">{t.period}</span>
+                        </>
+                      ) : (
+                        <span className="text-sm font-bold text-white">{s.time || 'Time TBC'}</span>
+                      )}
+                    </div>
+                    <div className="text-xs font-semibold text-white/80 mt-1 truncate">{s.sessionType}</div>
+                    <div className="text-[11px] text-white/40 font-light truncate">{s.location} · Coach {s.coachName}</div>
+                  </div>
+                  <span
+                    className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
+                    style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
+                  >
+                    {s.status.toUpperCase()}
+                  </span>
+                </div>
+              );
+            })}
+
+            {todaysWorkouts.length === 0 && todaySessions.length === 0 && (
+              <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+                <p className="text-sm text-white/50 font-light leading-relaxed">Nothing assigned for today.</p>
               </div>
-              <p className="text-sm font-bold text-white">{todaysWorkout.planTitle}</p>
-              <p className="text-[11px] text-white/50 font-light">
-                {todaysWorkout.category}
-                {todaysWorkout.durationMinutes ? ` · ${todaysWorkout.durationMinutes} mins` : ''}
-                {' · Do this on your own today'}
-              </p>
-            </button>
-          );
-        })}
+            )}
+          </div>
+        );
+      })()}
 
       {/* Training plans */}
       {plansLoading ? (
