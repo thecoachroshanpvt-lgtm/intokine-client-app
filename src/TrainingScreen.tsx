@@ -12,6 +12,10 @@ interface TrainerizeSet {
   targetReps: number;
   rpe?: number;
   restSeconds?: number;
+  holdSeconds?: number;
+  durationMinutes?: number;
+  distanceKm?: number;
+  method?: string;
 }
 
 interface TrainerizeExercise {
@@ -21,6 +25,7 @@ interface TrainerizeExercise {
   equipment?: string;
   targetMuscle?: string;
   supersetTag?: string;
+  exerciseType?: 'Weighted' | 'Bodyweight' | 'Isometric' | 'DistanceCardio' | 'DurationCardio';
   sets: TrainerizeSet[];
   coachCues?: string;
   previousBestPerformance?: string;
@@ -171,8 +176,14 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                           {s.setType !== 'Working' ? `${s.setType} · ` : ''}Set {s.setNumber}
                         </span>
                         <span className="text-white font-mono">
-                          {s.targetWeightKg ? `${s.targetWeightKg}kg × ` : ''}{s.targetReps} reps
-                          {s.rpe ? ` @ RPE ${s.rpe}` : ''}
+                          {ex.exerciseType === 'Isometric'
+                            ? `${s.holdSeconds || 0}s hold`
+                            : ex.exerciseType === 'DurationCardio'
+                            ? `${s.durationMinutes || 0} min${s.method ? ` · ${s.method}` : ''}`
+                            : ex.exerciseType === 'DistanceCardio'
+                            ? `${s.distanceKm || 0} km${s.method ? ` · ${s.method}` : ''}`
+                            : `${ex.exerciseType !== 'Bodyweight' && s.targetWeightKg ? `${s.targetWeightKg}kg × ` : ''}${s.targetReps} reps`}
+                          {s.rpe && !(ex.exerciseType === 'DurationCardio' || ex.exerciseType === 'DistanceCardio') ? ` @ RPE ${s.rpe}` : ''}
                         </span>
                       </div>
                     ))}
