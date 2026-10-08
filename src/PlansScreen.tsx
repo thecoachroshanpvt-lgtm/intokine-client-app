@@ -430,7 +430,8 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
       {/* Today's suggested workout - self-guided, tap to open the training page */}
       {(() => {
         const todayKey = new Date().toISOString().split('T')[0];
-        const todaysSuggestedWorkout = plans.find((p) => p.isSuggestedWorkout && p.date === todayKey);
+        // Every workout the coach sends is self-guided, so any shared plan dated today is today's workout.
+        const todaysSuggestedWorkout = plans.find((p) => p.date === todayKey);
         if (!todaysSuggestedWorkout) return null;
         const done = !!todaysSuggestedWorkout.clientCompletedAt;
         return (
@@ -468,7 +469,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {plans.map((plan) => {
-            const isSuggested = !!plan.isSuggestedWorkout;
+            const isSuggested = true; // every workout shared by the coach opens the training page
             const done = !!plan.clientCompletedAt;
             return (
               <div
