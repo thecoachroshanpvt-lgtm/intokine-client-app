@@ -406,13 +406,17 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                   key={w.id}
                   type="button"
                   onClick={() => setSelectedWorkout(w)}
-                  className="w-full text-left bg-[#242426] hover:bg-[#2b2b2e] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3 transition"
+                  className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 hover:from-[#ec2226]/25 hover:to-[#6ccbde]/20 border border-[#6ccbde]/20 rounded-2xl p-4 flex items-center gap-3 transition"
                 >
-                  {dateTile}
+                  <div className="w-12 h-12 shrink-0 rounded-full bg-[#0b0c10]/60 border border-white/10 flex items-center justify-center">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6ccbde" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
+                    </svg>
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">Suggested workout</div>
-                    <div className="text-sm font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
-                    <div className="text-[11px] text-white/40 font-light truncate">
+                    <div className="text-base font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
+                    <div className="text-[11px] text-white/50 font-light truncate">
                       Do it any time today
                       {w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}
                     </div>
@@ -427,7 +431,9 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
               );
             })}
 
-            {todaySessions.map((s) => {
+            {todaySessions
+              .filter((s) => !(todaysWorkouts.length > 0 && s.status === 'Scheduled'))
+              .map((s) => {
               const sd = parseDateKey(s.date);
               const t = formatTime(s.time);
               const color = statusColor(s.status);
