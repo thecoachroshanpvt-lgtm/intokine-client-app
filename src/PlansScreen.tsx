@@ -481,69 +481,6 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           </div>
         );
       })()}
-
-      {/* Training plans */}
-      {plansLoading ? (
-        <div className="text-center py-12 text-white/40 text-sm font-light">Loading your plans...</div>
-      ) : plans.filter((p) => p.date >= toDateKey(new Date())).length === 0 ? (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
-          <p className="text-sm text-white/50 font-light leading-relaxed">
-            Nothing shared yet — your coach will share your training plans here once they're ready.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {plans.filter((p) => p.date > toDateKey(new Date())).map((plan) => {
-            const isSuggested = true; // every workout shared by the coach opens the training page
-            const done = !!plan.clientCompletedAt;
-            return (
-              <div
-                key={plan.id}
-                onClick={isSuggested ? () => setSelectedWorkout(plan) : undefined}
-                role={isSuggested ? 'button' : undefined}
-                tabIndex={isSuggested ? 0 : undefined}
-                onKeyDown={isSuggested ? (e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedWorkout(plan); } : undefined}
-                className={`text-left rounded-2xl p-4 space-y-2 transition ${
-                  isSuggested
-                    ? 'bg-gradient-to-br from-[#ec2226]/15 to-[#6ccbde]/10 border border-white/[0.12] hover:border-white/25 cursor-pointer'
-                    : 'bg-white/[0.05] border border-white/[0.08]'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-white">{plan.planTitle}</span>
-                  <span className="text-[10px] font-semibold text-[#ec2226] bg-[#ec2226]/10 px-2 py-0.5 rounded-full border border-[#ec2226]/25 whitespace-nowrap">
-                    {plan.date}
-                  </span>
-                </div>
-                <div className="text-xs text-white/50 font-light flex items-center gap-2 flex-wrap">
-                  <span>{plan.category}</span>
-                  {plan.durationMinutes && (
-                    <>
-                      <span>·</span>
-                      <span>{plan.durationMinutes} mins</span>
-                    </>
-                  )}
-                  <span>·</span>
-                  <span>Coach {plan.coachName}</span>
-                </div>
-                {plan.targetFocus && (
-                  <p className="text-xs text-white/70 font-light">{plan.targetFocus}</p>
-                )}
-                {isSuggested && (
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">
-                      {plan.date > toDateKey(new Date()) ? 'Upcoming' : 'Workout'}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${done ? 'bg-emerald-500/20 text-emerald-300' : 'bg-white/10 text-white'}`}>
-                      {done ? '✓ Done' : 'Tap to start →'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 };
