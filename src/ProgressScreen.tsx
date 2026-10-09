@@ -2029,6 +2029,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${cardColor}, transparent)` }} />
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Movement: ', '')}</span>
+                              {historyFor(g.activityName).length > 0 && (
                               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                                 g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
                                 g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
@@ -2036,6 +2037,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               }`}>
                                 {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
                               </span>
+                              )}
                             </div>
                             <ScoreMeter data={historyFor(g.activityName)} color={cardColor} />
                             {reviewText && (
