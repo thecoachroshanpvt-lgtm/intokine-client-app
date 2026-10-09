@@ -716,7 +716,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
           className={`text-left bg-[#242426] border border-white/[0.06] rounded-2xl p-4 transition active:scale-[0.98] ${items.length === 0 ? 'opacity-40' : 'hover:border-[#6ccbde]/40'}`}
         >
           <span className="text-xl block mb-1">🏆</span>
-          <span className="text-sm font-bold text-white block">Achievements</span>
+          <span className="text-sm font-bold text-white block">{title} achievements</span>
           <span className="text-[11px] text-white/40">
             {items.length} activit{items.length === 1 ? 'y' : 'ies'}{fitCount > 0 ? ` · ${fitCount} already fit` : ''}
           </span>
