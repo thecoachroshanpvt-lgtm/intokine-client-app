@@ -382,7 +382,9 @@ interface RoadmapItem {
 }
 
 /** Athletic milestone roadmap: numbered medal nodes on a red-to-cyan track, each with a score card. */
-const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; route?: boolean }> = ({ items, compact, route }) => {
+const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; route?: boolean; passedLabel?: string }> = ({ items, compact, route, passedLabel = 'Achieved' }) => {
+  const labelFor = (it: RoadmapItem) => (it.status === 'AlreadyFit' ? 'Already fit' : passedLabel);
+  const routeBadge = items.length > 0 && items.every((x) => x.status === 'AlreadyFit') ? 'Already fit' : passedLabel;
   const [openId, setOpenId] = React.useState<string | null>(null);
   const openItem = items.find((x) => x.id === openId) || null;
   React.useEffect(() => {
@@ -399,7 +401,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
   const totalGain = firstScore !== null && lastScore !== null ? Math.round((lastScore - firstScore) * 10) / 10 : null;
   return (
   <div>
-    {route && <SkillRouteMap items={items} badge="Solved" onSelect={setOpenId} />}
+    {route && <SkillRouteMap items={items} badge={routeBadge} onSelect={setOpenId} />}
     {!route && items.map((it, i) => {
       const last = i === items.length - 1;
       return (
@@ -427,7 +429,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">Solved</span>
+                <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${it.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>{labelFor(it)}</span>
                 {it.date && <span className="text-[10px] text-white/40 font-mono">{it.date}</span>}
               </div>
               {it.note && <p className="text-[11px] text-white/70 leading-relaxed mt-2 whitespace-pre-line">“{it.note}”</p>}
@@ -446,7 +448,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-2">
               <span className={`text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${openItem.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>
-                {openItem.status === 'AlreadyFit' ? 'Already Fit' : 'Solved'}
+                {labelFor(openItem)}
               </span>
               {openItem.date && <span className="text-[10px] text-white/40 font-mono">{openItem.date}</span>}
             </div>
@@ -604,7 +606,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
             >
               <span className="text-[11px] font-bold text-white uppercase tracking-wide block leading-tight">{it.name}</span>
               <span className="flex items-center gap-1.5 mt-1">
-                <span className="text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">{badge}</span>
+                <span className={`text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${badge === 'Already fit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>{badge}</span>
                 <span className="text-[10px] text-[#6ccbde] font-mono font-bold">{it.scoreText ?? (it.score !== undefined ? `${it.score}${it.unit ?? '/10'}` : '')}</span>
               </span>
             </button>
@@ -622,7 +624,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
               <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
             </div>
             <div className="p-4 space-y-3">
-              <span className="text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">{badge}</span>
+              <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${badge === 'Already fit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>{badge}</span>
               {openItem.note && <p className="text-xs text-white/70 leading-relaxed whitespace-pre-line">“{openItem.note}”</p>}
               {openItem.rows && openItem.rows.length > 0 && (
                 <div>
@@ -655,6 +657,15 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
   const passed = items.filter((x) => x.status !== 'AlreadyFit');
   const fit = items.filter((x) => x.status === 'AlreadyFit');
   const shown = open === 'fit' ? fit : passed;
+  const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
+  // Keep the bottom navigation bar bright and on top while the pop-up is open.
+  React.useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
+  }, [open]);
   const card = (kind: 'passed' | 'fit', icon: string, label: string, list: RoadmapItem[], accent: string) => (
     <button
       type="button"
@@ -681,7 +692,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
               <button type="button" onClick={() => setOpen(null)} className="text-white/40 text-lg leading-none px-1">×</button>
             </div>
             <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-              {route ? <SkillRouteMap items={shown} /> : <AchievementsTimeline compact items={shown} />}
+              {route ? <SkillRouteMap items={shown} badge={open === 'fit' ? 'Already fit' : passedLabel} /> : <AchievementsTimeline compact passedLabel={passedLabel} items={shown} />}
             </div>
           </div>
         </div>
@@ -693,6 +704,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => {
   const passed = items.filter((x) => x.status !== 'AlreadyFit');
   const fit = items.filter((x) => x.status === 'AlreadyFit');
+  const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
   return (
     <div className="space-y-4">
       <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
@@ -705,13 +717,13 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       {passed.length > 0 && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 Achievements</p>
-          {route ? <SkillRouteMap items={passed} /> : <AchievementsTimeline route items={passed} />}
+          {route ? <SkillRouteMap items={passed} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={passed} />}
         </div>
       )}
       {fit.length > 0 && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
-          {route ? <SkillRouteMap items={fit} /> : <AchievementsTimeline route items={fit} />}
+          {route ? <SkillRouteMap items={fit} badge="Already fit" /> : <AchievementsTimeline route passedLabel={passedLabel} items={fit} />}
         </div>
       )}
     </div>
