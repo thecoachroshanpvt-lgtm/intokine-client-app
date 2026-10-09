@@ -445,8 +445,10 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
 
   const canContinue = !!current && isAnswered(current);
 
-  const goNext = () => {
-    if (!isAnswered(current)) {
+  const goNext = (alreadyAnswered = false) => {
+    // Tap-to-choose questions pass alreadyAnswered=true: the tap itself is the
+    // answer, but this function's copy of `form` is from before the tap.
+    if (!alreadyAnswered && !isAnswered(current)) {
       setError('Please answer this question to continue.');
       return;
     }
@@ -683,14 +685,14 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => { set(current.key, true); setTimeout(goNext, 150); }}
+              onClick={() => { set(current.key, true); setTimeout(() => goNext(true), 150); }}
               className={`flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === true ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
             >
               Yes
             </button>
             <button
               type="button"
-              onClick={() => { set(current.key, false); setTimeout(goNext, 150); }}
+              onClick={() => { set(current.key, false); setTimeout(() => goNext(true), 150); }}
               className={`flex-1 py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === false ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
             >
               No
@@ -704,7 +706,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
               <button
                 key={opt}
                 type="button"
-                onClick={() => { set(current.key, opt); setTimeout(goNext, 150); }}
+                onClick={() => { set(current.key, opt); setTimeout(() => goNext(true), 150); }}
                 className={`flex-1 min-w-[45%] py-4 rounded-2xl text-lg font-bold transition-all duration-200 ease-out active:scale-95 ${value === opt ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
               >
                 {opt}
@@ -742,7 +744,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
               <button
                 key={label}
                 type="button"
-                onClick={() => { set(current.key, label); setTimeout(goNext, 150); }}
+                onClick={() => { set(current.key, label); setTimeout(() => goNext(true), 150); }}
                 className={`py-3.5 rounded-xl text-base font-bold transition-all duration-200 ease-out active:scale-95 ${value === label ? 'bg-[#6ccbde] text-black shadow-lg shadow-[#6ccbde]/20' : 'bg-white/10 backdrop-blur-sm border border-white/20 text-white hover:bg-white/15'}`}
               >
                 {label}
@@ -805,7 +807,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         {!isAutoAdvance && (
           <button
             type="button"
-            onClick={goNext}
+            onClick={() => goNext()}
             disabled={submitting || !canContinue}
             className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white text-base font-black shadow-lg shadow-[#ec2226]/20 transition-all duration-200 ease-out active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
           >
