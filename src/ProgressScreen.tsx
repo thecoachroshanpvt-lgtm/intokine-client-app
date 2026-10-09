@@ -726,8 +726,8 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
             </div>
           </div>
           <div className="max-w-md mx-auto px-4 pt-6 pb-28">
-            {open === 'fit' && passed.length === 0
-              ? <AlreadyFitShowcase items={fit} title={title} />
+            {open === 'fit'
+              ? <AlreadyFitShowcase hero={passed.length === 0} items={fit} title={title} />
               : route ? <SkillRouteMap items={shown} badge={open === 'fit' ? 'Already fit' : passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={shown} />}
           </div>
         </div>,
