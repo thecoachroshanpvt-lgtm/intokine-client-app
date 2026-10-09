@@ -654,6 +654,34 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
 /** Categories that are just tracked (no Achievements / Already fit). */
 const NO_ACHIEVEMENT_PREFIXES = ['Core Endurance & Stability:', 'Muscular Endurance:', 'Muscular Strength:', 'SAQ:', 'Power:'];
 
+/** Already fit style used when there is no progressing (passed) activity: a celebratory badge with tiles instead of a road map. */
+const AlreadyFitShowcase: React.FC<{ items: RoadmapItem[]; title: string }> = ({ items, title }) => (
+  <div className="space-y-5">
+    <div className="relative overflow-hidden rounded-3xl p-6 text-center border border-amber-400/25" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245,158,11,0.28), #1c1c1e 70%)' }}>
+      <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl border-2 border-amber-400/60" style={{ background: 'rgba(245,158,11,0.12)', boxShadow: '0 0 40px rgba(245,158,11,0.25)' }}>🎓</div>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300 mt-4">Already fit</p>
+      <h2 className="text-lg font-bold text-white mt-1">You are already fit in {title}</h2>
+      <p className="text-xs text-white/55 mt-2 leading-relaxed">Your coach checked these and you were ready from day one. Nothing to fix here - just keep it up!</p>
+      <div className="mt-4 inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/30 rounded-full px-3 py-1">
+        <span className="text-amber-300 text-xs font-bold">{items.length}</span>
+        <span className="text-[11px] text-amber-200/80">activit{items.length === 1 ? 'y' : 'ies'} already fit</span>
+      </div>
+    </div>
+    <div className="grid grid-cols-1 gap-2.5">
+      {items.map((it) => (
+        <div key={it.id} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+          <span className="w-9 h-9 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 text-base font-bold shrink-0">✓</span>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-white truncate">{it.name}</p>
+            {(it.note || it.date) && <p className="text-[11px] text-white/40 truncate">{it.note || it.date}</p>}
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 shrink-0">Fit</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 /** Achievements (passed) on the left, Already Fit on the right. Items are split by their status. */
 const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items, route, singleCard }) => {
   const [open, setOpen] = React.useState<'passed' | 'fit' | null>(null);
@@ -698,7 +726,9 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
             </div>
           </div>
           <div className="max-w-md mx-auto px-4 pt-6 pb-28">
-            {route ? <SkillRouteMap items={shown} badge={open === 'fit' ? 'Already fit' : passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={shown} />}
+            {open === 'fit' && passed.length === 0
+              ? <AlreadyFitShowcase items={fit} title={title} />
+              : route ? <SkillRouteMap items={shown} badge={open === 'fit' ? 'Already fit' : passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={shown} />}
           </div>
         </div>,
         document.body
@@ -731,7 +761,9 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       {fit.length > 0 && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
-          {route ? <SkillRouteMap items={fit} badge="Already fit" /> : <AchievementsTimeline route passedLabel={passedLabel} items={fit} />}
+          {passed.length === 0
+            ? <AlreadyFitShowcase items={fit} title={title} />
+            : route ? <SkillRouteMap items={fit} badge="Already fit" /> : <AchievementsTimeline route passedLabel={passedLabel} items={fit} />}
         </div>
       )}
     </div>
