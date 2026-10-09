@@ -651,6 +651,9 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
   );
 };
 
+/** Categories that are just tracked (no Achievements / Already fit). */
+const NO_ACHIEVEMENT_PREFIXES = ['Core Endurance & Stability:', 'Muscular Endurance:', 'Muscular Strength:', 'SAQ:', 'Power:'];
+
 /** Achievements (passed) on the left, Already Fit on the right. Items are split by their status. */
 const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items, route, singleCard }) => {
   const [open, setOpen] = React.useState<'passed' | 'fit' | null>(null);
@@ -1804,8 +1807,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   const h = customHistory(g);
                   return { ...base, history: h, score: h.length > 0 ? h[h.length - 1].value : undefined };
                 };
-                const achieved = customGoals.filter(isPassedGoal).reverse();
-                const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
+                // No Achievements / Already fit cards here: every activity just stays in the list.
+                const achieved: GoalEntry[] = [];
+                const visibleCustom = customGoals;
                 const showMcgill = !mcgillPassed && (hasMcgill || (visibleCustom.length === 0 && achieved.length === 0));
                 const mcgillReview = mcgillGoal?.coachReview || mcgillGoal?.observation;
 
@@ -1871,7 +1875,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-3">
-                    <AchievementFitRow title="Core Endurance" items={[...achieved].reverse().map(toItem)} />
                     {showMcgill && (
                     <button
                       type="button"
@@ -2112,8 +2115,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   const h = customHistory(g);
                   return { id: g.id, name: g.activityName.replace(ME, ''), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, unit: ' reps', history: h, score: h.length > 0 ? h[h.length - 1].value : undefined };
                 };
-                const achieved = customGoals.filter(isPassedGoal).reverse();
-                const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
+                // No Achievements / Already fit cards here: every activity just stays in the list.
+                const achieved: GoalEntry[] = [];
+                const visibleCustom = customGoals;
                 const visibleStandards = standards.filter((x) => standardHistory(x).length > 0);
                 const nothingElse = visibleCustom.length === 0 && achieved.length === 0;
 
@@ -2123,7 +2127,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-3">
-                    <AchievementFitRow title="Muscular Endurance" items={[...achieved].reverse().map(toItem)} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {(visibleStandards.length > 0 ? visibleStandards : nothingElse ? standards : []).map((x) => (
                         <div key={String(x.key)} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
@@ -2268,7 +2271,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
-                const passedGoals = goals.filter((g) => g.status === 'Pass' && !g.activityName.startsWith('Skills:'));
+                const passedGoals = goals.filter((g) => g.status === 'Pass' && !g.activityName.startsWith('Skills:') && !NO_ACHIEVEMENT_PREFIXES.some((p) => g.activityName.startsWith(p)));
                 if (passedGoals.length === 0) {
                   return (
                     <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
@@ -2297,7 +2300,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <div>
               <BackButton />
               {(() => {
-                const alreadyFitGoals = goals.filter((g) => g.status === 'AlreadyFit' && !g.activityName.startsWith('Skills:'));
+                const alreadyFitGoals = goals.filter((g) => g.status === 'AlreadyFit' && !g.activityName.startsWith('Skills:') && !NO_ACHIEVEMENT_PREFIXES.some((p) => g.activityName.startsWith(p)));
                 if (alreadyFitGoals.length === 0) {
                   return (
                     <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
