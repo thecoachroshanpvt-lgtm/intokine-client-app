@@ -374,8 +374,6 @@ const questions: QuestionConfig[] = [
 
   // Section 12 - Goals & Readiness
   { key: 'readinessToAdoptHealthyLifestyle', type: 'scale', label: 'How likely are you to adopt a healthier lifestyle? (1 = very unlikely, 10 = very likely)', section: 'Goals & Readiness' },
-  { key: 'hasSpecificHealthGoals', type: 'yesno', label: 'Do you have specific goals for improving your health?', section: 'Goals & Readiness' },
-  { key: 'healthGoalsPrioritized', type: 'textarea', label: 'List them in order of importance to you.', section: 'Goals & Readiness', showIf: (f) => f.hasSpecificHealthGoals === true },
 
   // Section 13 - COVID History
   { key: 'diagnosedWithCovidBefore', type: 'yesno', label: 'Have you been diagnosed with COVID before?', section: 'COVID History' },
@@ -398,7 +396,8 @@ const questions: QuestionConfig[] = [
   { key: 'foodsNeverEaten', type: 'textarea', label: "Any food or drink you avoid entirely? (e.g. milk, fish)", section: 'Food & Medical Considerations' },
 
   // Section 16 - Fitness Goal
-  { key: 'fitnessGoal', type: 'textarea', label: "Last one - what's your fitness goal? Tell your coach what you're really working toward.", section: 'Fitness Goal' },
+  { key: 'hasSpecificHealthGoals', type: 'yesno', label: 'Last one - do you have specific goals for improving your health?', section: 'Fitness Goal' },
+  { key: 'healthGoalsPrioritized', type: 'textarea', label: 'List them in order of importance to you.', section: 'Fitness Goal', showIf: (f) => f.hasSpecificHealthGoals === true },
   { key: 'consentConfirmed', type: 'consent', label: 'Almost done.', section: 'Fitness Goal' },
 ];
 
@@ -594,7 +593,8 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         hasFoodAllergy: toBool(form.hasFoodAllergy),
         foodAllergyDetails: form.foodAllergyDetails || undefined,
         foodsNeverEaten: form.foodsNeverEaten || undefined,
-        fitnessGoal: form.fitnessGoal,
+        // The separate fitness-goal question was merged into the health-goals question; keep this field filled for the coach screens.
+        fitnessGoal: form.hasSpecificHealthGoals === true ? (form.healthGoalsPrioritized || undefined) : undefined,
         consentConfirmed: toBool(form.consentConfirmed),
         consentDate: new Date().toISOString().split('T')[0],
       };
