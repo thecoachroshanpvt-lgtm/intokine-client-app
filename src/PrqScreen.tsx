@@ -426,7 +426,30 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
     });
   };
 
+  // A question must be answered before the client can move on. Only
+  // multi-select lists (picking nothing means "none apply") and the
+  // measurements marked "if known" may be left empty.
+  const isOptional = (q: QuestionConfig) =>
+    q.type === 'chips' || /if known|if you know/i.test(q.label);
+
+  const isAnswered = (q: QuestionConfig): boolean => {
+    if (isOptional(q)) return true;
+    const v = form[q.key];
+    switch (q.type) {
+      case 'yesno': return v === true || v === false;
+      case 'consent': return !!form.consentConfirmed;
+      case 'phone': return typeof v === 'string' && v.replace(/\D/g, '').length >= 7 && /\d{5,}/.test(v.replace(/^\+\d+\s*/, ''));
+      default: return typeof v === 'string' ? v.trim().length > 0 : v !== undefined && v !== null;
+    }
+  };
+
+  const canContinue = !!current && isAnswered(current);
+
   const goNext = () => {
+    if (!isAnswered(current)) {
+      setError('Please answer this question to continue.');
+      return;
+    }
     if (isLast) {
       handleSubmit();
     } else {
@@ -783,7 +806,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
           <button
             type="button"
             onClick={goNext}
-            disabled={submitting}
+            disabled={submitting || !canContinue}
             className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white text-base font-black shadow-lg shadow-[#ec2226]/20 transition-all duration-200 ease-out active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
           >
             {submitting ? 'Saving...' : isLast ? 'Finish & Submit' : 'Continue'}
