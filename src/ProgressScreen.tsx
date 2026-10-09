@@ -1387,7 +1387,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           };
         });
 
-        if (activeRoadmaps.length === 0 && achievedSkills.length > 0) {
+        if (activeRoadmaps.length === 0 && achievedSkills.length > 0 && skillItems.some((x) => x.status !== 'AlreadyFit')) {
           return <AchievementsPage route title="Skills complete" items={skillItems} />;
         }
 
@@ -1617,7 +1617,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const visibleTests = tests.filter((t) => !isPassedGoal(goals.find((g) => g.activityName === `${FLEX}${t.label}`)));
                 const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
 
-                if (visibleTests.length === 0 && visibleCustom.length === 0 && achieved.length > 0) {
+                if (visibleTests.length === 0 && visibleCustom.length === 0 && achieved.length > 0 && achieved.some((g) => g.status !== 'AlreadyFit')) {
                   const ordered = [...achieved].reverse();
                   return (
                     <AchievementsPage title="Flexibility & Mobility complete" items={ordered.map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
@@ -1709,7 +1709,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const showStd = !isPassedGoal(stdGoal) && (sideData.length > 0 || (customGoals.length === 0 && achieved.length === 0));
                 const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
 
-                if (!showStd && visibleCustom.length === 0 && achieved.length > 0) {
+                if (!showStd && visibleCustom.length === 0 && achieved.length > 0 && achieved.some((g) => g.status !== 'AlreadyFit')) {
                   return <AchievementsPage title="Balance complete" items={[...achieved].reverse().map(toItem)} />;
                 }
 
@@ -1991,7 +1991,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const achieved = allActivities.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
                 const inProgress = allActivities.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
 
-                if (inProgress.length === 0 && achieved.length > 0) {
+                if (inProgress.length === 0 && achieved.length > 0 && achieved.some((g) => g.status !== 'AlreadyFit')) {
                   return (
                     <AchievementsPage title="Movement complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                   );
