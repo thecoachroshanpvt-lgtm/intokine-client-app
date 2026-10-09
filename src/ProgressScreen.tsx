@@ -688,18 +688,20 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
         {card('passed', '🏆', 'Achievements', passed, '#6ccbde')}
         {!singleCard && card('fit', '🎓', 'Already fit', fit, '#f59e0b')}
       </div>
-      {open && (
-        <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpen(null)}>
-          <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+      {open && createPortal(
+        <div className="anim-page fixed top-0 left-0 right-0 bottom-0 z-[60] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
+          <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+            <button type="button" onClick={() => setOpen(null)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
+            <div>
               <h3 className="text-sm font-bold text-white">{title} {open === 'fit' ? 'already fit' : 'achievements'}</h3>
-              <button type="button" onClick={() => setOpen(null)} className="text-white/40 text-lg leading-none px-1">×</button>
-            </div>
-            <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-              {route ? <SkillRouteMap items={shown} badge={open === 'fit' ? 'Already fit' : passedLabel} /> : <AchievementsTimeline compact passedLabel={passedLabel} items={shown} />}
+              <span className="text-[10px] text-white/40">{shown.length} {open === 'fit' ? 'already fit - areas you were ready in' : 'achieved - your road to the top'}</span>
             </div>
           </div>
-        </div>
+          <div className="max-w-md mx-auto px-4 pt-6 pb-28">
+            {route ? <SkillRouteMap items={shown} badge={open === 'fit' ? 'Already fit' : passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={shown} />}
+          </div>
+        </div>,
+        document.body
       )}
     </>
   );
@@ -929,18 +931,18 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     const { db } = initializeClientFirebaseApp();
     if (!db) return;
 
-    const fetchGoals = async () => {
-      try {
-        const clientDoc = await getDoc(doc(db, 'intokine_clients', clientId));
-        if (clientDoc.exists()) {
-          setGoals(clientDoc.data().goals || []);
+    // Live listener: when the coach marks an activity Passed / Already fit (or removes it),
+    // the cards update straight away instead of waiting for the app to be reopened.
+    const unsubscribeGoals = onSnapshot(
+      doc(db, 'intokine_clients', clientId),
+      (snap) => {
+        if (snap.exists()) {
+          setGoals(((snap.data() as { goals?: GoalEntry[] }).goals) || []);
         }
-      } catch (e) {
-        console.warn('Could not load goals:', e);
-      }
-    };
-
-    fetchGoals();
+      },
+      (e) => console.warn('Could not load goals:', e)
+    );
+    return () => unsubscribeGoals();
   }, [clientId]);
 
   const chronological = [...assessments].reverse();
