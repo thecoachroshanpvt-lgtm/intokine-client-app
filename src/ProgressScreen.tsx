@@ -654,11 +654,30 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
 /** Categories that are just tracked (no Achievements / Already fit). */
 const NO_ACHIEVEMENT_PREFIXES = ['Core Endurance & Stability:', 'Muscular Endurance:', 'Muscular Strength:', 'SAQ:', 'Power:'];
 
+/** Already fit activities as simple tiles (shown inside the Achievements card, below the achieved road map). */
+const AlreadyFitTiles: React.FC<{ items: RoadmapItem[] }> = ({ items }) => (
+  <div className="space-y-2.5">
+    <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
+    {items.map((it) => (
+      <div key={it.id} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+        <span className="w-9 h-9 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 text-base font-bold shrink-0">✓</span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-white truncate">{it.name}</p>
+          {(it.note || it.date) && <p className="text-[11px] text-white/40 truncate">{it.note || it.date}</p>}
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 shrink-0">Fit</span>
+      </div>
+    ))}
+  </div>
+);
+
 /** One Achievements card per category. Already fit activities sit inside it, tagged "Already fit". */
 const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items: rawItems, route }) => {
   const [open, setOpen] = React.useState(false);
   const items = /^Posture/.test(title) ? rawItems.map((x) => ({ ...x, status: 'Pass' })) : rawItems;
-  const fitCount = items.filter((x) => x.status === 'AlreadyFit').length;
+  const fitItems = items.filter((x) => x.status === 'AlreadyFit');
+  const passedItems = items.filter((x) => x.status !== 'AlreadyFit');
+  const fitCount = fitItems.length;
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
   // Keep the bottom navigation bar bright and on top while the pop-up is open.
   React.useEffect(() => {
@@ -694,7 +713,10 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
             </div>
           </div>
           <div className="max-w-md mx-auto px-4 pt-6 pb-28">
-            {route ? <SkillRouteMap items={items} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={items} />}
+            <div className="space-y-6">
+              {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={passedItems} />)}
+              {fitItems.length > 0 && <AlreadyFitTiles items={fitItems} />}
+            </div>
           </div>
         </div>,
         document.body
@@ -707,6 +729,8 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
   // Posture has no separate Already fit group - everything counts as solved.
   const items = /^Posture/.test(title) ? rawItems.map((x) => ({ ...x, status: 'Pass' })) : rawItems;
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
+  const fitItems = items.filter((x) => x.status === 'AlreadyFit');
+  const passedItems = items.filter((x) => x.status !== 'AlreadyFit');
   return (
     <div className="space-y-4">
       <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
@@ -719,7 +743,8 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       {items.length > 0 && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 Achievements</p>
-          {route ? <SkillRouteMap items={items} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={items} />}
+          {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={passedItems} />)}
+          {fitItems.length > 0 && <AlreadyFitTiles items={fitItems} />}
         </div>
       )}
     </div>
