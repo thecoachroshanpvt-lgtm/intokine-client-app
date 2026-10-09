@@ -1993,11 +1993,12 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   return h.length > 0 ? h[h.length - 1].value : undefined;
                 };
 
-                // A pre-defined test with no score left (all results removed) and not passed has
-                // nothing to show, so it is not listed as "In Progress".
-                const standardGoals = standardTests
-                  .map((t) => goals.find((g) => g.activityName === t.name))
-                  .filter((g): g is GoalEntry => !!g && (g.status !== 'Pending' || historyFor(g.activityName).length > 0));
+                // Every pre-defined test always has its card and graph (like Muscular Strength),
+                // even before it has a score or after its scores were removed.
+                const standardGoals: GoalEntry[] = standardTests.map((t) => (
+                  goals.find((g) => g.activityName === t.name)
+                  || ({ id: `std-${t.name}`, activityName: t.name, status: 'Pending', dateAdded: '' } as GoalEntry)
+                ));
                 const allActivities = [...standardGoals, ...customGoals].reverse();
 
                 if (allActivities.length === 0) {
