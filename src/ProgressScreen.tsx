@@ -649,20 +649,74 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
   );
 };
 
-const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => (
-  <div className="space-y-4">
-    <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
-      <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Level complete</p>
-      <h2 className="text-lg font-bold text-white mt-1">{title}</h2>
-      <p className="text-xs text-white/50 mt-1">{items.length} of {items.length} activities solved</p>
-      <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
+/** Achievements (passed) on the left, Already Fit on the right. Items are split by their status. */
+const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => {
+  const [open, setOpen] = React.useState<'passed' | 'fit' | null>(null);
+  const passed = items.filter((x) => x.status !== 'AlreadyFit');
+  const fit = items.filter((x) => x.status === 'AlreadyFit');
+  const shown = open === 'fit' ? fit : passed;
+  const card = (kind: 'passed' | 'fit', icon: string, label: string, list: RoadmapItem[], accent: string) => (
+    <button
+      type="button"
+      disabled={list.length === 0}
+      onClick={() => setOpen(kind)}
+      className={`text-left bg-[#242426] border border-white/[0.06] rounded-2xl p-4 transition active:scale-[0.98] ${list.length === 0 ? 'opacity-40' : `hover:border-[${accent}]/40`}`}
+    >
+      <span className="text-xl block mb-1">{icon}</span>
+      <span className="text-sm font-bold text-white block">{label}</span>
+      <span className="text-[11px] text-white/40">{list.length} activit{list.length === 1 ? 'y' : 'ies'}</span>
+    </button>
+  );
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        {card('passed', '🏆', 'Achievements', passed, '#6ccbde')}
+        {card('fit', '🎓', 'Already fit', fit, '#f59e0b')}
+      </div>
+      {open && (
+        <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpen(null)}>
+          <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white">{title} {open === 'fit' ? 'already fit' : 'achievements'}</h3>
+              <button type="button" onClick={() => setOpen(null)} className="text-white/40 text-lg leading-none px-1">×</button>
+            </div>
+            <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
+              {route ? <SkillRouteMap items={shown} /> : <AchievementsTimeline compact items={shown} />}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => {
+  const passed = items.filter((x) => x.status !== 'AlreadyFit');
+  const fit = items.filter((x) => x.status === 'AlreadyFit');
+  return (
+    <div className="space-y-4">
+      <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
+        <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Level complete</p>
+        <h2 className="text-lg font-bold text-white mt-1">{title}</h2>
+        <p className="text-xs text-white/50 mt-1">{items.length} of {items.length} activities done</p>
+        <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
+      </div>
+      {passed.length > 0 && (
+        <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 Achievements</p>
+          {route ? <SkillRouteMap items={passed} /> : <AchievementsTimeline route items={passed} />}
+        </div>
+      )}
+      {fit.length > 0 && (
+        <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
+          {route ? <SkillRouteMap items={fit} /> : <AchievementsTimeline route items={fit} />}
+        </div>
+      )}
     </div>
-    <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4">
-      {route ? <SkillRouteMap items={items} /> : <AchievementsTimeline route items={items} />}
-    </div>
-  </div>
-);
+  );
+};
 
 /** McGill's ratios and their normal ranges; `out` is true when a value is outside the normal range. */
 const MCGILL_RATIOS: { key: 'mcgillFlexorExtensorRatio' | 'mcgillRightLeftSideRatio' | 'mcgillRightToExtensorRatio' | 'mcgillLeftToExtensorRatio'; label: string; normal: string; out: (n: number) => boolean }[] = [
@@ -1306,34 +1360,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
         return (
           <div className="space-y-3">
-            {achievedSkills.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setShowSkillAchievementsPopup(true)}
-                className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
-              >
-                <div>
-                  <span className="text-sm font-bold text-white block">🏆 Skill achievements</span>
-                  <span className="text-[11px] text-white/40">{achievedSkills.length} skill{achievedSkills.length === 1 ? '' : 's'} mastered</span>
-                </div>
-                <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
-              </button>
-            )}
-            {showSkillAchievementsPopup && createPortal(
-              <div className="anim-page fixed top-0 left-0 right-0 bottom-0 z-[100] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
-                <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
-                  <button type="button" onClick={() => setShowSkillAchievementsPopup(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
-                  <div>
-                    <h3 className="text-sm font-bold text-white">Skill achievements</h3>
-                    <span className="text-[10px] text-white/40">{achievedSkills.length} skill{achievedSkills.length === 1 ? '' : 's'} mastered - your road to the top</span>
-                  </div>
-                </div>
-                <div className="max-w-md mx-auto px-4 py-6">
-                  <SkillRouteMap items={skillItems} />
-                </div>
-              </div>,
-              document.body
-            )}
+            <AchievementFitRow route title="Skill" items={skillItems} />
             {[...activeRoadmaps].reverse().map(([skillName, steps]) => (
               <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
                 <span className="text-sm font-bold text-white">{skillName}</span>
@@ -1481,19 +1508,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-4">
-                    {achieved.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowPostureAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-white block">🏆 Posture achievements</span>
-                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
-                        </div>
-                        <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
-                      </button>
-                    )}
+                    <AchievementFitRow title="Posture" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
 
                     {inProgress.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1526,19 +1541,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </div>
                     )}
 
-                    {showPostureAchievementsPopup && (
-                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowPostureAchievementsPopup(false)}>
-                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-white">Posture achievements</h3>
-                            <button type="button" onClick={() => setShowPostureAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
-                          </div>
-                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })()}
@@ -1582,32 +1584,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-4">
-                    {achieved.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowFlexAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-white block">🏆 Flexibility & Mobility achievements</span>
-                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
-                        </div>
-                        <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
-                      </button>
-                    )}
-                    {showFlexAchievementsPopup && (
-                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowFlexAchievementsPopup(false)}>
-                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-white">Flexibility & Mobility achievements</h3>
-                            <button type="button" onClick={() => setShowFlexAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
-                          </div>
-                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                            <AchievementsTimeline compact items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <AchievementFitRow title="Flexibility & Mobility" items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {visibleTests.map((t) => {
                       const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
@@ -1696,32 +1673,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-3">
-                    {achieved.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowBalanceAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-white block">🏆 Balance achievements</span>
-                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
-                        </div>
-                        <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
-                      </button>
-                    )}
-                    {showBalanceAchievementsPopup && (
-                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowBalanceAchievementsPopup(false)}>
-                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-white">Balance achievements</h3>
-                            <button type="button" onClick={() => setShowBalanceAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
-                          </div>
-                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                            <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <AchievementFitRow title="Balance" items={[...achieved].reverse().map(toItem)} />
                     {showStd && (
                       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
@@ -1895,32 +1847,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-3">
-                    {achieved.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowCoreAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-white block">🏆 Core Endurance achievements</span>
-                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
-                        </div>
-                        <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
-                      </button>
-                    )}
-                    {showCoreAchievementsPopup && (
-                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowCoreAchievementsPopup(false)}>
-                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-white">Core Endurance achievements</h3>
-                            <button type="button" onClick={() => setShowCoreAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
-                          </div>
-                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                            <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <AchievementFitRow title="Core Endurance" items={[...achieved].reverse().map(toItem)} />
                     {showMcgill && (
                     <button
                       type="button"
@@ -2030,19 +1957,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-4">
-                    {achieved.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowMovementAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-white block">🏆 Movement achievements</span>
-                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
-                        </div>
-                        <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
-                      </button>
-                    )}
+                    <AchievementFitRow title="Movement" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
 
                     {inProgress.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2075,19 +1990,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </div>
                     )}
 
-                    {showMovementAchievementsPopup && (
-                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMovementAchievementsPopup(false)}>
-                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-white">Movement achievements</h3>
-                            <button type="button" onClick={() => setShowMovementAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
-                          </div>
-                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                            <AchievementsTimeline compact items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })()}
@@ -2197,32 +2099,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-3">
-                    {achieved.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setShowMuscEndAchievementsPopup(true)}
-                        className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-2xl p-4 flex items-center justify-between transition active:scale-[0.98] transition-transform"
-                      >
-                        <div>
-                          <span className="text-sm font-bold text-white block">🏆 Muscular Endurance achievements</span>
-                          <span className="text-[11px] text-white/40">{achieved.length} activit{achieved.length === 1 ? 'y' : 'ies'} passed</span>
-                        </div>
-                        <span className="text-[#6ccbde] text-lg font-black leading-none pl-3">›</span>
-                      </button>
-                    )}
-                    {showMuscEndAchievementsPopup && (
-                      <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setShowMuscEndAchievementsPopup(false)}>
-                        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
-                          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-white">Muscular Endurance achievements</h3>
-                            <button type="button" onClick={() => setShowMuscEndAchievementsPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
-                          </div>
-                          <div className="p-4 overflow-y-auto" style={{ maxHeight: '60vh' }}>
-                            <AchievementsTimeline compact items={[...achieved].reverse().map(toItem)} />
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    <AchievementFitRow title="Muscular Endurance" items={[...achieved].reverse().map(toItem)} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {(visibleStandards.length > 0 ? visibleStandards : nothingElse ? standards : []).map((x) => (
                         <div key={String(x.key)} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
