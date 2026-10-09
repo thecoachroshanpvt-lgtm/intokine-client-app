@@ -655,9 +655,9 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
 const NO_ACHIEVEMENT_PREFIXES = ['Core Endurance & Stability:', 'Muscular Endurance:', 'Muscular Strength:', 'SAQ:', 'Power:'];
 
 /** Already fit style used when there is no progressing (passed) activity: a celebratory badge with tiles instead of a road map. */
-const AlreadyFitShowcase: React.FC<{ items: RoadmapItem[]; title: string }> = ({ items, title }) => (
+const AlreadyFitShowcase: React.FC<{ items: RoadmapItem[]; title: string; hero?: boolean }> = ({ items, title, hero = true }) => (
   <div className="space-y-5">
-    <div className="relative overflow-hidden rounded-3xl p-6 text-center border border-amber-400/25" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245,158,11,0.28), #1c1c1e 70%)' }}>
+    {hero && <div className="relative overflow-hidden rounded-3xl p-6 text-center border border-amber-400/25" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245,158,11,0.28), #1c1c1e 70%)' }}>
       <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl border-2 border-amber-400/60" style={{ background: 'rgba(245,158,11,0.12)', boxShadow: '0 0 40px rgba(245,158,11,0.25)' }}>🎓</div>
       <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300 mt-4">Already fit</p>
       <h2 className="text-lg font-bold text-white mt-1">You are already fit in {title}</h2>
@@ -666,7 +666,7 @@ const AlreadyFitShowcase: React.FC<{ items: RoadmapItem[]; title: string }> = ({
         <span className="text-amber-300 text-xs font-bold">{items.length}</span>
         <span className="text-[11px] text-amber-200/80">activit{items.length === 1 ? 'y' : 'ies'} already fit</span>
       </div>
-    </div>
+    </div>}
     <div className="grid grid-cols-1 gap-2.5">
       {items.map((it) => (
         <div key={it.id} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
@@ -766,7 +766,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
           {/* This page only shows when nothing is still progressing, so Already fit always uses the showcase style. */}
-          <AlreadyFitShowcase items={fit} title={title.replace(/\s+complete$/i, '')} />
+          <AlreadyFitShowcase hero={false} items={fit} title={title.replace(/\s+complete$/i, '')} />
         </div>
       )}
     </div>
