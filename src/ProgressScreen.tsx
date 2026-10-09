@@ -731,16 +731,18 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
   const fitItems = items.filter((x) => x.status === 'AlreadyFit');
   const passedItems = items.filter((x) => x.status !== 'AlreadyFit');
+  const allFit = items.length > 0 && passedItems.length === 0;
   return (
     <div className="space-y-4">
       <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
         <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Level complete</p>
-        <h2 className="text-lg font-bold text-white mt-1">{title}</h2>
-        <p className="text-xs text-white/50 mt-1">{items.length} of {items.length} activities done</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">{allFit ? 'Already fit' : 'Level complete'}</p>
+        <h2 className="text-lg font-bold text-white mt-1">{allFit ? `You are already fit in ${title.replace(/\s+complete$/i, '')}` : title}</h2>
+        <p className="text-xs text-white/50 mt-1">{allFit ? `${items.length} ${items.length === 1 ? 'activity' : 'activities'} already fit` : `${items.length} of ${items.length} activities done`}</p>
         <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
       </div>
-      {items.length > 0 && (
+      {allFit && <AlreadyFitTiles items={fitItems} />}
+      {items.length > 0 && !allFit && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 Achievements</p>
           {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={passedItems} />)}
@@ -1387,7 +1389,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           };
         });
 
-        if (activeRoadmaps.length === 0 && achievedSkills.length > 0 && skillItems.some((x) => x.status !== 'AlreadyFit')) {
+        if (activeRoadmaps.length === 0 && achievedSkills.length > 0) {
           return <AchievementsPage route title="Skills complete" items={skillItems} />;
         }
 
@@ -1617,7 +1619,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const visibleTests = tests.filter((t) => !isPassedGoal(goals.find((g) => g.activityName === `${FLEX}${t.label}`)));
                 const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
 
-                if (visibleTests.length === 0 && visibleCustom.length === 0 && achieved.length > 0 && achieved.some((g) => g.status !== 'AlreadyFit')) {
+                if (visibleTests.length === 0 && visibleCustom.length === 0 && achieved.length > 0) {
                   const ordered = [...achieved].reverse();
                   return (
                     <AchievementsPage title="Flexibility & Mobility complete" items={ordered.map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
@@ -1709,7 +1711,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const showStd = !isPassedGoal(stdGoal) && (sideData.length > 0 || (customGoals.length === 0 && achieved.length === 0));
                 const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
 
-                if (!showStd && visibleCustom.length === 0 && achieved.length > 0 && achieved.some((g) => g.status !== 'AlreadyFit')) {
+                if (!showStd && visibleCustom.length === 0 && achieved.length > 0) {
                   return <AchievementsPage title="Balance complete" items={[...achieved].reverse().map(toItem)} />;
                 }
 
@@ -1991,7 +1993,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const achieved = allActivities.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
                 const inProgress = allActivities.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
 
-                if (inProgress.length === 0 && achieved.length > 0 && achieved.some((g) => g.status !== 'AlreadyFit')) {
+                if (inProgress.length === 0 && achieved.length > 0) {
                   return (
                     <AchievementsPage title="Movement complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
                   );
