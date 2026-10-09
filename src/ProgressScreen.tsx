@@ -606,7 +606,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
             >
               <span className="text-[11px] font-bold text-white uppercase tracking-wide block leading-tight">{it.name}</span>
               <span className="flex items-center gap-1.5 mt-1">
-                <span className={`text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${badge === 'Already fit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>{badge}</span>
+                <span className={`text-[8px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full ${it.status === 'AlreadyFit' || badge === 'Already fit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>{it.status === 'AlreadyFit' ? 'Already fit' : badge}</span>
                 <span className="text-[10px] text-[#6ccbde] font-mono font-bold">{it.scoreText ?? (it.score !== undefined ? `${it.score}${it.unit ?? '/10'}` : '')}</span>
               </span>
             </button>
@@ -624,7 +624,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
               <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
             </div>
             <div className="p-4 space-y-3">
-              <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${badge === 'Already fit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>{badge}</span>
+              <span className={`text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${openItem.status === 'AlreadyFit' || badge === 'Already fit' ? 'bg-amber-500/20 text-amber-300' : 'bg-emerald-500/20 text-emerald-300'}`}>{openItem.status === 'AlreadyFit' ? 'Already fit' : badge}</span>
               {openItem.note && <p className="text-xs text-white/70 leading-relaxed whitespace-pre-line">“{openItem.note}”</p>}
               {openItem.rows && openItem.rows.length > 0 && (
                 <div>
@@ -654,41 +654,11 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
 /** Categories that are just tracked (no Achievements / Already fit). */
 const NO_ACHIEVEMENT_PREFIXES = ['Core Endurance & Stability:', 'Muscular Endurance:', 'Muscular Strength:', 'SAQ:', 'Power:'];
 
-/** Already fit style used when there is no progressing (passed) activity: a celebratory badge with tiles instead of a road map. */
-const AlreadyFitShowcase: React.FC<{ items: RoadmapItem[]; title: string; hero?: boolean }> = ({ items, title, hero = true }) => (
-  <div className="space-y-5">
-    {hero && <div className="relative overflow-hidden rounded-3xl p-6 text-center border border-amber-400/25" style={{ background: 'radial-gradient(circle at 50% 0%, rgba(245,158,11,0.28), #1c1c1e 70%)' }}>
-      <div className="mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl border-2 border-amber-400/60" style={{ background: 'rgba(245,158,11,0.12)', boxShadow: '0 0 40px rgba(245,158,11,0.25)' }}>🎓</div>
-      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300 mt-4">Already fit</p>
-      <h2 className="text-lg font-bold text-white mt-1">You are already fit in {title}</h2>
-      <p className="text-xs text-white/55 mt-2 leading-relaxed">Your coach checked these and you were ready from day one. Nothing to fix here - just keep it up!</p>
-      <div className="mt-4 inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/30 rounded-full px-3 py-1">
-        <span className="text-amber-300 text-xs font-bold">{items.length}</span>
-        <span className="text-[11px] text-amber-200/80">activit{items.length === 1 ? 'y' : 'ies'} already fit</span>
-      </div>
-    </div>}
-    <div className="grid grid-cols-1 gap-2.5">
-      {items.map((it) => (
-        <div key={it.id} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
-          <span className="w-9 h-9 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 text-base font-bold shrink-0">✓</span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-white truncate">{it.name}</p>
-            {(it.note || it.date) && <p className="text-[11px] text-white/40 truncate">{it.note || it.date}</p>}
-          </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 shrink-0">Fit</span>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-/** Achievements (passed) on the left, Already Fit on the right. Items are split by their status. */
-const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items, route, singleCard }) => {
-  const [open, setOpen] = React.useState<'passed' | 'fit' | null>(null);
-  // singleCard: no separate Already fit card - everything counts as an achievement.
-  const passed = singleCard ? items.map((x) => ({ ...x, status: 'Pass' })) : items.filter((x) => x.status !== 'AlreadyFit');
-  const fit = singleCard ? [] : items.filter((x) => x.status === 'AlreadyFit');
-  const shown = open === 'fit' ? fit : passed;
+/** One Achievements card per category. Already fit activities sit inside it, tagged "Already fit". */
+const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items: rawItems, route }) => {
+  const [open, setOpen] = React.useState(false);
+  const items = /^Posture/.test(title) ? rawItems.map((x) => ({ ...x, status: 'Pass' })) : rawItems;
+  const fitCount = items.filter((x) => x.status === 'AlreadyFit').length;
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
   // Keep the bottom navigation bar bright and on top while the pop-up is open.
   React.useEffect(() => {
@@ -698,37 +668,33 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
     document.body.setAttribute('data-popup-open', '1');
     return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
   }, [open]);
-  const card = (kind: 'passed' | 'fit', icon: string, label: string, list: RoadmapItem[], accent: string) => (
-    <button
-      type="button"
-      disabled={list.length === 0}
-      onClick={() => setOpen(kind)}
-      className={`text-left bg-[#242426] border border-white/[0.06] rounded-2xl p-4 transition active:scale-[0.98] ${list.length === 0 ? 'opacity-40' : `hover:border-[${accent}]/40`}`}
-    >
-      <span className="text-xl block mb-1">{icon}</span>
-      <span className="text-sm font-bold text-white block">{label}</span>
-      <span className="text-[11px] text-white/40">{list.length} activit{list.length === 1 ? 'y' : 'ies'}</span>
-    </button>
-  );
   return (
     <>
-      <div className={singleCard ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-2 gap-3'}>
-        {card('passed', '🏆', 'Achievements', passed, '#6ccbde')}
-        {!singleCard && card('fit', '🎓', 'Already fit', fit, '#f59e0b')}
+      <div className="grid grid-cols-1 gap-3">
+        <button
+          type="button"
+          disabled={items.length === 0}
+          onClick={() => setOpen(true)}
+          className={`text-left bg-[#242426] border border-white/[0.06] rounded-2xl p-4 transition active:scale-[0.98] ${items.length === 0 ? 'opacity-40' : 'hover:border-[#6ccbde]/40'}`}
+        >
+          <span className="text-xl block mb-1">🏆</span>
+          <span className="text-sm font-bold text-white block">Achievements</span>
+          <span className="text-[11px] text-white/40">
+            {items.length} activit{items.length === 1 ? 'y' : 'ies'}{fitCount > 0 ? ` · ${fitCount} already fit` : ''}
+          </span>
+        </button>
       </div>
       {open && createPortal(
         <div className="anim-page fixed top-0 left-0 right-0 bottom-0 z-[60] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
           <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
-            <button type="button" onClick={() => setOpen(null)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
+            <button type="button" onClick={() => setOpen(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
             <div>
-              <h3 className="text-sm font-bold text-white">{title} {open === 'fit' ? 'already fit' : 'achievements'}</h3>
-              <span className="text-[10px] text-white/40">{shown.length} {open === 'fit' ? 'already fit - areas you were ready in' : 'achieved - your road to the top'}</span>
+              <h3 className="text-sm font-bold text-white">{title} achievements</h3>
+              <span className="text-[10px] text-white/40">{items.length} done - your road to the top</span>
             </div>
           </div>
           <div className="max-w-md mx-auto px-4 pt-6 pb-28">
-            {open === 'fit'
-              ? <AlreadyFitShowcase hero={passed.length === 0} items={fit} title={title} />
-              : route ? <SkillRouteMap items={shown} badge={open === 'fit' ? 'Already fit' : passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={shown} />}
+            {route ? <SkillRouteMap items={items} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={items} />}
           </div>
         </div>,
         document.body
@@ -740,13 +706,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
 const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items: rawItems, route }) => {
   // Posture has no separate Already fit group - everything counts as solved.
   const items = /^Posture/.test(title) ? rawItems.map((x) => ({ ...x, status: 'Pass' })) : rawItems;
-  const passed = items.filter((x) => x.status !== 'AlreadyFit');
-  const fit = items.filter((x) => x.status === 'AlreadyFit');
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
-  // Nothing progressed (only Already fit): show the showcase style instead of a road map.
-  if (passed.length === 0 && fit.length > 0) {
-    return <AlreadyFitShowcase items={fit} title={title.replace(/\s+complete$/i, '')} />;
-  }
   return (
     <div className="space-y-4">
       <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
@@ -756,17 +716,10 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
         <p className="text-xs text-white/50 mt-1">{items.length} of {items.length} activities done</p>
         <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
       </div>
-      {passed.length > 0 && (
+      {items.length > 0 && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 Achievements</p>
-          {route ? <SkillRouteMap items={passed} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={passed} />}
-        </div>
-      )}
-      {fit.length > 0 && (
-        <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
-          {/* This page only shows when nothing is still progressing, so Already fit always uses the showcase style. */}
-          <AlreadyFitShowcase hero={false} items={fit} title={title.replace(/\s+complete$/i, '')} />
+          {route ? <SkillRouteMap items={items} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={items} />}
         </div>
       )}
     </div>
@@ -2345,7 +2298,19 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     </div>
                   );
                 }
-                return <AlreadyFitShowcase hero={false} title="Performance" items={alreadyFitGoals.map((g) => ({ id: g.id, name: g.activityName, date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status }))} />;
+                return (
+                  <div className="space-y-2">
+                    {alreadyFitGoals.map((goal) => (
+                      <div key={goal.id} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                        <span className="text-sm text-white font-semibold">{goal.activityName}</span>
+                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-amber-500/20 text-amber-300">
+                          🎓 Already Fit
+                          <span className="text-white/40 font-normal">{goal.dateAchieved}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
               })()}
             </div>
           )}
