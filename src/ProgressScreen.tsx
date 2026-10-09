@@ -964,6 +964,32 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
   const chronological = [...assessments].reverse();
 
+  // Which performance categories have anything added (an activity or a score). Empty ones are faded and locked.
+  const catHasData = (() => {
+    const specs: Record<string, { prefix: string; fields: (keyof AssessmentSnapshot)[] }> = {
+      posture: { prefix: 'Posture:', fields: ['postureScore'] },
+      flexibility: { prefix: 'Flexibility & Mobility:', fields: ['thomasTestScore', 'thomasTestPass', 'passiveStraightLegRaiseScore', 'passiveStraightLegRaisePass', 'shoulderFlexionScore', 'shoulderFlexionTestPass', 'shoulderExtensionScore', 'shoulderExtensionTestPass'] },
+      balance: { prefix: 'Balance:', fields: ['unipedalStanceLeftSeconds', 'unipedalStanceRightSeconds'] },
+      core_endurance: { prefix: 'Core Endurance & Stability:', fields: ['mcgillFlexorSeconds', 'mcgillExtensorSeconds', 'mcgillRightSideBridgeSeconds', 'mcgillLeftSideBridgeSeconds'] },
+      movement: { prefix: 'Movement:', fields: ['bendAndLiftSquatPatternScore', 'singleLegStepUpScore', 'shoulderPushStabilizationScore', 'pullStabilityStandingRowScore', 'thoracicSpineMobilityScore', 'overheadSquatTestScore'] },
+      cardio: { prefix: 'Cardio:', fields: ['vo2Max', 'bloodPressureSystolic', 'aerobicCapacityScore'] },
+      muscular_endurance: { prefix: 'Muscular Endurance:', fields: ['pushUpsReps', 'pullUpMaxReps', 'bodyweightSquatsReps'] },
+      muscular_strength: { prefix: 'Muscular Strength:', fields: ['benchPress1RM', 'squat1RM', 'deadlift1RM', 'overheadPress1RM'] },
+      saq: { prefix: 'SAQ:', fields: ['tTestSeconds'] },
+      power: { prefix: 'Power:', fields: ['verticalJumpCm'] },
+    };
+    const out: Record<string, boolean> = {};
+    Object.entries(specs).forEach(([key, { prefix, fields }]) => {
+      // A pre-defined test that is only left "Pending" with nothing recorded does not count as added.
+      const hasGoal = goals.some((g) => g.activityName.startsWith(prefix) && (g.status !== 'Pending' || !!g.value || !!g.valueLeft || !!g.valueRight || !!g.circuitRounds?.length || !(key === 'movement' && /^Movement: (Bend & Lift Squat Pattern|Single Leg Step Up|Shoulder Push Stabilization|Pull Stability Standing Row|Thoracic Spine Mobility|Overhead Squat Test)$/.test(g.activityName))));
+      const hasScore = assessments.some((a) =>
+        fields.some((f) => a[f] != null) || Object.keys(a.customActivityScores || {}).some((n) => n.startsWith(prefix))
+      );
+      out[key] = hasGoal || hasScore;
+    });
+    return out;
+  })();
+
   if (assessmentsLoading) {
     return (
       <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
@@ -1459,52 +1485,52 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           {perfCategory === 'hub' && (
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setPerfCategory('posture')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.posture} onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.posture ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="posture" />
                   <h3 className="text-sm font-bold text-white">Posture</h3>
                   <p className="text-[11px] text-white/40 font-light">Postural alignment.</p>
                 </button>
-                <button onClick={() => setPerfCategory('flexibility')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.flexibility} onClick={() => setPerfCategory('flexibility')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.flexibility ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="flexibility" />
                   <h3 className="text-sm font-bold text-white">Flexibility & Mobility</h3>
                   <p className="text-[11px] text-white/40 font-light">Thomas, SLR, shoulder tests.</p>
                 </button>
-                <button onClick={() => setPerfCategory('balance')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.balance} onClick={() => setPerfCategory('balance')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.balance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="balance" />
                   <h3 className="text-sm font-bold text-white">Balance</h3>
                   <p className="text-[11px] text-white/40 font-light">Unipedal Stance Test.</p>
                 </button>
-                <button onClick={() => setPerfCategory('core_endurance')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.core_endurance} onClick={() => setPerfCategory('core_endurance')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.core_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="core_endurance" />
                   <h3 className="text-sm font-bold text-white">Core Endurance & Stability</h3>
                   <p className="text-[11px] text-white/40 font-light">McGill's Core Endurance Test.</p>
                 </button>
-                <button onClick={() => setPerfCategory('movement')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.movement} onClick={() => setPerfCategory('movement')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.movement ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="movement" />
                   <h3 className="text-sm font-bold text-white">Movement</h3>
                   <p className="text-[11px] text-white/40 font-light">Movement pattern screens.</p>
                 </button>
-                <button onClick={() => setPerfCategory('cardio')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.cardio} onClick={() => setPerfCategory('cardio')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.cardio ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="cardio" />
                   <h3 className="text-sm font-bold text-white">Cardio</h3>
                   <p className="text-[11px] text-white/40 font-light">VO2 Max & aerobic tests.</p>
                 </button>
-                <button onClick={() => setPerfCategory('muscular_endurance')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.muscular_endurance} onClick={() => setPerfCategory('muscular_endurance')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="muscular_endurance" />
                   <h3 className="text-sm font-bold text-white">Muscular Endurance</h3>
                   <p className="text-[11px] text-white/40 font-light">Push-ups, pull-ups, squats.</p>
                 </button>
-                <button onClick={() => setPerfCategory('muscular_strength')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.muscular_strength} onClick={() => setPerfCategory('muscular_strength')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_strength ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="muscular_strength" />
                   <h3 className="text-sm font-bold text-white">Muscular Strength</h3>
                   <p className="text-[11px] text-white/40 font-light">1RM bench, squat, deadlift, OHP.</p>
                 </button>
-                <button onClick={() => setPerfCategory('saq')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.saq} onClick={() => setPerfCategory('saq')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.saq ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="saq" />
                   <h3 className="text-sm font-bold text-white">SAQ</h3>
                   <p className="text-[11px] text-white/40 font-light">Speed, Agility & Quickness.</p>
                 </button>
-                <button onClick={() => setPerfCategory('power')} className="relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1">
+                <button disabled={!catHasData.power} onClick={() => setPerfCategory('power')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.power ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="power" />
                   <h3 className="text-sm font-bold text-white">Power</h3>
                   <p className="text-[11px] text-white/40 font-light">Vertical Jump.</p>
