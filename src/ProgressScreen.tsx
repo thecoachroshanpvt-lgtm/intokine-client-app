@@ -734,12 +734,14 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
   const allFit = items.length > 0 && passedItems.length === 0;
   return (
     <div className="space-y-4">
-      <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
-        <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />
-        <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">{allFit ? 'Already fit' : 'Level complete'}</p>
+      <div className={`relative overflow-hidden bg-[#242426] border rounded-2xl p-5 text-center ${allFit ? 'border-amber-400/30' : 'border-[#ec2226]/25'}`} style={{ background: allFit ? 'linear-gradient(180deg, rgba(245,158,11,0.18), #242426 70%)' : 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
+        {allFit
+          ? <div className="mx-auto w-14 h-14 mb-2 rounded-full flex items-center justify-center text-3xl border-2 border-amber-400/60" style={{ background: 'rgba(245,158,11,0.12)', boxShadow: '0 0 28px rgba(245,158,11,0.25)' }}>🎓</div>
+          : <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />}
+        <p className={`text-[10px] font-bold uppercase tracking-widest ${allFit ? 'text-amber-300' : 'text-[#6ccbde]'}`}>{allFit ? 'Already fit' : 'Level complete'}</p>
         <h2 className="text-lg font-bold text-white mt-1">{allFit ? `You are already fit in ${title.replace(/\s+complete$/i, '')}` : title}</h2>
         <p className="text-xs text-white/50 mt-1">{allFit ? `${items.length} ${items.length === 1 ? 'activity' : 'activities'} already fit` : `${items.length} of ${items.length} activities done`}</p>
-        <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-[#6ccbde] rounded-full" /></div>
+        <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className={`h-full w-full rounded-full ${allFit ? 'bg-amber-400' : 'bg-[#6ccbde]'}`} /></div>
       </div>
       {allFit && <AlreadyFitTiles items={fitItems} />}
       {items.length > 0 && !allFit && (
