@@ -652,6 +652,25 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
 };
 
 /** Categories that are just tracked (no Achievements / Already fit). */
+/** Pre-defined tests: when only left "Pending" with nothing recorded, they do not count as added. */
+const STANDARD_TEST_NAMES = new Set([
+  'Posture: Posture',
+  'Balance: Unipedal Stance Test',
+  "Core Endurance & Stability: McGill's Test",
+  'Flexibility & Mobility: Thomas Test',
+  'Flexibility & Mobility: Passive Straight Leg Raise',
+  'Flexibility & Mobility: Shoulder Flexion Test',
+  'Flexibility & Mobility: Shoulder Extension Test',
+  'Movement: Bend & Lift Squat Pattern',
+  'Movement: Single Leg Step Up',
+  'Movement: Shoulder Push Stabilization',
+  'Movement: Pull Stability Standing Row',
+  'Movement: Thoracic Spine Mobility',
+  'Movement: Overhead Squat Test',
+  'Cardio: VO2 Max',
+  'SAQ: T Test',
+]);
+
 const NO_ACHIEVEMENT_PREFIXES = ['Core Endurance & Stability:', 'Muscular Endurance:', 'Muscular Strength:', 'SAQ:', 'Power:'];
 
 /** Already fit activities as simple tiles (shown inside the Achievements card, below the achieved road map). */
@@ -981,9 +1000,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     const out: Record<string, boolean> = {};
     Object.entries(specs).forEach(([key, { prefix, fields }]) => {
       // A pre-defined test that is only left "Pending" with nothing recorded does not count as added.
-      const hasGoal = goals.some((g) => g.activityName.startsWith(prefix) && (g.status !== 'Pending' || !!g.value || !!g.valueLeft || !!g.valueRight || !!g.circuitRounds?.length || !(key === 'movement' && /^Movement: (Bend & Lift Squat Pattern|Single Leg Step Up|Shoulder Push Stabilization|Pull Stability Standing Row|Thoracic Spine Mobility|Overhead Squat Test)$/.test(g.activityName))));
+      const hasGoal = goals.some((g) => g.activityName.startsWith(prefix) && (g.status !== 'Pending' || !!g.value || !!g.valueLeft || !!g.valueRight || !!g.circuitRounds?.length || !STANDARD_TEST_NAMES.has(g.activityName)));
       const hasScore = assessments.some((a) =>
-        fields.some((f) => a[f] != null) || Object.keys(a.customActivityScores || {}).some((n) => n.startsWith(prefix))
+        fields.some((f) => a[f] != null && a[f] !== false) || Object.keys(a.customActivityScores || {}).some((n) => n.startsWith(prefix))
       );
       out[key] = hasGoal || hasScore;
     });
