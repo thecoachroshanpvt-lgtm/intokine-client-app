@@ -1993,9 +1993,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   return h.length > 0 ? h[h.length - 1].value : undefined;
                 };
 
+                // A pre-defined test with no score left (all results removed) and not passed has
+                // nothing to show, so it is not listed as "In Progress".
                 const standardGoals = standardTests
                   .map((t) => goals.find((g) => g.activityName === t.name))
-                  .filter((g): g is GoalEntry => !!g);
+                  .filter((g): g is GoalEntry => !!g && (g.status !== 'Pending' || historyFor(g.activityName).length > 0));
                 const allActivities = [...standardGoals, ...customGoals].reverse();
 
                 if (allActivities.length === 0) {
