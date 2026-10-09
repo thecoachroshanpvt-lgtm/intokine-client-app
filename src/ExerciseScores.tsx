@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { initializeClientFirebaseApp, collection, query, where, onSnapshot } from './firebase';
+import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc } from './firebase';
 
 type ExType = 'Weighted' | 'Bodyweight' | 'Isometric' | 'Cardio';
 
@@ -80,19 +80,43 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
       setLoading(false);
       return;
     }
-    const q = query(collection(db, 'intokine_performance_records'), where('clientId', '==', clientId));
-    const unsub = onSnapshot(
-      q,
+    let fromDoc: PerfRecord[] = [];
+    let fromCollection: PerfRecord[] = [];
+    const publish = () => {
+      setRecords(fromCollection.length > 0 ? fromCollection : fromDoc);
+      setLoading(false);
+    };
+
+    // The coach's scores are copied onto the client's own record - this always works.
+    const unsubDoc = onSnapshot(
+      doc(db, 'intokine_clients', clientId),
       (snap) => {
-        setRecords(snap.docs.map((d) => d.data() as PerfRecord));
-        setLoading(false);
+        const data = snap.exists() ? (snap.data() as { performanceScores?: PerfRecord[] }) : {};
+        fromDoc = Array.isArray(data.performanceScores) ? data.performanceScores : [];
+        publish();
       },
       (err) => {
         console.warn('Could not load exercise scores:', err);
         setLoading(false);
       }
     );
-    return () => unsub();
+
+    // The full performance collection is used too when this account is allowed to read it.
+    const unsubCol = onSnapshot(
+      query(collection(db, 'intokine_performance_records'), where('clientId', '==', clientId)),
+      (snap) => {
+        fromCollection = snap.docs.map((d) => d.data() as PerfRecord);
+        publish();
+      },
+      () => {
+        /* no permission for this collection - the client record copy above is used instead */
+      }
+    );
+
+    return () => {
+      unsubDoc();
+      unsubCol();
+    };
   }, [clientId]);
 
   const groups = useMemo(() => {
