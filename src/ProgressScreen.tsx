@@ -2007,7 +2007,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {inProgress.map((g, idx) => {
                           const cardColor = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'][idx % 4];
-                          const reviewText = g.coachReview || g.observation;
+                          // A review belongs to a result: once every score is deleted, it is not shown any more.
+                          const reviewText = historyFor(g.activityName).length > 0 ? (g.coachReview || g.observation) : undefined;
                           return (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${cardColor}, transparent)` }} />
