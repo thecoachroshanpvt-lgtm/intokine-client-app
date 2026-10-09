@@ -743,6 +743,10 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
   const passed = items.filter((x) => x.status !== 'AlreadyFit');
   const fit = items.filter((x) => x.status === 'AlreadyFit');
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
+  // Nothing progressed (only Already fit): show the showcase style instead of a road map.
+  if (passed.length === 0 && fit.length > 0) {
+    return <AlreadyFitShowcase items={fit} title={title.replace(/\s+complete$/i, '')} />;
+  }
   return (
     <div className="space-y-4">
       <div className="relative overflow-hidden bg-[#242426] border border-[#ec2226]/25 rounded-2xl p-5 text-center" style={{ background: 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
