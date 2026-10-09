@@ -1334,7 +1334,17 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
       })()}
 
       {topTab === 'skills' && (() => {
-        const skillGoals = goals.filter((g) => g.activityName.startsWith('Skills:'));
+        // Oldest first: the id carries the time the step was added, so the order stays the same
+        // however many times a step's status was updated (saving can move it in the stored list).
+        const addedAt = (g: GoalEntry, idx: number) => {
+          const m = /(\d{10,})/.exec(g.id || '');
+          return m ? Number(m[1]) : idx;
+        };
+        const skillGoals = goals
+          .filter((g) => g.activityName.startsWith('Skills:'))
+          .map((g, idx) => ({ g, idx, t: addedAt(g, idx) }))
+          .sort((a, b) => (a.t - b.t) || (a.idx - b.idx))
+          .map((x) => x.g);
         if (skillGoals.length === 0) {
           return (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
