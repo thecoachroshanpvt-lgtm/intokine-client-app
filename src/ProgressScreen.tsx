@@ -765,9 +765,8 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       {fit.length > 0 && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
-          {passed.length === 0
-            ? <AlreadyFitShowcase items={fit} title={title} />
-            : route ? <SkillRouteMap items={fit} badge="Already fit" /> : <AchievementsTimeline route passedLabel={passedLabel} items={fit} />}
+          {/* This page only shows when nothing is still progressing, so Already fit always uses the showcase style. */}
+          <AlreadyFitShowcase items={fit} title={title.replace(/\s+complete$/i, '')} />
         </div>
       )}
     </div>
