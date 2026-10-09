@@ -2345,19 +2345,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     </div>
                   );
                 }
-                return (
-                  <div className="space-y-2">
-                    {alreadyFitGoals.map((goal) => (
-                      <div key={goal.id} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                        <span className="text-sm text-white font-semibold">{goal.activityName}</span>
-                        <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-amber-500/20 text-amber-300">
-                          🎓 Already Fit
-                          <span className="text-white/40 font-normal">{goal.dateAchieved}</span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                );
+                return <AlreadyFitShowcase hero={false} title="Performance" items={alreadyFitGoals.map((g) => ({ id: g.id, name: g.activityName, date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status }))} />;
               })()}
             </div>
           )}
