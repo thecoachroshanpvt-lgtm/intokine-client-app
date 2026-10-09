@@ -8,7 +8,6 @@ import {
 } from './firebase';
 import { WelcomeScreen } from './WelcomeScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
-import { ProgramHomeScreen } from './ProgramHomeScreen';
 import { ClientDashboard } from './ClientDashboard';
 import { PrqScreen } from './PrqScreen';
 
@@ -20,7 +19,6 @@ function App() {
   // not just once - so this is plain state with no localStorage
   // persistence, always starting fresh on load.
   const [showWelcome, setShowWelcome] = useState(true);
-  const [showProgramHome, setShowProgramHome] = useState(true);
 
   const [authChecked, setAuthChecked] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
@@ -99,7 +97,7 @@ function App() {
   }, []);
 
   // 1. Welcome/about-INTOKINE screen always shows first, on every
-  // app open. First of exactly 2 photo screens.
+  // app open. The only photo screen.
   if (showWelcome) {
     return <WelcomeScreen onContinue={() => setShowWelcome(false)} />;
   }
@@ -150,21 +148,7 @@ function App() {
     );
   }
 
-  // 3. Their own program card - the second of exactly 2 photo
-  // screens, showing both their Program and Service together (e.g.
-  // "Weight Training - Personal Training"), and also where the
-  // "welcome back" greeting lives now.
-  if (showProgramHome) {
-    return (
-      <ProgramHomeScreen
-        clientName={clientInfo.name}
-        programType={programType}
-        service={service}
-        onEnter={() => setShowProgramHome(false)}
-      />
-    );
-  }
-
+  // 3. Straight to the app home - the welcome photo screen is the only photo screen.
   return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} />;
 }
 
