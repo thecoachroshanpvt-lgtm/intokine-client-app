@@ -652,10 +652,11 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
 };
 
 /** Achievements (passed) on the left, Already Fit on the right. Items are split by their status. */
-const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => {
+const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items, route, singleCard }) => {
   const [open, setOpen] = React.useState<'passed' | 'fit' | null>(null);
-  const passed = items.filter((x) => x.status !== 'AlreadyFit');
-  const fit = items.filter((x) => x.status === 'AlreadyFit');
+  // singleCard: no separate Already fit card - everything counts as an achievement.
+  const passed = singleCard ? items.map((x) => ({ ...x, status: 'Pass' })) : items.filter((x) => x.status !== 'AlreadyFit');
+  const fit = singleCard ? [] : items.filter((x) => x.status === 'AlreadyFit');
   const shown = open === 'fit' ? fit : passed;
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
   // Keep the bottom navigation bar bright and on top while the pop-up is open.
@@ -680,9 +681,9 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
   );
   return (
     <>
-      <div className="grid grid-cols-2 gap-3">
+      <div className={singleCard ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-2 gap-3'}>
         {card('passed', '🏆', 'Achievements', passed, '#6ccbde')}
-        {card('fit', '🎓', 'Already fit', fit, '#f59e0b')}
+        {!singleCard && card('fit', '🎓', 'Already fit', fit, '#f59e0b')}
       </div>
       {open && (
         <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpen(null)}>
@@ -701,7 +702,9 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
   );
 };
 
-const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items, route }) => {
+const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean }> = ({ title, items: rawItems, route }) => {
+  // Posture has no separate Already fit group - everything counts as solved.
+  const items = /^Posture/.test(title) ? rawItems.map((x) => ({ ...x, status: 'Pass' })) : rawItems;
   const passed = items.filter((x) => x.status !== 'AlreadyFit');
   const fit = items.filter((x) => x.status === 'AlreadyFit');
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
@@ -1506,7 +1509,16 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 };
 
                 if (customGoals.length === 0) {
-                  return <p className="text-xs text-white/40 text-center py-6">No posture activities logged yet.</p>;
+                  return (
+                    <div className="relative overflow-hidden bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.16), #242426 75%)' }}>
+                      <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde, transparent)' }} />
+                      <img src="/posture-achievement-icon.PNG" alt="" className="w-16 h-16 mx-auto mb-3 object-contain" />
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Posture</p>
+                      <h2 className="text-xl font-black text-white mt-1 leading-tight">You are already fit in posture</h2>
+                      <p className="text-xs text-white/60 mt-2 leading-relaxed">Your coach found nothing to correct. Stand tall, keep moving well, and keep this strong foundation going.</p>
+                      <div className="mt-4 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-gradient-to-r from-[#ec2226] to-[#6ccbde] rounded-full" /></div>
+                    </div>
+                  );
                 }
 
                 const achieved = [...customGoals.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit')].reverse();
@@ -1520,7 +1532,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 return (
                   <div className="space-y-4">
-                    <AchievementFitRow title="Posture" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
+                    <AchievementFitRow singleCard title="Posture" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Posture: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
 
                     {inProgress.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
