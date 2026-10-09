@@ -10,6 +10,7 @@ import {
   doc,
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
+import { ExerciseScores } from './ExerciseScores';
 
 interface CircuitRound {
   round: number;
@@ -179,7 +180,7 @@ type PerformanceCategory =
   | 'achievements'
   | 'already_fit';
 
-type TopTab = 'bca' | 'performance' | 'skills';
+type TopTab = 'bca' | 'performance' | 'skills' | 'scores';
 
 type XRayType =
   | 'posture'
@@ -884,22 +885,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   // can have real content even before any assessment has been shared.
   const hasAnyData = assessments.length > 0 || goals.length > 0;
 
-  if (!hasAnyData) {
-    return (
-      <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
-          <p className="text-sm text-white/50 font-light leading-relaxed">
-            No progress reports shared yet — your coach will share your assessment results here.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   const TabButton: React.FC<{ tab: TopTab; label: string }> = ({ tab, label }) => (
     <button
       onClick={() => setTopTab(tab)}
-      className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition ${
+      className={`flex-1 whitespace-nowrap px-3.5 py-2.5 text-xs font-bold rounded-xl transition ${
         topTab === tab ? 'bg-gradient-to-r from-[#ec2226] to-[#6ccbde] text-white' : 'bg-white/[0.04] text-white/50'
       }`}
     >
@@ -916,13 +905,34 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     </button>
   );
 
+  const tabRow = (
+    <div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar">
+      <TabButton tab="bca" label="BCA Statistics" />
+      <TabButton tab="performance" label="Performance" />
+      <TabButton tab="skills" label="Skill Roadmap" />
+      <TabButton tab="scores" label="Exercise Scores" />
+    </div>
+  );
+
+  // BCA, Performance and Skills need assessments or goals; Exercise Scores has its own data.
+  if (!hasAnyData && topTab !== 'scores') {
+    return (
+      <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
+        {tabRow}
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+          <p className="text-sm text-white/50 font-light leading-relaxed">
+            No progress reports shared yet — your coach will share your assessment results here.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
-      <div className="flex gap-2 mb-5">
-        <TabButton tab="bca" label="BCA Statistics" />
-        <TabButton tab="performance" label="Performance" />
-        <TabButton tab="skills" label="Skill Roadmap" />
-      </div>
+      {tabRow}
+
+      {topTab === 'scores' && <ExerciseScores clientId={clientId} />}
 
       {topTab === 'bca' && (() => {
         const weightData = chronological.filter((a) => a.weightKg != null).map((a) => ({ date: a.date, value: a.weightKg as number }));
