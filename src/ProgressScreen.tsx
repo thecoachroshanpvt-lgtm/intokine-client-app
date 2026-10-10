@@ -10,6 +10,7 @@ import {
   doc,
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
+import { MiniBarChart } from './MiniBarChart';
 import { ExerciseScores } from './ExerciseScores';
 
 interface CircuitRound {
@@ -2200,7 +2201,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         <div key={String(x.key)} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                           <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${x.color}, transparent)` }} />
                           <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{x.label} <span className="normal-case text-white/30">(in reps)</span></span>
-                          <MiniLineChart data={standardHistory(x)} color={x.color} unit="reps" />
+                          <MiniBarChart data={standardHistory(x)} color={x.color} unit=" reps" />
                           <ReviewBlock text={reviewFor(`${ME}${x.label}`)} />
                         </div>
                       ))}
@@ -2210,7 +2211,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(ME, '')} <span className="normal-case text-white/30">(in reps)</span></span>
-                            <MiniLineChart data={customHistory(g)} color={color} unit="reps" />
+                            <MiniBarChart data={customHistory(g)} color={color} unit=" reps" />
                             <ReviewBlock text={g.coachReview || g.observation} />
                           </div>
                         );
@@ -2246,7 +2247,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <div key={l.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${l.color}, transparent)` }} />
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{l.label} <span className="normal-case text-white/30">(in kg)</span></span>
-                            <MiniLineChart data={data} color={l.color} unit="kg" />
+                            <MiniBarChart data={data} color={l.color} unit=" kg" />
                             {reviewFor(`Muscular Strength: ${l.label}`) && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
                                 <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
@@ -2261,7 +2262,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <div className="space-y-2">
                         {customGoals.map((g) => (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Muscular Strength: ', '')}</span>
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace('Muscular Strength: ', '')} <span className="normal-case text-white/30">(in kg)</span></span>
+                            <MiniBarChart data={chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }))} color="#6ccbde" unit=" kg" />
                             {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} kg</span></span>}
                             {(g.coachReview || g.observation) && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
@@ -2290,13 +2292,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
                       <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">T Test <span className="normal-case text-white/30">(in seconds)</span></span>
-                      <MiniLineChart data={tTestData} color="#ec2226" unit="s" />
+                      <MiniBarChart data={tTestData} color="#ec2226" unit=" s" />
                     </div>
                     {customGoals.length > 0 && (
                       <div className="space-y-2">
                         {customGoals.map((g) => (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('SAQ: ', '')}</span>
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace('SAQ: ', '')} <span className="normal-case text-white/30">(in seconds)</span></span>
+                            <MiniBarChart data={chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }))} color="#6ccbde" unit=" s" />
                           </div>
                         ))}
                       </div>
@@ -2318,13 +2321,14 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
                       <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Vertical Jump <span className="normal-case text-white/30">(in cm)</span></span>
-                      <MiniLineChart data={jumpData} color="#a78bfa" unit="cm" />
+                      <MiniBarChart data={jumpData} color="#a78bfa" unit=" cm" />
                     </div>
                     {customGoals.length > 0 && (
                       <div className="space-y-2">
                         {customGoals.map((g) => (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Power: ', '')}</span>
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace('Power: ', '')} <span className="normal-case text-white/30">(in cm)</span></span>
+                            <MiniBarChart data={chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }))} color="#6ccbde" unit=" cm" />
                           </div>
                         ))}
                       </div>
