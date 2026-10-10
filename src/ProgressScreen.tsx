@@ -1350,7 +1350,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <img
                     src="/bca-body-outline.png"
                     alt="Body diagram"
-                    className="absolute inset-0 w-full h-full object-contain"
+                    className="absolute inset-0 w-full h-full object-contain" style={{ opacity: 0.9 }}
                     onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                   />
                   {bodyParts.map((part) => {
