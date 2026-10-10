@@ -183,13 +183,15 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
 
   return (
     <div className="space-y-4">
-      <input
-        type="text"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        placeholder="Search exercises..."
-        className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#6ccbde]"
-      />
+      <div className="sticky top-16 z-20 bg-[#1c1c1c] pb-2 -mt-1 pt-1">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search exercises..."
+          className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#6ccbde]"
+        />
+      </div>
 
       {groups.length === 0 ? (
         <div className="text-center py-8 text-white/40 text-sm font-light">No exercises match your search.</div>
@@ -197,14 +199,14 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
         groups.map((g) => (
           <div key={g.workout} className="space-y-2">
             <span className="text-[11px] text-white/40 uppercase font-semibold block">{g.workout}</span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {g.items.map(({ ex, best }) => {
                 const color = TYPE_COLOR[ex.type];
                 const last = [...ex.entries].sort((a, b) => b.date.localeCompare(a.date))[0];
                 return (
-                  <button type="button" onClick={() => setOpenEx(ex)} key={ex.id} className="text-left w-full bg-[#242426] border border-white/[0.06] hover:border-white/20 rounded-2xl p-4 space-y-2 transition active:scale-[0.99]">
+                  <button type="button" onClick={() => setOpenEx(ex)} key={ex.id} className="text-left w-full bg-[#242426] border border-white/[0.06] hover:border-white/20 rounded-xl px-3 py-2.5 space-y-1 transition active:scale-[0.99]">
                     <div className="flex items-start justify-between gap-2">
-                      <span className="text-sm font-bold text-white leading-snug">{ex.name}</span>
+                      <span className="text-[13px] font-bold text-white leading-snug">{ex.name}</span>
                       <span
                         className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap"
                         style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
@@ -213,8 +215,8 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
                       </span>
                     </div>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl font-bold font-mono text-white leading-none">{best!.big}</span>
-                      {best!.unit && <span className="text-sm font-semibold text-white/50">{best!.unit}</span>}
+                      <span className="text-xl font-bold font-mono text-white leading-none">{best!.big}</span>
+                      {best!.unit && <span className="text-xs font-semibold text-white/50">{best!.unit}</span>}
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-white/40 font-light">
                       <span>{best!.sub}</span>
