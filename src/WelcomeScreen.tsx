@@ -35,9 +35,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8 text-center">
         <img
-          src="/brand-logo.png"
-          alt="INTOKINE"
-          className="w-16 h-16 rounded-2xl shadow-xl mb-6 object-cover"
+          src="/brand-icon.png"
+          alt=""
+          className="h-14 w-auto object-contain mb-5"
         />
         {!wordmarkFailed ? (
           <img
