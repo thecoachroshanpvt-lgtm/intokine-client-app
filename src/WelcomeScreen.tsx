@@ -37,7 +37,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         <img
           src="/brand-icon.png"
           alt=""
-          className="h-9 w-auto object-contain mb-4"
+          className="h-7 w-auto object-contain mb-3"
         />
         {!wordmarkFailed ? (
           <img
