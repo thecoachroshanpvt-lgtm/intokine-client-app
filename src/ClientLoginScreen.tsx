@@ -71,8 +71,7 @@ export const ClientLoginScreen: React.FC = () => {
       <div className="w-full max-w-sm space-y-10 relative z-10">
         <div className="flex flex-col items-center text-center">
           <img src="/brand-icon.png" alt="INTOKINE" className="h-5 w-auto object-contain" />
-          <div className="mt-6 h-[2px] w-10 rounded-full" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
-          <p className="mt-4 text-[10px] text-white/55 font-semibold uppercase tracking-[0.18em] whitespace-nowrap">Sign in to see your training plan</p>
+          <p className="mt-5 text-[10px] text-white/55 font-semibold uppercase tracking-[0.18em] whitespace-nowrap">Sign in to see your training plan</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-3">
