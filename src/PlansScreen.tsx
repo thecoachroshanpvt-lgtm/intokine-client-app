@@ -8,7 +8,12 @@ import {
   doc,
   setDoc,
   getDoc,
+  signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from './firebase';
+import { createPortal } from 'react-dom';
 import { TrainingScreen } from './TrainingScreen';
 
 interface PlansScreenProps {
@@ -128,11 +133,99 @@ function getPhase(percentThrough: number): string {
   return 'Peak Phase';
 }
 
+/** Settings pop-up: change password and log out. */
+const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const [mode, setMode] = useState<'menu' | 'password'>('menu');
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
+  }, []);
+
+  const logOut = async () => {
+    const { auth } = initializeClientFirebaseApp();
+    if (auth) await signOut(auth);
+  };
+
+  const changePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    if (next.length < 6) { setError('New password must be at least 6 characters.'); return; }
+    if (next !== confirm) { setError('New passwords do not match.'); return; }
+    const { auth } = initializeClientFirebaseApp();
+    const user = auth?.currentUser;
+    if (!auth || !user || !user.email) { setError('Please log in again and retry.'); return; }
+    setBusy(true);
+    try {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
+      await updatePassword(user, next);
+      setDone(true);
+    } catch (err: any) {
+      const code = err?.code || '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') setError('Current password is incorrect.');
+      else if (code === 'auth/too-many-requests') setError('Too many attempts. Please try again later.');
+      else if (code === 'auth/requires-recent-login') setError('Please log out, log in again, and retry.');
+      else setError('Could not change the password. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const inputCls = 'w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#6ccbde]';
+
+  return createPortal(
+    <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5 pb-24" onClick={onClose}>
+      <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wide">{mode === 'menu' ? 'Settings' : 'Change password'}</h3>
+          <button type="button" onClick={onClose} className="text-white/40 text-lg leading-none px-1">×</button>
+        </div>
+        {mode === 'menu' ? (
+          <div className="p-4 space-y-2.5">
+            <button type="button" onClick={() => setMode('password')} className="w-full text-left bg-[#242426] border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-semibold text-white">
+              Change password
+            </button>
+            <button type="button" onClick={logOut} className="w-full text-left bg-[#ec2226]/10 border border-[#ec2226]/30 rounded-xl px-4 py-3 text-sm font-semibold text-[#ec2226]">
+              Log out
+            </button>
+          </div>
+        ) : done ? (
+          <div className="p-4 space-y-3">
+            <p className="text-sm text-emerald-300">Your password has been changed.</p>
+            <button type="button" onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#ec2226] to-[#6ccbde]">Done</button>
+          </div>
+        ) : (
+          <form onSubmit={changePassword} className="p-4 space-y-3">
+            <input type="password" autoComplete="current-password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} className={inputCls} required />
+            <input type="password" autoComplete="new-password" placeholder="New password" value={next} onChange={(e) => setNext(e.target.value)} className={inputCls} required />
+            <input type="password" autoComplete="new-password" placeholder="Confirm new password" value={confirm} onChange={(e) => setConfirm(e.target.value)} className={inputCls} required />
+            {error && <p className="text-xs text-[#ec2226]">{error}</p>}
+            <button type="submit" disabled={busy} className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#ec2226] to-[#6ccbde] disabled:opacity-50">
+              {busy ? 'Saving...' : 'Change password'}
+            </button>
+            <button type="button" onClick={() => { setMode('menu'); setError(''); }} className="w-full text-xs text-white/50">Back</button>
+          </form>
+        )}
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }) => {
   const [plans, setPlans] = useState<VisiblePlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [startDate, setStartDate] = useState<string | null>(null);
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [packageSessions, setPackageSessions] = useState<number | null>(null);
   const [packageBaseline, setPackageBaseline] = useState<number | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -335,7 +428,19 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
             {uploadingPhoto ? 'Uploading...' : 'Tap to add a profile photo'}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          aria-label="Settings"
+          className="ml-auto w-10 h-10 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white/70 hover:text-white"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
       </div>
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {photoError && <p className="text-xs text-[#ec2226] font-light">{photoError}</p>}
 
       {/* Package expired notification */}
