@@ -37,22 +37,28 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         <img
           src="/brand-icon.png"
           alt=""
-          className="h-7 w-auto object-contain mb-3"
+          className="h-8 sm:h-10 w-auto object-contain mb-9 sm:mb-12 opacity-95"
         />
         {!wordmarkFailed ? (
           <img
             src="/brand-wordmark.png"
             alt="INTOKINE"
             onError={() => setWordmarkFailed(true)}
-            className="h-14 sm:h-20 w-auto max-w-[80%] object-contain mb-4"
+            className="h-[4.5rem] sm:h-24 w-auto max-w-[88%] object-contain drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
           />
         ) : (
-          <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95] mb-4">
+          <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95]">
             INTOKINE
           </h1>
         )}
-        <p className="text-base sm:text-lg text-white/80 font-light max-w-xs sm:max-w-md leading-relaxed">
-          Your program, your progress, built by your coach and always within reach.
+        <div
+          className="mt-7 sm:mt-9 h-[2px] w-14 rounded-full"
+          style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+        />
+        <p className="mt-6 sm:mt-7 text-[11px] sm:text-xs text-white/70 font-semibold uppercase tracking-[0.28em] leading-[2] max-w-[17rem] sm:max-w-sm">
+          Your program. Your progress.
+          <br />
+          Built by your coach.
         </p>
       </div>
 
