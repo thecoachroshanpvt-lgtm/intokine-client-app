@@ -691,6 +691,28 @@ const AlreadyFitTiles: React.FC<{ items: RoadmapItem[] }> = ({ items }) => (
   </div>
 );
 
+/** Achieved activities as simple tiles (same layout as Already fit, in the app's cyan accent). */
+const AchievedTiles: React.FC<{ items: RoadmapItem[]; label: string }> = ({ items, label }) => (
+  <div className="space-y-2.5">
+    <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 {label}</p>
+    {items.map((it) => (
+      <div key={it.id} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+        <span className="w-9 h-9 rounded-full bg-[#6ccbde]/15 border border-[#6ccbde]/40 flex items-center justify-center text-[#6ccbde] text-base font-bold shrink-0">✓</span>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-white truncate">{it.name}</p>
+          {(it.note || it.date) && <p className="text-[11px] text-white/40 truncate">{it.note || it.date}</p>}
+        </div>
+        <div className="text-right shrink-0">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#6ccbde] block">{label}</span>
+          {(it.scoreText ?? (it.score !== undefined ? `${it.score}${it.unit ?? '/10'}` : '')) && (
+            <span className="text-[10px] text-white/40 font-mono">{it.scoreText ?? `${it.score}${it.unit ?? '/10'}`}</span>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 /** One Achievements card per category. Already fit activities sit inside it, tagged "Already fit". */
 const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items: rawItems, route }) => {
   const [open, setOpen] = React.useState(false);
@@ -734,7 +756,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
           </div>
           <div className="max-w-md mx-auto px-4 pt-6 pb-28">
             <div className="space-y-6">
-              {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={passedItems} />)}
+              {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievedTiles items={passedItems} label={passedLabel} />)}
               {fitItems.length > 0 && <AlreadyFitTiles items={fitItems} />}
             </div>
           </div>
@@ -766,8 +788,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       {allFit && <AlreadyFitTiles items={fitItems} />}
       {items.length > 0 && !allFit && (
         <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 Achievements</p>
-          {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievementsTimeline route passedLabel={passedLabel} items={passedItems} />)}
+          {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievedTiles items={passedItems} label={passedLabel} />)}
           {fitItems.length > 0 && <AlreadyFitTiles items={fitItems} />}
         </div>
       )}
