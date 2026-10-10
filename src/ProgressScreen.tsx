@@ -674,29 +674,98 @@ const STANDARD_TEST_NAMES = new Set([
 
 const NO_ACHIEVEMENT_PREFIXES = ['Core Endurance & Stability:', 'Muscular Endurance:', 'Muscular Strength:', 'SAQ:', 'Power:'];
 
+/** Centered pop-up with the progress graph for one achieved / already fit activity. */
+const ActivityGraphModal: React.FC<{ item: RoadmapItem; tag: string; fit: boolean; onClose: () => void }> = ({ item, tag, fit, onClose }) => {
+  React.useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
+  }, []);
+  const unit = item.unit ?? '/10';
+  const hist = item.history || [];
+  const color = fit ? '#fbbf24' : '#6ccbde';
+  const points = hist.map((h) => ({ date: h.date, value: h.value }));
+  return createPortal(
+    <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5 pb-24" onClick={(e) => { e.stopPropagation(); onClose(); }}>
+      <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wide">{item.name}</h3>
+          <button type="button" onClick={onClose} className="text-white/40 text-lg leading-none px-1">×</button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <span className={`text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full ${fit ? 'bg-amber-500/20 text-amber-300' : 'bg-[#6ccbde]/15 text-[#6ccbde]'}`}>{tag}</span>
+            {item.date && <span className="text-[10px] text-white/40 font-mono">{item.date}</span>}
+          </div>
+          {item.sides ? (
+            <SideComparison data={item.sides} unit="s" />
+          ) : item.series ? (
+            <div className="grid grid-cols-1 gap-3">
+              {item.series.map((sr) => (
+                <div key={sr.label}>
+                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-1">{sr.label}</span>
+                  <MiniLineChart data={sr.data} color={sr.color} unit="s" />
+                </div>
+              ))}
+            </div>
+          ) : points.length > 0 ? (
+            <MiniBarChart data={points} color={color} unit={unit === '/10' ? '/10' : unit} />
+          ) : null}
+          {item.rows && item.rows.length > 0 && (
+            <div className="space-y-1.5">
+              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block">{item.rowsTitle || 'Result journey'}</span>
+              {item.rows.map((d, k) => (
+                <div key={`${d.date}-${k}`} className="flex items-center justify-between gap-2 bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                  <span className="text-[11px] text-white/50 font-mono">{d.date}</span>
+                  <span className="text-[11px] font-black text-white font-mono text-right">{d.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {item.note && (
+            <div className="bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+              <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+              <p className="text-xs text-white/90 leading-relaxed whitespace-pre-line">{item.note}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
 /** Already fit activities as simple tiles (shown inside the Achievements card, below the achieved road map). */
-const AlreadyFitTiles: React.FC<{ items: RoadmapItem[] }> = ({ items }) => (
+const AlreadyFitTiles: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
+  const [sel, setSel] = React.useState<RoadmapItem | null>(null);
+  return (
   <div className="space-y-2.5">
+    {sel && <ActivityGraphModal item={sel} tag="Already fit" fit onClose={() => setSel(null)} />}
     <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
     {items.map((it) => (
-      <div key={it.id} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+      <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
         <span className="w-9 h-9 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 text-base font-bold shrink-0">✓</span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white truncate">{it.name}</p>
           {(it.note || it.date) && <p className="text-[11px] text-white/40 truncate">{it.note || it.date}</p>}
         </div>
         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 shrink-0">Fit</span>
-      </div>
+      </button>
     ))}
   </div>
-);
+  );
+};
 
 /** Achieved activities as simple tiles (same layout as Already fit, in the app's cyan accent). */
-const AchievedTiles: React.FC<{ items: RoadmapItem[]; label: string }> = ({ items, label }) => (
+const AchievedTiles: React.FC<{ items: RoadmapItem[]; label: string }> = ({ items, label }) => {
+  const [sel, setSel] = React.useState<RoadmapItem | null>(null);
+  return (
   <div className="space-y-2.5">
+    {sel && <ActivityGraphModal item={sel} tag={label} fit={false} onClose={() => setSel(null)} />}
     <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 {label}</p>
     {items.map((it) => (
-      <div key={it.id} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+      <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
         <span className="w-9 h-9 rounded-full bg-[#6ccbde]/15 border border-[#6ccbde]/40 flex items-center justify-center text-[#6ccbde] text-base font-bold shrink-0">✓</span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white truncate">{it.name}</p>
@@ -708,10 +777,11 @@ const AchievedTiles: React.FC<{ items: RoadmapItem[]; label: string }> = ({ item
             <span className="text-[10px] text-white/40 font-mono">{it.scoreText ?? `${it.score}${it.unit ?? '/10'}`}</span>
           )}
         </div>
-      </div>
+      </button>
     ))}
   </div>
-);
+  );
+};
 
 /** One Achievements card per category. Already fit activities sit inside it, tagged "Already fit". */
 const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items: rawItems, route }) => {
