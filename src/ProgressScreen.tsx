@@ -1556,18 +1556,6 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button onClick={() => setPerfCategory('achievements')} className="bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🏅</span>
-                  <h3 className="text-sm font-bold text-white">Achievements</h3>
-                  <p className="text-[11px] text-white/40 font-light">Milestones reached in your journey.</p>
-                </button>
-                <button onClick={() => setPerfCategory('already_fit')} className="bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1">
-                  <span className="text-xl">🎓</span>
-                  <h3 className="text-sm font-bold text-white">Already Fit</h3>
-                  <p className="text-[11px] text-white/40 font-light">Areas you were already proficient in.</p>
-                </button>
-              </div>
             </div>
           )}
 
