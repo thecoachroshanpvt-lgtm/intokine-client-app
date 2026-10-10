@@ -12,6 +12,7 @@ import {
 import { MiniLineChart } from './MiniLineChart';
 import { MiniBarChart } from './MiniBarChart';
 import { ExerciseScores } from './ExerciseScores';
+import { InlineLoader } from './InlineLoader';
 
 interface CircuitRound {
   round: number;
@@ -1093,7 +1094,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   if (assessmentsLoading) {
     return (
       <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
-        <div className="text-center py-12 text-white/40 text-sm font-light">Loading your progress...</div>
+        <InlineLoader />
       </div>
     );
   }
