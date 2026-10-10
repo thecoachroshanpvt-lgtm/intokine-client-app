@@ -71,7 +71,7 @@ const bestOf = (ex: PerfExercise): { big: string; unit: string; sub?: string } |
   return null;
 };
 
-// One bar per date: the main number for this kind of exercise (best of that day), oldest to newest.
+// The main number for this kind of exercise from every logged result, oldest to newest.
 const progressSeries = (ex: PerfExercise): { points: { date: string; value: number }[]; unit: string; label: string } => {
   const pick = (e: Entry): number => {
     if (ex.type === 'Weighted') return e.weightKg ?? 0;
@@ -82,14 +82,12 @@ const progressSeries = (ex: PerfExercise): { points: { date: string; value: numb
   const useKm = ex.type === 'Cardio' && (ex.entries || []).some((e) => (e.distanceKm ?? 0) > 0);
   const unit = ex.type === 'Weighted' ? 'kg' : ex.type === 'Bodyweight' ? '' : useKm ? 'km' : 's';
   const label = ex.type === 'Weighted' ? 'Weight' : ex.type === 'Bodyweight' ? 'Reps' : useKm ? 'Distance' : 'Time';
-  const byDate = new Map<string, number>();
-  (ex.entries || []).forEach((e) => {
-    const v = pick(e);
-    if (v > 0) byDate.set(e.date, Math.max(byDate.get(e.date) ?? 0, v));
-  });
-  const points = Array.from(byDate.entries())
-    .map(([date, value]) => ({ date, value }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  // One bar per logged result, oldest to newest (several results on the same day each get their own bar).
+  const points = (ex.entries || [])
+    .map((e, idx) => ({ date: e.date, value: pick(e), idx }))
+    .filter((x) => x.value > 0)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.idx - b.idx)
+    .map(({ date, value }) => ({ date, value }));
   return { points, unit, label };
 };
 
