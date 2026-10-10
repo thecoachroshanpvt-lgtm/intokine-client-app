@@ -1,12 +1,26 @@
 import React, { useState } from 'react';
 import { PasswordInput } from './PasswordInput';
-import { initializeClientFirebaseApp, signInWithEmailAndPassword } from './firebase';
+import { initializeClientFirebaseApp, signInWithEmailAndPassword, sendPasswordResetEmail } from './firebase';
 
 export const ClientLoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+
+  const handleForgot = async () => {
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      setResetMessage('Type your email above first, then tap "Forgot password?" again.');
+      return;
+    }
+    try {
+      const { auth } = initializeClientFirebaseApp();
+      if (auth) await sendPasswordResetEmail(auth, trimmed);
+    } catch { /* same message either way, so nobody can test which emails exist */ }
+    setResetMessage('If that email has an account, a reset link has been sent. Check your inbox and spam folder.');
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,6 +127,17 @@ export const ClientLoginScreen: React.FC = () => {
           >
             {loading ? 'SIGNING IN...' : 'SIGN IN'}
           </button>
+
+          <button
+            type="button"
+            onClick={handleForgot}
+            className="w-full text-center text-[11px] text-white/50 underline font-light"
+          >
+            Forgot password?
+          </button>
+          {resetMessage && (
+            <p className="text-[11px] text-[#6ccbde] text-center font-light">{resetMessage}</p>
+          )}
         </form>
 
         <p className="text-center text-[11px] text-white/40 font-light">
