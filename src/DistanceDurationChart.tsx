@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChartRange } from './ChartRange';
+import { useChartRange, TrendLine } from './ChartRange';
 
 interface Row {
   date: string;
@@ -15,10 +15,29 @@ const DUR_COLOR = '#6ccbde';
  * the line and dots show how far (km). Each measure has its own scale, so both stay readable.
  */
 export const DistanceDurationChart: React.FC<{ data: Row[] }> = ({ data }) => {
-  const { visible: rows, chips, selected, setSelected } = useChartRange(data);
+  const { visible: rows, chips, selected, setSelected, trend } = useChartRange(data);
   if (rows.length === 0) {
     return <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">Not enough data yet</div>;
   }
+  if (trend) {
+    return (
+      <div>
+        {chips}
+        <div className="flex items-center gap-4 mb-1">
+          <span className="text-[10px] text-white/50"><span style={{ color: DUR_COLOR }}>●</span> Duration (min)</span>
+          <span className="text-[10px] text-white/50"><span style={{ color: DIST_COLOR }}>●</span> Distance (km)</span>
+        </div>
+        <TrendLine
+          dates={rows.map((r) => r.date)}
+          series={[
+            { values: rows.map((r) => r.duration), color: DUR_COLOR },
+            { values: rows.map((r) => r.distance), color: DIST_COLOR },
+          ]}
+        />
+      </div>
+    );
+  }
+
   const W = 300;
   const H = 150;
   const padX = 14;
