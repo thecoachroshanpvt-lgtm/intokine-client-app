@@ -229,7 +229,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [packageSessions, setPackageSessions] = useState<number | null>(null);
-  const [packageBaseline, setPackageBaseline] = useState<number | null>(null);
+  const [packageBaselineIds, setPackageBaselineIds] = useState<string[] | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
@@ -281,7 +281,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           setStartDate(data.startDate || null);
           setRenewalDate(data.renewalDate || null);
           setPackageSessions(typeof data.packageSessions === 'number' && data.packageSessions > 0 ? data.packageSessions : null);
-          setPackageBaseline(typeof data.packageBaseline === 'number' ? data.packageBaseline : null);
+          setPackageBaselineIds(Array.isArray(data.packageBaselineIds) ? data.packageBaselineIds : null);
           setProfilePhoto(data.profilePhotoBase64 || null);
         }
       },
@@ -338,11 +338,11 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   };
 
   // Only sessions in the current package count - renewing starts a new package, so this restarts at 0.
-  const doneSessionsAll = allSessionsList.filter(
-    (s) => s.status === 'Completed' || s.attendanceStatus === 'Present' || s.attendanceStatus === 'Late'
+  const completedSessions = allSessionsList.filter(
+    (s: any) =>
+      (s.status === 'Completed' || s.attendanceStatus === 'Present' || s.attendanceStatus === 'Late') &&
+      (packageBaselineIds ? !packageBaselineIds.includes(s.id) : !startDate || s.date >= startDate)
   ).length;
-  // After a renewal the coach side records how many were already done, so the new package starts at 0 exactly.
-  const completedSessions = packageBaseline !== null ? Math.max(0, doneSessionsAll - packageBaseline) : doneSessionsAll;
 
   const journey = (() => {
     // Package measured in sessions: finished when that many sessions are done.
