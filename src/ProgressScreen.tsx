@@ -1504,7 +1504,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           {perfCategory === 'hub' && (
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-3">
-                <button disabled={!catHasData.posture} onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.posture ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.posture ? '' : 'opacity-35 grayscale'}`}>
                   <XRayBackground type="posture" />
                   <h3 className="text-sm font-bold text-white">Posture</h3>
                   <p className="text-[11px] text-white/40 font-light">Postural alignment.</p>
