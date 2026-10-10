@@ -1126,7 +1126,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   // Fixed (not sticky) so it never moves or flickers during iOS rubber-band scrolling.
   // An invisible copy keeps the space so the content starts below it.
   const tabButtons = (
-    <div className="max-w-4xl mx-auto px-5 pb-3 flex gap-2 overflow-x-auto no-scrollbar" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
+    <div className="max-w-4xl mx-auto px-5 pb-3 flex gap-2 overflow-x-auto overflow-y-hidden no-scrollbar" data-no-pull style={{ touchAction: 'pan-x', WebkitOverflowScrolling: 'touch', paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}>
       <TabButton tab="bca" label="BCA Statistics" />
       <TabButton tab="performance" label="Performance" />
       <TabButton tab="skills" label="Skill Roadmap" />
