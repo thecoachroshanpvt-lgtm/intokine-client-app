@@ -7,6 +7,7 @@ import {
   onSnapshot,
 } from './firebase';
 import { TrainingScreen } from './TrainingScreen';
+import { InlineLoader } from './InlineLoader';
 
 interface ScheduleScreenProps {
   clientId: string;
@@ -234,7 +235,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
       </div>
 
       {sessionsLoading ? (
-        <div className="text-center py-12 text-white/40 text-sm font-light">Loading your schedule...</div>
+        <InlineLoader />
       ) : (
         <>
           {viewMode === 'today' && (
