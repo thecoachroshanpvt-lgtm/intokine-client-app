@@ -15,6 +15,7 @@ import {
 } from './firebase';
 import { createPortal } from 'react-dom';
 import { TrainingScreen } from './TrainingScreen';
+import { InlineLoader } from './InlineLoader';
 
 interface PlansScreenProps {
   clientId: string;
@@ -232,6 +233,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [todaySessions, setTodaySessions] = useState<TodaySession[]>([]);
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [allSessionsList, setAllSessionsList] = useState<TodaySession[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<VisiblePlan | null>(null);
 
@@ -308,7 +310,8 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
       const allSessions = snapshot.docs.map((d) => d.data() as TodaySession);
       setTodaySessions(allSessions.filter((s) => s.date === todayKey));
       setAllSessionsList(allSessions);
-    });
+      setSessionsLoaded(true);
+    }, () => setSessionsLoaded(true));
 
     return () => unsubscribe();
   }, [clientId]);
@@ -485,6 +488,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
 
       {/* Today - the suggested workout assigned for today (do it any time) plus any coach session */}
       {(() => {
+        if (!sessionsLoaded || plansLoading) return <InlineLoader />;
         const todayKey = toDateKey(new Date());
         const todaysWorkouts = plans.filter((p) => p.date === todayKey);
         const d = parseDateKey(todayKey);
