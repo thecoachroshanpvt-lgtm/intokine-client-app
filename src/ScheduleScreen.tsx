@@ -6,6 +6,7 @@ import {
   where,
   onSnapshot,
 } from './firebase';
+import { TrainingScreen } from './TrainingScreen';
 
 interface ScheduleScreenProps {
   clientId: string;
@@ -20,6 +21,22 @@ interface ScheduledSession {
   sessionType: string;
   location: string;
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
+}
+
+interface SuggestedPlan {
+  id: string;
+  planTitle: string;
+  date: string;
+  category: string;
+  coachName: string;
+  durationMinutes?: number;
+  targetFocus?: string;
+  planDetails?: string;
+  rpeTarget?: number;
+  coachSessionNotes?: string;
+  structuredExercises?: any[];
+  isSuggestedWorkout?: boolean;
+  clientCompletedAt?: string;
 }
 
 type ViewMode = 'today' | 'week' | 'month';
@@ -59,6 +76,8 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [sessions, setSessions] = useState<ScheduledSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [plans, setPlans] = useState<SuggestedPlan[]>([]);
+  const [selectedWorkout, setSelectedWorkout] = useState<SuggestedPlan | null>(null);
   const [monthCursor, setMonthCursor] = useState(() => new Date());
   const [selectedMonthDay, setSelectedMonthDay] = useState<string | null>(null);
 
@@ -91,6 +110,22 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     return () => unsubscribe();
   }, [clientId]);
 
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    const plansQuery = query(
+      collection(db, 'intokine_given_session_plans'),
+      where('clientId', '==', clientId),
+      where('clientVisible', '==', true)
+    );
+    const unsubscribe = onSnapshot(
+      plansQuery,
+      (snapshot) => setPlans(snapshot.docs.map((d) => d.data() as SuggestedPlan)),
+      (err) => console.warn('Could not load suggested workouts:', err)
+    );
+    return () => unsubscribe();
+  }, [clientId]);
+
   const statusColor = (status: ScheduledSession['status']) => {
     if (status === 'Completed') return '#6ccbde';
     if (status === 'Cancelled') return '#71717a';
@@ -99,6 +134,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
   };
 
   const todayKey = toDateKey(new Date());
+  const todaysWorkouts = plans.filter((p) => p.date === todayKey);
 
   const todaySessions = useMemo(
     () => sessions.filter((s) => s.date === todayKey),
@@ -209,6 +245,43 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
               ) : (
                 todaySessions.map(renderSessionCard)
               )}
+              {todaysWorkouts.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  <span className="text-[11px] text-white/40 uppercase font-semibold block">Suggested workout</span>
+                  {todaysWorkouts.map((w) => {
+                    const done = !!w.clientCompletedAt;
+                    const color = done ? '#34d399' : '#ec2226';
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        onClick={() => setSelectedWorkout(w)}
+                        className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 hover:from-[#ec2226]/25 hover:to-[#6ccbde]/20 border border-[#6ccbde]/20 rounded-2xl p-4 flex items-center gap-3 transition"
+                      >
+                        <div className="w-12 h-12 shrink-0 rounded-full bg-[#0b0c10]/60 border border-white/10 flex items-center justify-center">
+                          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6ccbde" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">Do it yourself</div>
+                          <div className="text-base font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
+                          <div className="text-[11px] text-white/50 font-light truncate">
+                            Do it any time today
+                            {w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}
+                          </div>
+                        </div>
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
+                          style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
+                        >
+                          {done ? 'DONE' : 'ASSIGNED'}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -265,7 +338,32 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                   const inMonth = d.getMonth() === monthCursor.getMonth();
                   const hasSession = !!sessionsByDate[key]?.length;
                   const isToday = key === todayKey;
-                  return (
+                  if (selectedWorkout) {
+    return (
+      <TrainingScreen
+        workout={{
+          id: selectedWorkout.id,
+          date: selectedWorkout.date,
+          planTitle: selectedWorkout.planTitle,
+          category: selectedWorkout.category,
+          planDetails: selectedWorkout.planDetails || '',
+          targetFocus: selectedWorkout.targetFocus || '',
+          durationMinutes: selectedWorkout.durationMinutes || 0,
+          rpeTarget: selectedWorkout.rpeTarget || 0,
+          coachName: selectedWorkout.coachName,
+          coachSessionNotes: selectedWorkout.coachSessionNotes,
+          structuredExercises: selectedWorkout.structuredExercises,
+          clientCompletedAt: selectedWorkout.clientCompletedAt,
+        }}
+        onBack={() => setSelectedWorkout(null)}
+        onMarkedComplete={() => {
+          setPlans((prev) => prev.map((p) => (p.id === selectedWorkout.id ? { ...p, clientCompletedAt: new Date().toISOString() } : p)));
+        }}
+      />
+    );
+  }
+
+  return (
                     <button
                       key={key}
                       onClick={() => setSelectedMonthDay(key)}
