@@ -79,13 +79,17 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
   // Pull-down-to-refresh (like Instagram): pull from the top, release past the threshold (data on every screen is already live, so this just confirms it is up to date without reloading anything).
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const pullRef = React.useRef({ startY: 0, active: false, dist: 0, busy: false });
+  const pullRef = React.useRef({ startY: 0, startX: 0, active: false, dist: 0, busy: false });
   useEffect(() => {
     const THRESHOLD = 70;
     const onStart = (e: TouchEvent) => {
       const st = pullRef.current;
       if (st.busy || document.body.hasAttribute('data-popup-open') || window.scrollY > 0) { st.active = false; return; }
+      // Swipes that start on a sideways-scrolling row (like the Progress top tabs) are never a pull-to-refresh.
+      const tgt = e.target as HTMLElement | null;
+      if (tgt && tgt.closest && tgt.closest('.no-scrollbar, [data-no-pull]')) { st.active = false; return; }
       st.startY = e.touches[0].clientY;
+      st.startX = e.touches[0].clientX;
       st.active = true;
       st.dist = 0;
     };
@@ -93,6 +97,9 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
       const st = pullRef.current;
       if (!st.active) return;
       const dy = e.touches[0].clientY - st.startY;
+      const dx = e.touches[0].clientX - st.startX;
+      // Mostly sideways movement: not a pull, leave it alone.
+      if (st.dist === 0 && Math.abs(dx) > Math.abs(dy)) { st.active = false; return; }
       if (dy <= 0 || window.scrollY > 0) { if (st.dist > 0) { st.dist = 0; setPull(0); } return; }
       st.dist = Math.min(dy * 0.5, 110);
       setPull(st.dist);
