@@ -237,7 +237,7 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
         const diff = first && latest ? Math.round((latest.value - first.value) * 100) / 100 : 0;
         const fmt = (v: number) => (openEx.type === 'Isometric' || (openEx.type === 'Cardio' && unit === 's') ? fmtTime(v) : `${v}${unit ? ` ${unit}` : ''}`);
         return createPortal(
-          <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-end sm:items-center justify-center p-4 pb-28" onClick={() => setOpenEx(null)}>
+          <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4 pb-24" onClick={() => setOpenEx(null)}>
             <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
                 <div className="min-w-0">
