@@ -3,6 +3,7 @@
 html, body {
   margin: 0;
   padding: 0;
+  overscroll-behavior-y: none;
 }
 
 /* Hides the scrollbar on the PRQ date wheel picker columns, while
