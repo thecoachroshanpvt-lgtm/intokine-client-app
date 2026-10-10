@@ -13,11 +13,16 @@ import {
 } from 'firebase/firestore';
 import {
   getAuth,
-  setPersistence,
+  initializeAuth,
+  indexedDBLocalPersistence,
   browserLocalPersistence,
+  browserSessionPersistence,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   Auth,
   User,
 } from 'firebase/auth';
@@ -44,8 +49,15 @@ export function initializeClientFirebaseApp() {
   if (!app) {
     app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
-    auth = getAuth(app);
-    setPersistence(auth, browserLocalPersistence).catch(() => {});
+    // Try the most durable storage first and fall back automatically. Forcing one storage type fails
+    // in private tabs and in-app browsers (Instagram, WhatsApp, etc.) and made sign-in fail there.
+    try {
+      auth = initializeAuth(app, {
+        persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+      });
+    } catch {
+      auth = getAuth(app);
+    }
   }
   return { app, db, auth };
 }
@@ -64,5 +76,8 @@ export {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 };
 export type { User };
