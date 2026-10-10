@@ -6,6 +6,7 @@ interface WelcomeScreenProps {
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
   const [imageFailed, setImageFailed] = useState(false);
+  const [wordmarkFailed, setWordmarkFailed] = useState(false);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#1c1c1c] flex flex-col justify-between">
@@ -38,9 +39,18 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
           alt="INTOKINE"
           className="w-16 h-16 rounded-2xl shadow-xl mb-6 object-cover"
         />
-        <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95] mb-4">
-          INTOKINE
-        </h1>
+        {!wordmarkFailed ? (
+          <img
+            src="/brand-wordmark.png"
+            alt="INTOKINE"
+            onError={() => setWordmarkFailed(true)}
+            className="h-14 sm:h-20 w-auto max-w-[80%] object-contain mb-4"
+          />
+        ) : (
+          <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95] mb-4">
+            INTOKINE
+          </h1>
+        )}
         <p className="text-base sm:text-lg text-white/80 font-light max-w-xs sm:max-w-md leading-relaxed">
           Your program, your progress, built by your coach and always within reach.
         </p>
