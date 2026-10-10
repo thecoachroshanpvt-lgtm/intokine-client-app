@@ -2199,7 +2199,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       {(visibleStandards.length > 0 ? visibleStandards : nothingElse ? standards : []).map((x) => (
                         <div key={String(x.key)} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                           <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${x.color}, transparent)` }} />
-                          <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{x.label}</span>
+                          <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{x.label} <span className="normal-case text-white/30">(in reps)</span></span>
                           <MiniLineChart data={standardHistory(x)} color={x.color} unit="reps" />
                           <ReviewBlock text={reviewFor(`${ME}${x.label}`)} />
                         </div>
@@ -2209,7 +2209,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         return (
                           <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
-                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(ME, '')}</span>
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(ME, '')} <span className="normal-case text-white/30">(in reps)</span></span>
                             <MiniLineChart data={customHistory(g)} color={color} unit="reps" />
                             <ReviewBlock text={g.coachReview || g.observation} />
                           </div>
