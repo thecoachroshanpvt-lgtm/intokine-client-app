@@ -33,12 +33,11 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8 text-center">
-        <div
-          className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl mb-6"
-          style={{ background: 'linear-gradient(135deg, #ec2226, #6ccbde)' }}
-        >
-          <span className="font-header text-xl text-white">IK</span>
-        </div>
+        <img
+          src="/brand-logo.png"
+          alt="INTOKINE"
+          className="w-16 h-16 rounded-2xl shadow-xl mb-6 object-cover"
+        />
         <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95] mb-4">
           INTOKINE
         </h1>
