@@ -1,4 +1,5 @@
 import React from 'react';
+import { useChartRange } from './ChartRange';
 
 interface DataPoint {
   date: string;
@@ -22,7 +23,8 @@ interface MiniBarChartProps {
  * Shares the same dimensions, font, and color conventions as
  * MiniLineChart so it feels like part of the same design system.
  */
-export const MiniBarChart: React.FC<MiniBarChartProps> = ({ data, color, unit = '', maxValue, formatValue }) => {
+export const MiniBarChart: React.FC<MiniBarChartProps> = ({ data: allData, color, unit = '', maxValue, formatValue }) => {
+  const { visible: data, chips, selected, setSelected } = useChartRange(allData);
   if (data.length === 0) {
     return (
       <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">
@@ -62,18 +64,25 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({ data, color, unit = 
 
   const maxDateLabels = 5;
   const dateLabelStep = Math.max(1, Math.ceil(bars.length / maxDateLabels));
+  const crowded = bars.length > 8;
+  const maxI = values.indexOf(Math.max(...values));
+  const showValue = (i: number) => !crowded || i === 0 || i === bars.length - 1 || i === maxI || i === selected;
 
   return (
     <div>
+      {chips}
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height: `${height}px` }} preserveAspectRatio="none">
         {bars.map((b, i) => (
-          <g key={i}>
-            <rect x={b.x} y={b.y} width={barWidth} height={b.barHeight} rx="3" fill={color} fillOpacity="0.85" />
-            <text x={b.cx} y={b.y - 6} fontSize="8" fill="white" fillOpacity="0.85" textAnchor="middle" fontFamily="monospace">
-              {formatValue ? formatValue(b.value) : b.value}
-            </text>
-            {i % dateLabelStep === 0 && (
-              <text x={b.cx} y={height - 6} fontSize="7" fill="white" fillOpacity="0.35" textAnchor="middle">
+          <g key={i} onClick={() => setSelected(selected === i ? null : i)} style={{ cursor: 'pointer' }}>
+            <rect x={b.cx - slotWidth / 2} y={paddingTop - 10} width={slotWidth} height={chartHeight + 10} fill="transparent" />
+            <rect x={b.x} y={b.y} width={barWidth} height={b.barHeight} rx="3" fill={color} fillOpacity={i === selected ? 1 : 0.85} />
+            {showValue(i) && (
+              <text x={b.cx} y={b.y - 6} fontSize={i === selected ? 10 : 8} fontWeight={i === selected ? 'bold' : 'normal'} fill="white" fillOpacity={i === selected ? 1 : 0.85} textAnchor="middle" fontFamily="monospace">
+                {formatValue ? formatValue(b.value) : b.value}
+              </text>
+            )}
+            {(i % dateLabelStep === 0 || i === selected) && (
+              <text x={b.cx} y={height - 6} fontSize="7" fill="white" fillOpacity={i === selected ? 0.9 : 0.35} textAnchor="middle">
                 {b.date.slice(5)}
               </text>
             )}
