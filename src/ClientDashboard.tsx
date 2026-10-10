@@ -201,19 +201,19 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
 
       {/* Plans tab */}
-      {activeTab === 'plans' && (
+      <div className={activeTab === 'plans' ? '' : 'hidden'}>
         <PlansScreen clientId={clientId} clientName={clientName} />
-      )}
+      </div>
 
       {/* Schedule tab */}
-      {activeTab === 'schedule' && (
+      <div className={activeTab === 'schedule' ? '' : 'hidden'}>
         <ScheduleScreen clientId={clientId} clientName={clientName} />
-      )}
+      </div>
 
       {/* Progress tab */}
-      {activeTab === 'progress' && (
+      <div className={activeTab === 'progress' ? '' : 'hidden'}>
         <ProgressScreen clientId={clientId} />
-      )}
+      </div>
 
       {/* Diet tab */}
       {activeTab === 'diet' && (
