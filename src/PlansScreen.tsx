@@ -339,7 +339,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
 
   // Only sessions in the current package count - renewing starts a new package, so this restarts at 0.
   const doneSessionsAll = allSessionsList.filter(
-    (s) => (s.status === 'Completed' || s.attendanceStatus === 'Present') && (packageBaseline !== null || !startDate || s.date >= startDate)
+    (s) => s.status === 'Completed' || s.attendanceStatus === 'Present' || s.attendanceStatus === 'Late'
   ).length;
   // After a renewal the coach side records how many were already done, so the new package starts at 0 exactly.
   const completedSessions = packageBaseline !== null ? Math.max(0, doneSessionsAll - packageBaseline) : doneSessionsAll;
