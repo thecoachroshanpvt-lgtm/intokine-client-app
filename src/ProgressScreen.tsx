@@ -11,6 +11,7 @@ import {
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
 import { DistanceDurationChart } from './DistanceDurationChart';
+import { useChartRange, TrendLine } from './ChartRange';
 import { MiniBarChart } from './MiniBarChart';
 import { ExerciseScores } from './ExerciseScores';
 import { InlineLoader } from './InlineLoader';
@@ -891,7 +892,8 @@ interface SidePoint {
 
 /** Left vs right comparison: paired bars per assessment, plus the latest gap between the two sides. */
 const SideComparison: React.FC<{ data: SidePoint[]; unit?: string }> = ({ data, unit = 's' }) => {
-  const pts = data.filter((d) => d.left != null || d.right != null).slice(-6);
+  const allPts = data.filter((d) => d.left != null || d.right != null);
+  const { visible: pts, chips, selected, setSelected, trend } = useChartRange(allPts);
   if (pts.length === 0) {
     return <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">Not enough data yet</div>;
   }
@@ -906,7 +908,8 @@ const SideComparison: React.FC<{ data: SidePoint[]; unit?: string }> = ({ data, 
   const maxVal = Math.max(1, ...pts.map((d) => Math.max(d.left ?? 0, d.right ?? 0)));
   const groupW = (width - padX * 2) / pts.length;
   const barW = Math.min(22, groupW / 2 - 4);
-  const latest = pts[pts.length - 1];
+  // The Left vs Right verdict always describes the newest result, even while paging back through older ones.
+  const latest = allPts[allPts.length - 1];
   const l = latest.left;
   const r = latest.right;
   let summary: { text: string; tone: string } | null = null;
@@ -920,10 +923,20 @@ const SideComparison: React.FC<{ data: SidePoint[]; unit?: string }> = ({ data, 
   }
   return (
     <div>
+      {chips}
       <div className="flex items-center gap-3 mb-1">
         <span className="flex items-center gap-1 text-[10px] text-white/50"><span className="w-2 h-2 rounded-sm" style={{ background: LEFT }} />Left</span>
         <span className="flex items-center gap-1 text-[10px] text-white/50"><span className="w-2 h-2 rounded-sm" style={{ background: RIGHT }} />Right</span>
       </div>
+      {trend ? (
+        <TrendLine
+          dates={pts.map((d) => d.date)}
+          series={[
+            { values: pts.map((d) => d.left ?? undefined), color: LEFT, unit },
+            { values: pts.map((d) => d.right ?? undefined), color: RIGHT, unit },
+          ]}
+        />
+      ) : (
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height: `${height}px` }} preserveAspectRatio="none">
         <line x1={padX} x2={width - padX} y1={top + plotH} y2={top + plotH} stroke="white" strokeOpacity="0.1" />
         {pts.map((d, i) => {
@@ -932,23 +945,30 @@ const SideComparison: React.FC<{ data: SidePoint[]; unit?: string }> = ({ data, 
             { v: d.left, x: cx - barW - 1, c: LEFT },
             { v: d.right, x: cx + 1, c: RIGHT },
           ];
+          const crowded = pts.length > 8;
+          const showVals = !crowded || i === 0 || i === pts.length - 1 || i === selected;
+          const showDate = i % Math.max(1, Math.ceil(pts.length / 5)) === 0 || i === pts.length - 1 || i === selected;
           return (
-            <g key={i}>
+            <g key={i} onClick={() => setSelected(selected === i ? null : i)} style={{ cursor: 'pointer' }}>
+              <rect x={cx - groupW / 2} y={top - 10} width={groupW} height={plotH + 10} fill="transparent" />
               {bars.map((b, k) => {
                 if (b.v == null) return null;
                 const h = Math.max(2, (b.v / maxVal) * plotH);
                 return (
                   <g key={k}>
-                    <rect x={b.x} y={top + plotH - h} width={barW} height={h} rx="2" fill={b.c} fillOpacity="0.9" />
-                    <text x={b.x + barW / 2} y={top + plotH - h - 3} fontSize="8" fill="white" fillOpacity="0.85" textAnchor="middle" fontFamily="monospace">{b.v}</text>
+                    <rect x={b.x} y={top + plotH - h} width={barW} height={h} rx="2" fill={b.c} fillOpacity={i === selected ? 1 : 0.9} />
+                    {showVals && (
+                      <text x={b.x + barW / 2} y={top + plotH - h - 3} fontSize={i === selected ? 10 : 8} fontWeight={i === selected ? 'bold' : 'normal'} fill="white" fillOpacity="0.9" textAnchor="middle" fontFamily="monospace">{b.v}</text>
+                    )}
                   </g>
                 );
               })}
-              <text x={cx} y={height - 6} fontSize="7" fill="white" fillOpacity="0.35" textAnchor="middle">{d.date.slice(5)}</text>
+              {showDate && <text x={cx} y={height - 6} fontSize="7" fill="white" fillOpacity={i === selected ? 0.9 : 0.35} textAnchor="middle">{d.date.slice(5)}</text>}
             </g>
           );
         })}
       </svg>
+      )}
       {summary && <div className={`text-[11px] font-semibold mt-1 ${summary.tone}`}>{summary.text}</div>}
     </div>
   );
