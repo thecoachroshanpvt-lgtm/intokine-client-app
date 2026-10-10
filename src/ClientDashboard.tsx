@@ -120,38 +120,6 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
   return (
     <div className="min-h-screen bg-[#1c1c1c] pb-20">
-      {/* Header (hidden on the Progress tab) */}
-      {activeTab !== 'progress' && (
-      <div
-        className="px-5 pt-8 pb-6 relative overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #1c1c1c 0%, #1c1c1c 55%, rgba(236,34,38,0.12) 100%)' }}
-      >
-        <div
-          className="absolute pointer-events-none"
-          style={{
-            top: '-40%',
-            right: '-15%',
-            width: '140%',
-            height: '2px',
-            background: 'linear-gradient(90deg, transparent, #ec2226, #6ccbde, transparent)',
-            transform: 'rotate(18deg)',
-            opacity: 0.35,
-          }}
-        />
-        <div className="flex items-center justify-between relative z-10 max-w-4xl mx-auto">
-          <div>
-            <p className="text-[10px] text-white/40 font-semibold tracking-[0.2em]">WELCOME BACK</p>
-            <h1 className="font-header text-3xl text-white tracking-wide leading-tight mt-0.5">{clientName.toUpperCase()}</h1>
-          </div>
-          <button
-            onClick={handleSignOut}
-            className="text-[10px] text-white/50 hover:text-white px-3 py-2 rounded-lg border border-white/10 hover:border-white/25 font-bold tracking-[0.15em] transition"
-          >
-            SIGN OUT
-          </button>
-        </div>
-      </div>
-      )}
 
 
       {/* Plans tab */}
