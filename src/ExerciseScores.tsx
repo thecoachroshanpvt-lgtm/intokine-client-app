@@ -235,7 +235,13 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
         const first = points[0];
         const latest = points[points.length - 1];
         const diff = first && latest ? Math.round((latest.value - first.value) * 100) / 100 : 0;
-        const fmt = (v: number) => (openEx.type === 'Isometric' || (openEx.type === 'Cardio' && unit === 's') ? fmtTime(v) : `${v}${unit ? ` ${unit}` : ''}`);
+        const short = (v: number) => {
+          const m = Math.floor(v / 60);
+          const sec = Math.round(v % 60);
+          return m && sec ? `${m}m ${sec}s` : m ? `${m}m` : `${sec}s`;
+        };
+        const isTime = openEx.type === 'Isometric' || (openEx.type === 'Cardio' && unit === 's');
+        const fmt = (v: number) => (isTime ? short(v) : openEx.type === 'Bodyweight' ? `${v} reps` : `${v} ${unit}`);
         return createPortal(
           <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4 pb-24" onClick={() => setOpenEx(null)}>
             <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -251,7 +257,7 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
                   <p className="text-xs text-white/40 text-center py-6">Not enough data yet</p>
                 ) : (
                   <>
-                    <MiniBarChart data={points} color={color} unit={unit && unit !== 's' ? unit : ''} />
+                    <MiniBarChart data={points} color={color} formatValue={fmt} />
                     {points.length > 1 && first && latest && (
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div className="bg-[#242426] border border-white/[0.06] rounded-xl p-2.5">
@@ -265,7 +271,7 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
                         <div className="bg-[#242426] border border-white/[0.06] rounded-xl p-2.5">
                           <span className="text-[9px] text-white/40 uppercase font-bold block">Change</span>
                           <span className={`text-xs font-bold font-mono ${diff > 0 ? 'text-emerald-300' : diff < 0 ? 'text-rose-300' : 'text-white/60'}`}>
-                            {diff > 0 ? '+' : ''}{diff}{unit && unit !== 's' ? ` ${unit}` : ''}
+                            {diff > 0 ? '+' : diff < 0 ? '-' : ''}{fmt(Math.abs(diff))}
                           </span>
                         </div>
                       </div>
