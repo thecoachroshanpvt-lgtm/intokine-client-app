@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
+import { initializeClientFirebaseApp, doc, setDoc, getDoc } from './firebase';
 
 const IconChevronLeft: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className, style }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -603,6 +603,13 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
       Object.keys(record).forEach((key) => {
         if (record[key] !== undefined) clean[key] = record[key];
       });
+
+      // Copy the coach's id from the client's own profile so the coach can see this questionnaire.
+      try {
+        const profile = await getDoc(doc(db, 'intokine_clients', clientId));
+        const coachId = profile.exists() ? (profile.data() as any).assignedCoachId : undefined;
+        if (coachId) clean.assignedCoachId = coachId;
+      } catch { /* the Owner "Prepare coach access" button fills this in later */ }
 
       await setDoc(doc(db, 'intokine_prq_records', `PRQ-${clientId}`), clean);
       onComplete();
