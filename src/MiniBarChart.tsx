@@ -1,5 +1,5 @@
 import React from 'react';
-import { useChartRange } from './ChartRange';
+import { useChartRange, TrendLine } from './ChartRange';
 
 interface DataPoint {
   date: string;
@@ -24,7 +24,7 @@ interface MiniBarChartProps {
  * MiniLineChart so it feels like part of the same design system.
  */
 export const MiniBarChart: React.FC<MiniBarChartProps> = ({ data: allData, color, unit = '', maxValue, formatValue }) => {
-  const { visible: data, chips, selected, setSelected } = useChartRange(allData);
+  const { visible: data, chips, selected, setSelected, trend } = useChartRange(allData);
   if (data.length === 0) {
     return (
       <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">
@@ -38,6 +38,15 @@ export const MiniBarChart: React.FC<MiniBarChartProps> = ({ data: allData, color
       <div className="h-24 flex flex-col items-center justify-center">
         <span className="text-lg font-black text-white font-mono">{formatValue ? formatValue(data[0].value) : `${data[0].value}${unit}`}</span>
         <span className="text-[10px] text-white/40">{data[0].date}</span>
+      </div>
+    );
+  }
+
+  if (trend) {
+    return (
+      <div>
+        {chips}
+        <TrendLine dates={data.map((d) => d.date)} series={[{ values: data.map((d) => d.value), color }]} />
       </div>
     );
   }
