@@ -28,7 +28,7 @@ interface GoalEntry {
   observation?: string;
   coachReview?: string;
   value?: string;
-  valueType?: 'time_seconds' | 'score_10' | 'distance_km' | 'duration_minutes' | 'steps' | 'ratio' | 'reps' | 'unilateral_time' | 'bilateral_time' | 'circuits';
+  valueType?: 'time_seconds' | 'score_10' | 'distance_km' | 'duration_minutes' | 'steps' | 'ratio' | 'reps' | 'unilateral_time' | 'bilateral_time' | 'circuits' | 'distance_duration';
   valueLeft?: string;
   valueRight?: string;
   circuitRounds?: CircuitRound[];
@@ -2225,6 +2225,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                   </span>
                                 ))}
                               </div>
+                            ) : g.valueType === 'distance_duration' ? (
+                              (g.valueLeft || g.valueRight) && (
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {g.valueLeft && <span className="text-[11px] text-white/60 bg-white/[0.06] rounded-lg px-2 py-1 font-mono">{g.valueLeft} km</span>}
+                                  {g.valueRight && <span className="text-[11px] text-white/60 bg-white/[0.06] rounded-lg px-2 py-1 font-mono">{g.valueRight} min</span>}
+                                </div>
+                              )
                             ) : (
                               g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} {unitFor(g.valueType)}</span></span>
                             )}
