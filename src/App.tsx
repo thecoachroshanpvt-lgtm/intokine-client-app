@@ -14,6 +14,24 @@ import { PrqScreen } from './PrqScreen';
 type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training';
 type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Couple Training' | 'Online Batch Training' | 'Offline Batch Training';
 
+/** Full-screen loader: the brand icon softly blinks while the app loads. */
+const BrandLoader: React.FC = () => (
+  <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
+    <style>{`
+      @keyframes ikBlink {
+        0%, 100% { opacity: 0.15; transform: scale(0.94); }
+        50% { opacity: 1; transform: scale(1); }
+      }
+    `}</style>
+    <img
+      src="/brand-icon.png"
+      alt="Loading"
+      className="h-12 w-auto object-contain"
+      style={{ animation: 'ikBlink 1.3s ease-in-out infinite' }}
+    />
+  </div>
+);
+
 function App() {
   // Both photo screens are meant to show every time the app opens,
   // not just once - so this is plain state with no localStorage
@@ -103,11 +121,7 @@ function App() {
   }
 
   if (!authChecked) {
-    return (
-      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
-        <div className="text-white/40 text-sm font-light">Loading...</div>
-      </div>
-    );
+    return <BrandLoader />;
   }
 
   // 2. Not signed in - straight to login.
@@ -126,11 +140,7 @@ function App() {
   }
 
   if (!clientInfo || !programType || !service || prqCompleted === null) {
-    return (
-      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center">
-        <div className="text-white/40 text-sm font-light">Loading your account...</div>
-      </div>
-    );
+    return <BrandLoader />;
   }
 
   // 2.5. Health Screening Questionnaire (PRQ) - required once, before
