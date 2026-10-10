@@ -120,7 +120,8 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
   return (
     <div className="min-h-screen bg-[#1c1c1c] pb-20">
-      {/* Header */}
+      {/* Header (hidden on the Progress tab) */}
+      {activeTab !== 'progress' && (
       <div
         className="px-5 pt-8 pb-6 relative overflow-hidden"
         style={{ background: 'linear-gradient(160deg, #1c1c1c 0%, #1c1c1c 55%, rgba(236,34,38,0.12) 100%)' }}
@@ -150,6 +151,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
           </button>
         </div>
       </div>
+      )}
 
 
       {/* Plans tab */}
