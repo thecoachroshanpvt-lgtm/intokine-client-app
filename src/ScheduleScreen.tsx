@@ -79,6 +79,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
   const [plans, setPlans] = useState<SuggestedPlan[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<SuggestedPlan | null>(null);
   const [monthCursor, setMonthCursor] = useState(() => new Date());
+  const [selectedWeekDay, setSelectedWeekDay] = useState<string | null>(null);
   const [selectedMonthDay, setSelectedMonthDay] = useState<string | null>(null);
 
   useEffect(() => {
@@ -285,28 +286,92 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
             </div>
           )}
 
-          {viewMode === 'week' && (
-            <div className="space-y-2">
-              {weekDays.map((d) => {
-                const key = toDateKey(d);
-                const daySessions = sessionsByDate[key] || [];
-                const isToday = key === todayKey;
-                return (
-                  <div key={key}>
-                    <div className={`text-[11px] font-semibold uppercase tracking-wide mb-1.5 ${isToday ? 'text-[#6ccbde]' : 'text-white/40'}`}>
-                      {d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                      {isToday && ' · Today'}
-                    </div>
-                    {daySessions.length === 0 ? (
-                      <div className="text-xs text-white/30 font-light pb-2">No session</div>
-                    ) : (
-                      <div className="space-y-2 pb-2">{daySessions.map(renderSessionCard)}</div>
-                    )}
+          {viewMode === 'week' && (() => {
+            const activeKey = selectedWeekDay && weekDays.some((d) => toDateKey(d) === selectedWeekDay) ? selectedWeekDay : todayKey;
+            const activeDate = weekDays.find((d) => toDateKey(d) === activeKey) || weekDays[0];
+            const daySessions = sessionsByDate[activeKey] || [];
+            const dayWorkouts = plans.filter((p) => p.date === activeKey);
+            const weekSessionCount = weekDays.reduce((n, d) => n + (sessionsByDate[toDateKey(d)] || []).length, 0);
+            const weekWorkoutCount = weekDays.reduce((n, d) => n + plans.filter((p) => p.date === toDateKey(d)).length, 0);
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-7 gap-1.5">
+                  {weekDays.map((d) => {
+                    const key = toDateKey(d);
+                    const isActive = key === activeKey;
+                    const isToday = key === todayKey;
+                    const hasSession = (sessionsByDate[key] || []).length > 0;
+                    const hasWorkout = plans.some((p) => p.date === key);
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setSelectedWeekDay(key)}
+                        className={`rounded-xl py-2.5 flex flex-col items-center gap-1 border transition ${
+                          isActive
+                            ? 'bg-gradient-to-b from-[#ec2226]/25 to-[#6ccbde]/20 border-[#6ccbde]/50'
+                            : 'bg-[#242426] border-white/[0.06]'
+                        }`}
+                      >
+                        <span className={`text-[9px] font-bold uppercase tracking-wide ${isToday ? 'text-[#6ccbde]' : 'text-white/40'}`}>
+                          {d.toLocaleDateString(undefined, { weekday: 'short' })}
+                        </span>
+                        <span className={`text-base font-semibold font-mono leading-none ${isActive ? 'text-white' : 'text-white/80'}`}>{d.getDate()}</span>
+                        <span className="flex gap-1 h-1.5">
+                          {hasSession && <span className="w-1.5 h-1.5 rounded-full bg-[#ec2226]" />}
+                          {hasWorkout && <span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-white/40"><span className="w-1.5 h-1.5 rounded-full bg-[#ec2226]" />Coach sessions</div>
+                    <div className="text-2xl font-semibold font-mono text-white mt-1">{weekSessionCount}</div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-white/40"><span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />Suggested workouts</div>
+                    <div className="text-2xl font-semibold font-mono text-white mt-1">{weekWorkoutCount}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <span className={`text-[11px] font-semibold uppercase tracking-wide block ${activeKey === todayKey ? 'text-[#6ccbde]' : 'text-white/40'}`}>
+                    {activeDate.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                    {activeKey === todayKey && ' · Today'}
+                  </span>
+                  {daySessions.length === 0 && dayWorkouts.length === 0 ? (
+                    <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+                      <p className="text-sm text-white/50 font-light leading-relaxed">No session or workout on this day.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {daySessions.map(renderSessionCard)}
+                      {dayWorkouts.map((w) => (
+                        <button
+                          key={w.id}
+                          type="button"
+                          onClick={() => setSelectedWorkout(w)}
+                          className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 border border-[#6ccbde]/20 rounded-2xl p-4 flex items-center gap-3"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">Suggested workout</div>
+                            <div className="text-base font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
+                            {w.durationMinutes ? <div className="text-[11px] text-white/50 font-light">{w.durationMinutes} mins</div> : null}
+                          </div>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: w.clientCompletedAt ? '#34d399' : '#ec2226', borderColor: w.clientCompletedAt ? '#34d39940' : '#ec222640' }}>
+                            {w.clientCompletedAt ? 'DONE' : 'ASSIGNED'}
+                          </span>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {viewMode === 'month' && (
             <div className="space-y-3">
