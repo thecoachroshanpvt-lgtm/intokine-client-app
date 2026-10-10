@@ -76,10 +76,9 @@ type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet';
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('plans');
-  // Pull-down-to-refresh (like Instagram): pull from the top, release past the threshold to reload the screen.
+  // Pull-down-to-refresh (like Instagram): pull from the top, release past the threshold (data on every screen is already live, so this just confirms it is up to date without reloading anything).
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
   const pullRef = React.useRef({ startY: 0, active: false, dist: 0, busy: false });
   useEffect(() => {
     const THRESHOLD = 70;
@@ -107,7 +106,6 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
         st.busy = true;
         setRefreshing(true);
         setPull(THRESHOLD * 0.7);
-        setRefreshKey((k) => k + 1);
         window.setTimeout(() => {
           setRefreshing(false);
           setPull(0);
@@ -204,17 +202,17 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
       {/* Plans tab */}
       {activeTab === 'plans' && (
-        <PlansScreen key={`plans-${refreshKey}`} clientId={clientId} clientName={clientName} />
+        <PlansScreen clientId={clientId} clientName={clientName} />
       )}
 
       {/* Schedule tab */}
       {activeTab === 'schedule' && (
-        <ScheduleScreen key={`schedule-${refreshKey}`} clientId={clientId} clientName={clientName} />
+        <ScheduleScreen clientId={clientId} clientName={clientName} />
       )}
 
       {/* Progress tab */}
       {activeTab === 'progress' && (
-        <ProgressScreen key={`progress-${refreshKey}`} clientId={clientId} />
+        <ProgressScreen clientId={clientId} />
       )}
 
       {/* Diet tab */}
