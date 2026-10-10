@@ -98,6 +98,7 @@ interface AssessmentSnapshot {
   customActivityScores?: Record<string, number>;
   activityObservations?: Record<string, string>;
   activitySides?: Record<string, { left?: number; right?: number }>;
+  activityCircuits?: Record<string, number[]>;
 
   // Flexibility & Mobility
   thomasTestPass?: boolean;
@@ -2213,30 +2214,58 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     </div>
 
                     {customGoals.length > 0 && (
-                      <div className="space-y-2">
-                        {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-                            <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Cardio: ', '')}</span>
-                            {g.valueType === 'circuits' && g.circuitRounds && g.circuitRounds.length > 0 ? (
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {g.circuitRounds.map((r, i) => (
-                                  <span key={i} className="text-[10px] text-white/50 bg-white/[0.06] rounded-lg px-2 py-1">
-                                    Round {r.round}: {r.timeSeconds}s
-                                  </span>
-                                ))}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {customGoals.map((g, idx) => {
+                          const name = g.activityName;
+                          const color = ['#6ccbde', '#ec2226', '#f59e0b', '#a78bfa'][idx % 4];
+                          const scores = chronological
+                            .filter((a) => a.customActivityScores?.[name] != null)
+                            .map((a) => ({ date: a.date, value: a.customActivityScores![name], note: resultNote(a, name) }));
+                          const sides = chronological.filter((a) => a.activitySides?.[name] != null);
+                          const distData = sides.filter((a) => a.activitySides![name].left != null).map((a) => ({ date: a.date, value: a.activitySides![name].left as number }));
+                          const durData = sides.filter((a) => a.activitySides![name].right != null).map((a) => ({ date: a.date, value: a.activitySides![name].right as number }));
+                          const circuitData = chronological
+                            .filter((a) => (a.activityCircuits?.[name] || []).length > 0)
+                            .map((a) => ({ date: a.date, value: a.activityCircuits![name].reduce((t, x) => t + x, 0) }));
+                          const box = 'bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden';
+                          const title = (extra?: string) => (
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">
+                              {name.replace('Cardio: ', '')} {extra && <span className="normal-case text-white/30">({extra})</span>}
+                            </span>
+                          );
+                          const bar = <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />;
+                          const review = g.coachReview || g.observation;
+                          const reviewBlock = review ? (
+                            <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                              <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                              <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{review}</p>
+                            </div>
+                          ) : null;
+                          if (g.valueType === 'distance_duration') {
+                            return (
+                              <React.Fragment key={g.id}>
+                                <div className={box}>{bar}{title('distance, km')}<MiniLineChart data={distData} color={color} unit=" km" />{reviewBlock}</div>
+                                <div className={box}>{bar}{title('duration, min')}<MiniLineChart data={durData} color="#f59e0b" unit=" min" /></div>
+                              </React.Fragment>
+                            );
+                          }
+                          if (g.valueType === 'circuits') {
+                            return (
+                              <div key={g.id} className={box}>
+                                {bar}{title('total time, sec')}
+                                <MiniLineChart data={circuitData} color={color} unit="s" />
+                                {reviewBlock}
                               </div>
-                            ) : g.valueType === 'distance_duration' ? (
-                              (g.valueLeft || g.valueRight) && (
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                  {g.valueLeft && <span className="text-[11px] text-white/60 bg-white/[0.06] rounded-lg px-2 py-1 font-mono">{g.valueLeft} km</span>}
-                                  {g.valueRight && <span className="text-[11px] text-white/60 bg-white/[0.06] rounded-lg px-2 py-1 font-mono">{g.valueRight} min</span>}
-                                </div>
-                              )
-                            ) : (
-                              g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} {unitFor(g.valueType)}</span></span>
-                            )}
-                          </div>
-                        ))}
+                            );
+                          }
+                          return (
+                            <div key={g.id} className={box}>
+                              {bar}{title(unitFor(g.valueType) || undefined)}
+                              <MiniLineChart data={scores} color={color} unit={unitFor(g.valueType) ? ` ${unitFor(g.valueType)}` : ''} />
+                              {reviewBlock}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
