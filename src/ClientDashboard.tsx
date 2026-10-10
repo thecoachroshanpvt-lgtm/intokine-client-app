@@ -76,6 +76,59 @@ type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet';
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('plans');
+  // Pull-down-to-refresh (like Instagram): pull from the top, release past the threshold to reload the screen.
+  const [pull, setPull] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const pullRef = React.useRef({ startY: 0, active: false, dist: 0, busy: false });
+  useEffect(() => {
+    const THRESHOLD = 70;
+    const onStart = (e: TouchEvent) => {
+      const st = pullRef.current;
+      if (st.busy || document.body.hasAttribute('data-popup-open') || window.scrollY > 0) { st.active = false; return; }
+      st.startY = e.touches[0].clientY;
+      st.active = true;
+      st.dist = 0;
+    };
+    const onMove = (e: TouchEvent) => {
+      const st = pullRef.current;
+      if (!st.active) return;
+      const dy = e.touches[0].clientY - st.startY;
+      if (dy <= 0 || window.scrollY > 0) { if (st.dist > 0) { st.dist = 0; setPull(0); } return; }
+      st.dist = Math.min(dy * 0.5, 110);
+      setPull(st.dist);
+      if (e.cancelable) e.preventDefault();
+    };
+    const onEnd = () => {
+      const st = pullRef.current;
+      if (!st.active) return;
+      st.active = false;
+      if (st.dist >= THRESHOLD && !st.busy) {
+        st.busy = true;
+        setRefreshing(true);
+        setPull(THRESHOLD * 0.7);
+        setRefreshKey((k) => k + 1);
+        window.setTimeout(() => {
+          setRefreshing(false);
+          setPull(0);
+          st.busy = false;
+        }, 1100);
+      } else {
+        setPull(0);
+      }
+      st.dist = 0;
+    };
+    document.addEventListener('touchstart', onStart, { passive: true });
+    document.addEventListener('touchmove', onMove, { passive: false });
+    document.addEventListener('touchend', onEnd);
+    document.addEventListener('touchcancel', onEnd);
+    return () => {
+      document.removeEventListener('touchstart', onStart);
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+      document.removeEventListener('touchcancel', onEnd);
+    };
+  }, []);
 
   const [dietPlan, setDietPlan] = useState<DietPlan | null>(null);
   const [dietPlanLoading, setDietPlanLoading] = useState(true);
@@ -120,21 +173,48 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
   return (
     <div className="min-h-screen bg-[#1c1c1c] pb-20">
+      {(pull > 4 || refreshing) && (
+        <div
+          className="fixed left-0 right-0 z-[45] flex justify-center pointer-events-none"
+          style={{ top: 10, transform: `translateY(${Math.min(pull, 80)}px)`, transition: pull === 0 ? 'transform 0.2s' : 'none' }}
+        >
+          <div className="w-9 h-9 rounded-full bg-[#242426] border border-white/[0.12] shadow-lg flex items-center justify-center">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#6ccbde"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              style={{
+                transform: refreshing ? undefined : `rotate(${pull * 4}deg)`,
+                animation: refreshing ? 'ikSpin 0.8s linear infinite' : undefined,
+                opacity: Math.min(1, pull / 40 + (refreshing ? 1 : 0)),
+              }}
+            >
+              <path d="M21 12a9 9 0 1 1-3-6.7" />
+              <path d="M21 3v6h-6" />
+            </svg>
+          </div>
+        </div>
+      )}
+      <style>{`@keyframes ikSpin { to { transform: rotate(360deg); } }`}</style>
 
 
       {/* Plans tab */}
       {activeTab === 'plans' && (
-        <PlansScreen clientId={clientId} clientName={clientName} />
+        <PlansScreen key={`plans-${refreshKey}`} clientId={clientId} clientName={clientName} />
       )}
 
       {/* Schedule tab */}
       {activeTab === 'schedule' && (
-        <ScheduleScreen clientId={clientId} clientName={clientName} />
+        <ScheduleScreen key={`schedule-${refreshKey}`} clientId={clientId} clientName={clientName} />
       )}
 
       {/* Progress tab */}
       {activeTab === 'progress' && (
-        <ProgressScreen clientId={clientId} />
+        <ProgressScreen key={`progress-${refreshKey}`} clientId={clientId} />
       )}
 
       {/* Diet tab */}
