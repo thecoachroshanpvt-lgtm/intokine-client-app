@@ -1889,22 +1889,22 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Flexor Endurance</span>
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Flexor Endurance <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={flexorData} color="#ec2226" unit="s" />
                       </div>
                       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Extensor Endurance</span>
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Extensor Endurance <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={extensorData} color="#f59e0b" unit="s" />
                       </div>
                       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Side Bridge</span>
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Side Bridge <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={rightData} color="#6ccbde" unit="s" />
                       </div>
                       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
-                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Side Bridge</span>
+                        <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Side Bridge <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={leftData} color="#a78bfa" unit="s" />
                       </div>
                     </div>
@@ -1978,7 +1978,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           return (
                             <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
-                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(CORE, '')}</span>
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(CORE, '')} <span className="normal-case text-white/30">(in seconds)</span></span>
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
                               {review && (
                                 <div className="mt-3 pt-3 border-t border-white/[0.06]">
