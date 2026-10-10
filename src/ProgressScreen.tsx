@@ -2245,7 +2245,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         return (
                           <div key={l.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${l.color}, transparent)` }} />
-                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{l.label}</span>
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{l.label} <span className="normal-case text-white/30">(in kg)</span></span>
                             <MiniLineChart data={data} color={l.color} unit="kg" />
                             {reviewFor(`Muscular Strength: ${l.label}`) && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
