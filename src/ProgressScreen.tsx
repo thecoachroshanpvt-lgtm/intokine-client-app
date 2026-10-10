@@ -2289,7 +2289,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="space-y-3">
                     <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">T Test</span>
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">T Test <span className="normal-case text-white/30">(in seconds)</span></span>
                       <MiniLineChart data={tTestData} color="#ec2226" unit="s" />
                     </div>
                     {customGoals.length > 0 && (
@@ -2317,7 +2317,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="space-y-3">
                     <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
-                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Vertical Jump</span>
+                      <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Vertical Jump <span className="normal-case text-white/30">(in cm)</span></span>
                       <MiniLineChart data={jumpData} color="#a78bfa" unit="cm" />
                     </div>
                     {customGoals.length > 0 && (
