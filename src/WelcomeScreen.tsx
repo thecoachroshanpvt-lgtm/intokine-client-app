@@ -13,10 +13,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
       {/* Intro animation: the icon appears large, then glides up and the wordmark reveals beneath it. */}
       <style>{`
         @keyframes ikIcon {
-          0%   { opacity: 0; transform: translateY(96px) scale(2.6); filter: blur(6px); }
-          22%  { opacity: 1; transform: translateY(96px) scale(2.6); filter: blur(0); }
-          55%  { opacity: 1; transform: translateY(96px) scale(2.6); }
-          100% { opacity: 0.95; transform: translateY(0) scale(1); }
+          0%   { opacity: 0; transform: translateY(96px) scale(0.92); }
+          22%  { opacity: 1; transform: translateY(96px) scale(1); }
+          55%  { opacity: 1; transform: translateY(96px) scale(1); }
+          100% { opacity: 1; transform: translateY(0) scale(var(--ik-end)); }
         }
         @keyframes ikWord {
           0%   { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateY(10px); }
@@ -24,7 +24,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         }
         @keyframes ikLine { 0% { transform: scaleX(0); opacity: 0; } 100% { transform: scaleX(1); opacity: 1; } }
         @keyframes ikUp { 0% { opacity: 0; transform: translateY(14px); } 100% { opacity: 1; transform: translateY(0); } }
-        .ik-icon { animation: ikIcon 2s cubic-bezier(0.65, 0, 0.2, 1) both; }
+        .ik-icon { --ik-end: 0.375; height: 4rem; will-change: transform; backface-visibility: hidden; animation: ikIcon 2s cubic-bezier(0.65, 0, 0.2, 1) both; }
+        @media (min-width: 640px) { .ik-icon { --ik-end: 0.5; } }
         .ik-word { animation: ikWord 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 1.45s both; }
         .ik-line { animation: ikLine 0.6s ease-out 2.2s both; transform-origin: center; }
         .ik-tag  { animation: ikUp 0.7s ease-out 2.4s both; }
@@ -57,11 +58,14 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8 text-center">
-        <img
-          src="/brand-icon.png"
-          alt=""
-          className="ik-icon h-6 sm:h-8 w-auto object-contain mb-11 sm:mb-14"
-        />
+        {/* Slot keeps the final (small) size; the image is drawn large and scaled down so it stays sharp. */}
+        <div className="relative h-6 sm:h-8 w-full mb-11 sm:mb-14">
+          <img
+            src="/brand-icon.png"
+            alt=""
+            className="ik-icon absolute left-0 right-0 mx-auto w-auto object-contain top-1/2 -mt-8"
+          />
+        </div>
         {!wordmarkFailed ? (
           <img
             src="/brand-wordmark.png"
