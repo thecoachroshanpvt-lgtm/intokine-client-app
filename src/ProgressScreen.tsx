@@ -10,6 +10,7 @@ import {
   doc,
 } from './firebase';
 import { MiniLineChart } from './MiniLineChart';
+import { DistanceDurationChart } from './DistanceDurationChart';
 import { MiniBarChart } from './MiniBarChart';
 import { ExerciseScores } from './ExerciseScores';
 import { InlineLoader } from './InlineLoader';
@@ -2242,11 +2243,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             </div>
                           ) : null;
                           if (g.valueType === 'distance_duration') {
+                            const ddData = sides.map((a) => ({ date: a.date, distance: a.activitySides![name].left, duration: a.activitySides![name].right }));
                             return (
-                              <React.Fragment key={g.id}>
-                                <div className={box}>{bar}{title('distance, km')}<MiniLineChart data={distData} color={color} unit=" km" />{reviewBlock}</div>
-                                <div className={box}>{bar}{title('duration, min')}<MiniLineChart data={durData} color="#f59e0b" unit=" min" /></div>
-                              </React.Fragment>
+                              <div key={g.id} className={`${box} sm:col-span-2`}>
+                                {bar}{title('distance & duration')}
+                                <DistanceDurationChart data={ddData} />
+                                {reviewBlock}
+                              </div>
                             );
                           }
                           if (g.valueType === 'circuits') {
