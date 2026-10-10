@@ -1123,7 +1123,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   );
 
   const tabRow = (
-    <div className="flex gap-2 mb-5 overflow-x-auto no-scrollbar">
+    <div className="sticky top-0 z-30 bg-[#1c1c1c] -mx-5 px-5 -mt-4 pt-4 pb-3 mb-2 flex gap-2 overflow-x-auto no-scrollbar">
       <TabButton tab="bca" label="BCA Statistics" />
       <TabButton tab="performance" label="Performance" />
       <TabButton tab="skills" label="Skill Roadmap" />
