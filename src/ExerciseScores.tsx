@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { MiniBarChart } from './MiniBarChart';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc } from './firebase';
 
 type ExType = 'Weighted' | 'Bodyweight' | 'Isometric' | 'Cardio';
@@ -69,10 +71,42 @@ const bestOf = (ex: PerfExercise): { big: string; unit: string; sub?: string } |
   return null;
 };
 
+// One bar per date: the main number for this kind of exercise (best of that day), oldest to newest.
+const progressSeries = (ex: PerfExercise): { points: { date: string; value: number }[]; unit: string; label: string } => {
+  const pick = (e: Entry): number => {
+    if (ex.type === 'Weighted') return e.weightKg ?? 0;
+    if (ex.type === 'Bodyweight') return e.reps ?? 0;
+    if (ex.type === 'Isometric') return e.durationSec ?? 0;
+    return (e.distanceKm ?? 0) > 0 ? (e.distanceKm as number) : (e.durationSec ?? 0);
+  };
+  const useKm = ex.type === 'Cardio' && (ex.entries || []).some((e) => (e.distanceKm ?? 0) > 0);
+  const unit = ex.type === 'Weighted' ? 'kg' : ex.type === 'Bodyweight' ? '' : useKm ? 'km' : 's';
+  const label = ex.type === 'Weighted' ? 'Weight' : ex.type === 'Bodyweight' ? 'Reps' : useKm ? 'Distance' : 'Time';
+  const byDate = new Map<string, number>();
+  (ex.entries || []).forEach((e) => {
+    const v = pick(e);
+    if (v > 0) byDate.set(e.date, Math.max(byDate.get(e.date) ?? 0, v));
+  });
+  const points = Array.from(byDate.entries())
+    .map(([date, value]) => ({ date, value }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+  return { points, unit, label };
+};
+
 export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [records, setRecords] = useState<PerfRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [openEx, setOpenEx] = useState<PerfExercise | null>(null);
+
+  // Keep the bottom navigation bar bright while the pop-up is open.
+  useEffect(() => {
+    if (!openEx) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
+  }, [openEx]);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -170,7 +204,7 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
                 const color = TYPE_COLOR[ex.type];
                 const last = [...ex.entries].sort((a, b) => b.date.localeCompare(a.date))[0];
                 return (
-                  <div key={ex.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-2">
+                  <button type="button" onClick={() => setOpenEx(ex)} key={ex.id} className="text-left w-full bg-[#242426] border border-white/[0.06] hover:border-white/20 rounded-2xl p-4 space-y-2 transition active:scale-[0.99]">
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-sm font-bold text-white leading-snug">{ex.name}</span>
                       <span
@@ -188,13 +222,63 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
                       <span>{best!.sub}</span>
                       {last && <span className="font-mono">{last.date}</span>}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </div>
         ))
       )}
+      {openEx && (() => {
+        const { points, unit, label } = progressSeries(openEx);
+        const color = TYPE_COLOR[openEx.type];
+        const first = points[0];
+        const latest = points[points.length - 1];
+        const diff = first && latest ? Math.round((latest.value - first.value) * 100) / 100 : 0;
+        const fmt = (v: number) => (openEx.type === 'Isometric' || (openEx.type === 'Cardio' && unit === 's') ? fmtTime(v) : `${v}${unit ? ` ${unit}` : ''}`);
+        return createPortal(
+          <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-end sm:items-center justify-center p-4 pb-28" onClick={() => setOpenEx(null)}>
+            <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wide truncate">{openEx.name}</h3>
+                  <span className="text-[10px] text-white/40">{label} progress - previous to current</span>
+                </div>
+                <button type="button" onClick={() => setOpenEx(null)} className="text-white/40 text-lg leading-none px-1">×</button>
+              </div>
+              <div className="p-4 space-y-4">
+                {points.length === 0 ? (
+                  <p className="text-xs text-white/40 text-center py-6">Not enough data yet</p>
+                ) : (
+                  <>
+                    <MiniBarChart data={points} color={color} unit={unit && unit !== 's' ? unit : ''} />
+                    {points.length > 1 && first && latest && (
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-[#242426] border border-white/[0.06] rounded-xl p-2.5">
+                          <span className="text-[9px] text-white/40 uppercase font-bold block">First</span>
+                          <span className="text-xs font-bold text-white font-mono">{fmt(first.value)}</span>
+                        </div>
+                        <div className="bg-[#242426] border border-white/[0.06] rounded-xl p-2.5">
+                          <span className="text-[9px] text-white/40 uppercase font-bold block">Now</span>
+                          <span className="text-xs font-bold text-white font-mono">{fmt(latest.value)}</span>
+                        </div>
+                        <div className="bg-[#242426] border border-white/[0.06] rounded-xl p-2.5">
+                          <span className="text-[9px] text-white/40 uppercase font-bold block">Change</span>
+                          <span className={`text-xs font-bold font-mono ${diff > 0 ? 'text-emerald-300' : diff < 0 ? 'text-rose-300' : 'text-white/60'}`}>
+                            {diff > 0 ? '+' : ''}{diff}{unit && unit !== 's' ? ` ${unit}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {points.length === 1 && <p className="text-[11px] text-white/40 text-center">Only one result so far - the bars appear as more are added.</p>}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
     </div>
   );
 };
