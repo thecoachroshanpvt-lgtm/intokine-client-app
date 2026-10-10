@@ -37,7 +37,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         <img
           src="/brand-icon.png"
           alt=""
-          className="h-8 sm:h-10 w-auto object-contain mb-9 sm:mb-12 opacity-95"
+          className="h-6 sm:h-8 w-auto object-contain mb-11 sm:mb-14 opacity-95"
         />
         {!wordmarkFailed ? (
           <img
@@ -55,7 +55,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
           className="mt-7 sm:mt-9 h-[2px] w-14 rounded-full"
           style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
         />
-        <p className="mt-6 sm:mt-7 text-[11px] sm:text-xs text-white/70 font-semibold uppercase tracking-[0.28em] leading-[2] max-w-[17rem] sm:max-w-sm">
+        <p className="mt-6 sm:mt-7 text-[10px] sm:text-xs text-white/70 font-semibold uppercase tracking-[0.22em] leading-[2.2] whitespace-nowrap">
           Your program. Your progress.
           <br />
           Built by your coach.
