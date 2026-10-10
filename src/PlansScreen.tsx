@@ -160,7 +160,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const changePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (next.length < 6) { setError('New password must be at least 6 characters.'); return; }
+    if (next.length < 8) { setError('New password must be at least 8 characters.'); return; }
     if (next !== confirm) { setError('New passwords do not match.'); return; }
     const { auth } = initializeClientFirebaseApp();
     const user = auth?.currentUser;
