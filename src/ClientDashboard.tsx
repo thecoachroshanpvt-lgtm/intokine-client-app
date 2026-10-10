@@ -307,20 +307,20 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
               ),
             },
             {
-              key: 'progress' as DashboardTab,
-              label: 'Progress',
-              icon: (active: boolean) => (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
-                  <path d="M4 19V13M10 19V9M16 19V5M22 19H2" strokeLinecap="round" />
-                </svg>
-              ),
-            },
-            {
               key: 'diet' as DashboardTab,
               label: 'Diet',
               icon: (active: boolean) => (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
                   <path d="M7 2v6a2 2 0 0 0 4 0V2M9 8v14M18 2c-2 1-3 3-3 6s1 5 3 6v8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ),
+            },
+            {
+              key: 'progress' as DashboardTab,
+              label: 'Progress',
+              icon: (active: boolean) => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
+                  <path d="M4 19V13M10 19V9M16 19V5M22 19H2" strokeLinecap="round" />
                 </svg>
               ),
             },
