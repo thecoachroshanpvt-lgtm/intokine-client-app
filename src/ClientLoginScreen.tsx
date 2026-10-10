@@ -69,15 +69,15 @@ export const ClientLoginScreen: React.FC = () => {
         }}
       />
       <div className="w-full max-w-sm space-y-8 relative z-10">
-        <div className="text-center space-y-3">
-          <div
-            className="w-16 h-16 mx-auto rounded-2xl flex items-center justify-center shadow-xl"
-            style={{ background: 'linear-gradient(135deg, #ec2226, #6ccbde)' }}
-          >
-            <span className="font-header text-2xl text-white">IK</span>
-          </div>
-          <h1 className="font-header text-2xl text-white tracking-wide">INTOKINE</h1>
-          <p className="text-xs text-white/50 font-light">Sign in to see your training plan</p>
+        <div className="flex flex-col items-center text-center">
+          <img src="/brand-icon.png" alt="" className="h-6 w-auto object-contain mb-8" />
+          <img
+            src="/brand-wordmark.png"
+            alt="INTOKINE"
+            className="h-16 w-auto max-w-[80%] object-contain drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
+          />
+          <div className="mt-6 h-[2px] w-12 rounded-full" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
+          <p className="mt-5 text-[10px] text-white/60 font-semibold uppercase tracking-[0.22em]">Sign in to see your training plan</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-3">
