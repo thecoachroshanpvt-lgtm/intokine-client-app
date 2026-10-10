@@ -26,7 +26,7 @@ const BrandLoader: React.FC = () => (
     <img
       src="/brand-icon.png"
       alt="Loading"
-      className="h-12 w-auto object-contain"
+      className="h-8 w-auto object-contain"
       style={{ animation: 'ikBlink 1.3s ease-in-out infinite' }}
     />
   </div>
