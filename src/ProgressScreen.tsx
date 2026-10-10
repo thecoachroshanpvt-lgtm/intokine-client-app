@@ -1122,13 +1122,26 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
     </button>
   );
 
-  const tabRow = (
-    <div className="sticky top-0 z-30 bg-[#1c1c1c] -mx-5 px-5 -mt-4 pt-4 pb-3 mb-2 flex gap-2 overflow-x-auto no-scrollbar">
+  // Fixed (not sticky) so it never moves or flickers during iOS rubber-band scrolling.
+  // An invisible copy keeps the space so the content starts below it.
+  const tabButtons = (
+    <div className="max-w-4xl mx-auto px-5 pt-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
       <TabButton tab="bca" label="BCA Statistics" />
       <TabButton tab="performance" label="Performance" />
       <TabButton tab="skills" label="Skill Roadmap" />
       <TabButton tab="scores" label="Exercise Scores" />
     </div>
+  );
+  const tabRow = (
+    <>
+      <div
+        className="fixed top-0 left-0 right-0 z-30 bg-[#1c1c1c]"
+        style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', willChange: 'transform' }}
+      >
+        {tabButtons}
+      </div>
+      <div className="invisible -mx-5 -mt-4 mb-2" aria-hidden="true">{tabButtons}</div>
+    </>
   );
 
   // BCA, Performance and Skills need assessments or goals; Exercise Scores has its own data.
