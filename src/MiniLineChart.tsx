@@ -1,4 +1,5 @@
 import React from 'react';
+import { useChartRange } from './ChartRange';
 
 interface DataPoint {
   date: string;
@@ -14,7 +15,8 @@ interface MiniLineChartProps {
   fixedMax?: number;
 }
 
-export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit = '', fixedMin, fixedMax }) => {
+export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data: allData, color, unit = '', fixedMin, fixedMax }) => {
+  const { visible: data, chips, selected, setSelected } = useChartRange(allData);
   if (data.length === 0) {
     return (
       <div className="h-24 flex items-center justify-center text-[11px] text-white/30 font-light">
@@ -56,9 +58,15 @@ export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit 
   // crowding; otherwise thin them out to avoid overlapping text.
   const maxDateLabels = 5;
   const dateLabelStep = Math.max(1, Math.ceil(points.length / maxDateLabels));
+  // Few points: label all. Many points: label only the first, last, highest and lowest; tap any dot for its own value.
+  const crowded = points.length > 8;
+  const maxI = values.indexOf(Math.max(...values));
+  const minI = values.indexOf(Math.min(...values));
+  const showValue = (i: number) => !crowded || i === 0 || i === points.length - 1 || i === maxI || i === minI || i === selected;
 
   return (
     <div>
+      {chips}
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full" style={{ height: `${height}px` }} preserveAspectRatio="none">
         {fixed && (
           <>
@@ -75,13 +83,16 @@ export const MiniLineChart: React.FC<MiniLineChartProps> = ({ data, color, unit 
         )}
         <path d={pathD} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
         {points.map((p, i) => (
-          <g key={i}>
-            <circle cx={p.x} cy={p.y} r="2.5" fill={color} />
-            <text x={p.x} y={p.y - 8} fontSize="8" fill="white" fillOpacity="0.85" textAnchor="middle" fontFamily="monospace">
-              {p.value}
-            </text>
-            {i % dateLabelStep === 0 && (
-              <text x={p.x} y={height - 6} fontSize="7" fill="white" fillOpacity="0.35" textAnchor="middle">
+          <g key={i} onClick={() => setSelected(selected === i ? null : i)} style={{ cursor: 'pointer' }}>
+            <circle cx={p.x} cy={p.y} r="9" fill="transparent" />
+            <circle cx={p.x} cy={p.y} r={i === selected ? 3.5 : 2.5} fill={color} />
+            {showValue(i) && (
+              <text x={p.x} y={p.y - 8} fontSize={i === selected ? 10 : 8} fontWeight={i === selected ? 'bold' : 'normal'} fill="white" fillOpacity={i === selected ? 1 : 0.85} textAnchor="middle" fontFamily="monospace">
+                {p.value}
+              </text>
+            )}
+            {(i % dateLabelStep === 0 || i === selected) && (
+              <text x={p.x} y={height - 6} fontSize="7" fill="white" fillOpacity={i === selected ? 0.9 : 0.35} textAnchor="middle">
                 {p.date.slice(5)}
               </text>
             )}
