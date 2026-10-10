@@ -791,17 +791,9 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
   const passedItems = items.filter((x) => x.status !== 'AlreadyFit');
   const fitCount = fitItems.length;
   const passedLabel = /^Posture/.test(title) ? 'Solved' : 'Achieved';
-  // Keep the bottom navigation bar bright and on top while the pop-up is open.
-  React.useEffect(() => {
-    if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.body.setAttribute('data-popup-open', '1');
-    return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
-  }, [open]);
   return (
     <>
-      <div className="grid grid-cols-1 gap-3">
+      {!open && <div className="grid grid-cols-1 gap-3">
         <button
           type="button"
           disabled={items.length === 0}
@@ -814,24 +806,21 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
             {items.length} activit{items.length === 1 ? 'y' : 'ies'}{fitCount > 0 ? ` · ${fitCount} already fit` : ''}
           </span>
         </button>
-      </div>
-      {open && createPortal(
-        <div className="anim-page fixed top-0 left-0 right-0 bottom-0 z-[60] bg-[#0f0f10] overflow-y-auto" style={{ minHeight: '100dvh' }}>
-          <div className="sticky top-0 z-10 bg-[#0f0f10] border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
+      </div>}
+      {open && (
+        <div className="anim-page bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden">
+          <div className="border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
             <button type="button" onClick={() => setOpen(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
             <div>
               <h3 className="text-sm font-bold text-white">{title} achievements</h3>
               <span className="text-[10px] text-white/40">{items.length} done - your road to the top</span>
             </div>
           </div>
-          <div className="max-w-md mx-auto px-4 pt-6 pb-28">
-            <div className="space-y-6">
-              {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievedTiles items={passedItems} label={passedLabel} />)}
-              {fitItems.length > 0 && <AlreadyFitTiles items={fitItems} />}
-            </div>
+          <div className="p-4 space-y-6">
+            {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievedTiles items={passedItems} label={passedLabel} />)}
+            {fitItems.length > 0 && <AlreadyFitTiles items={fitItems} />}
           </div>
-        </div>,
-        document.body
+        </div>
       )}
     </>
   );
