@@ -372,12 +372,12 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
           {[
             {
               key: 'plans' as DashboardTab,
-              label: 'Plans',
+              label: 'Home',
               icon: (active: boolean) => (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
-                  <rect x="5" y="3" width="14" height="18" rx="2" />
-                  <path d="M9 3v2a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3" />
-                  <path d="M9 12h6M9 16h6" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 11.5 12 4l9 7.5" />
+                  <path d="M5 10v10h14V10" />
+                  <path d="M10 20v-5h4v5" />
                 </svg>
               ),
             },
