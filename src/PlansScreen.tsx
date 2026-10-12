@@ -92,9 +92,16 @@ function parseDateKey(key: string): Date | null {
 
 // "14:00" -> { clock: "2:00", period: "PM" }; anything unexpected is shown as-is.
 function formatTime(t: string): { clock: string; period: string } | null {
-  const m = /^(\d{1,2}):(\d{2})/.exec((t || '').trim());
+  // Accepts "14:00" (24-hour) and "02:00 PM" (what the coach app saves).
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
   if (!m) return null;
-  const h = Number(m[1]);
+  let h = Number(m[1]);
+  const suffix = m[3] ? m[3].toUpperCase() : '';
+  if (suffix) {
+    if (h < 1 || h > 12) return null;
+    if (suffix === 'PM' && h < 12) h += 12;
+    if (suffix === 'AM' && h === 12) h = 0;
+  }
   if (h > 23) return null;
   return { clock: `${h % 12 === 0 ? 12 : h % 12}:${m[2]}`, period: h >= 12 ? 'PM' : 'AM' };
 }
