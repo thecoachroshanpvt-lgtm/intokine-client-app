@@ -74,6 +74,7 @@ interface TodaySession {
   location: string;
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
   attendanceStatus?: string;
+  postponedFromDates?: string[];
 }
 
 // Local calendar date (YYYY-MM-DD) - toISOString() is UTC and shifts the day
@@ -316,7 +317,12 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
 
     const unsubscribe = onSnapshot(sessionsQuery, (snapshot) => {
       const allSessions = snapshot.docs.map((d) => d.data() as TodaySession);
-      setTodaySessions(allSessions.filter((s) => s.date === todayKey));
+      // Today's sessions, plus any that were moved away from today (so the client sees "Postponed to ...").
+      setTodaySessions(
+        allSessions.filter(
+          (s) => s.date === todayKey || (Array.isArray(s.postponedFromDates) && s.postponedFromDates.includes(todayKey))
+        )
+      );
       setAllSessionsList(allSessions);
       setSessionsLoaded(true);
     }, () => setSessionsLoaded(true));
@@ -518,9 +524,14 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
 
             {todaySessions
               .map((s) => {
-              const sd = parseDateKey(s.date);
+              const sd = parseDateKey(toDateKey(new Date()));
               const t = formatTime(s.time);
-              const color = statusColor(s.status);
+              const movedAway = s.date !== toDateKey(new Date());
+              const absent = !movedAway && (s.attendanceStatus === 'Absent' || s.attendanceStatus === 'No Show');
+              const color = movedAway ? '#f59e0b' : absent ? '#ec2226' : statusColor(s.status);
+              const label = movedAway ? 'POSTPONED' : absent ? 'ABSENT' : s.status.toUpperCase();
+              const movedTo = movedAway ? parseDateKey(s.date) : null;
+              const movedTime = movedAway ? formatTime(s.time) : null;
               return (
                 <div key={s.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
                   <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
@@ -534,6 +545,12 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none mb-1.5">Session with coach</div>
+                    {movedAway ? (
+                      <div className="text-sm font-bold text-amber-400 leading-snug">
+                        Moved to {movedTo ? movedTo.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : s.date}
+                        {movedTime ? ` · ${movedTime.clock} ${movedTime.period}` : ''}
+                      </div>
+                    ) : (
                     <div className="flex items-baseline gap-1">
                       {t ? (
                         <>
@@ -544,6 +561,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                         <span className="text-sm font-bold text-white">{s.time || 'Time TBC'}</span>
                       )}
                     </div>
+                    )}
                     <div className="text-xs font-semibold text-white/80 mt-1 truncate">{s.sessionType}</div>
                     <div className="text-[11px] text-white/40 font-light truncate">{s.location} · Coach {s.coachName}</div>
                   </div>
@@ -551,7 +569,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                     className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
                     style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
                   >
-                    {s.status.toUpperCase()}
+                    {label}
                   </span>
                 </div>
               );
