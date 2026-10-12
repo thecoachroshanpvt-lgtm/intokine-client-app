@@ -245,6 +245,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
   const [sessionsLoaded, setSessionsLoaded] = useState(false);
   const [allSessionsList, setAllSessionsList] = useState<TodaySession[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<VisiblePlan | null>(null);
+  const [packageHistoryOpen, setPackageHistoryOpen] = useState(false);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -477,28 +478,107 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         </div>
       )}
 
-      {/* Journey roadmap */}
-      {journey && (
-        <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-white">
-              <span className="font-mono">{completedSessions}</span>
-              {journey.mode === 'sessions' ? <> of <span className="font-mono">{packageSessions}</span> sessions done</> : <> session{completedSessions === 1 ? '' : 's'} done</>}
-            </span>
-            <span className="text-[11px] text-white/40 font-mono">
-              {journey.mode === 'sessions'
-                ? `${Math.max(0, (packageSessions || 0) - completedSessions)} left`
-                : `Week ${journey.currentWeek} of ${journey.totalWeeks}`}
-            </span>
+      {/* Journey roadmap - tap to see this package's attendance */}
+      {journey && (() => {
+        const todayK = toDateKey(new Date());
+        // Renewal alert: running low on sessions / days, or already finished.
+        const sessionsLeft = journey.mode === 'sessions' ? Math.max(0, (packageSessions || 0) - completedSessions) : null;
+        const daysLeft = journey.mode === 'dates' && renewalDate
+          ? Math.ceil((new Date(renewalDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : null;
+        let alertText: string | null = null;
+        if (journey.expired) alertText = 'Package finished - please contact your coach to renew.';
+        else if (sessionsLeft !== null && sessionsLeft <= 2) alertText = `Renewal due soon - only ${sessionsLeft} session${sessionsLeft === 1 ? '' : 's'} left.`;
+        else if (daysLeft !== null && daysLeft <= 7) alertText = `Renewal due soon - package ends in ${Math.max(0, daysLeft)} day${daysLeft === 1 ? '' : 's'}.`;
+
+        // Sessions that belong to the current package, up to today.
+        const inPackage = allSessionsList.filter((x: any) => (packageBaselineIds ? !packageBaselineIds.includes(x.id) : !startDate || x.date >= startDate));
+        type Row = { key: string; date: string; time: string; label: string; color: string; note?: string };
+        const rows: Row[] = [];
+        inPackage.forEach((x) => {
+          const att = x.attendanceStatus;
+          (x.postponedFromDates || []).forEach((fd) => {
+            if (fd <= todayK && fd !== x.date) rows.push({ key: `${x.id}-${fd}`, date: fd, time: '', label: 'POSTPONED', color: '#f59e0b', note: `Moved to ${x.date}` });
+          });
+          let label = '';
+          let color = '#71717a';
+          if (att === 'Late') { label = 'LATE'; color = '#fbbf24'; }
+          else if (att === 'Present' || x.status === 'Completed') { label = 'PRESENT'; color = '#34d399'; }
+          else if (att === 'Absent' || att === 'No Show') { label = 'ABSENT'; color = '#ec2226'; }
+          else if (att === 'Cancelled' || x.status === 'Cancelled') { label = 'CANCELLED'; }
+          else if (x.status === 'Postponed' || att === 'Postponed') return;
+          else if (x.date < todayK) { label = 'NOT MARKED'; }
+          if (!label || x.date > todayK) return;
+          rows.push({ key: x.id, date: x.date, time: x.time, label, color });
+        });
+        rows.sort((p, q) => q.date.localeCompare(p.date));
+        const absentCount = rows.filter((r) => r.label === 'ABSENT').length;
+        return (
+          <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl overflow-hidden">
+            <button type="button" onClick={() => setPackageHistoryOpen((o) => !o)} className="w-full text-left p-4 space-y-2" aria-expanded={packageHistoryOpen}>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-white">
+                  <span className="font-mono">{completedSessions}</span>
+                  {journey.mode === 'sessions' ? <> of <span className="font-mono">{packageSessions}</span> sessions done</> : <> session{completedSessions === 1 ? '' : 's'} done</>}
+                </span>
+                <span className="text-[11px] text-white/40 font-mono flex items-center gap-1.5">
+                  {journey.mode === 'sessions'
+                    ? `${sessionsLeft} left`
+                    : `Week ${journey.currentWeek} of ${journey.totalWeeks}`}
+                  <span style={{ display: 'inline-block', transform: packageHistoryOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+                </span>
+              </div>
+              <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${journey.percent * 100}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+                />
+              </div>
+              {alertText && (
+                <p className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: journey.expired ? '#ec2226' : '#f59e0b' }}>
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: journey.expired ? '#ec2226' : '#f59e0b' }} />
+                  {alertText}
+                </p>
+              )}
+              {!packageHistoryOpen && <p className="text-[10px] text-white/30 font-light">Tap to see your attendance for this package</p>}
+            </button>
+
+            {packageHistoryOpen && (
+              <div className="border-t border-white/[0.06] p-3 space-y-2">
+                <p className="text-[11px] text-white/50">
+                  This package: <span className="text-emerald-400 font-semibold">{completedSessions} attended</span>
+                  {absentCount > 0 && <> · <span className="text-[#ec2226] font-semibold">{absentCount} absent</span></>}
+                </p>
+                {rows.length === 0 ? (
+                  <p className="text-xs text-white/40 font-light text-center py-3">No sessions in this package yet.</p>
+                ) : (
+                  rows.map((r) => {
+                    const rd = parseDateKey(r.date);
+                    const rt = r.time ? formatTime(r.time) : null;
+                    return (
+                      <div key={r.key} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-xl px-3 py-2">
+                        <div className="w-16 shrink-0 text-xs font-semibold text-white">
+                          {rd ? rd.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : r.date}
+                          <div className="text-[10px] text-white/40 font-light">{rd ? rd.toLocaleDateString(undefined, { weekday: 'short' }) : ''}</div>
+                        </div>
+                        <div className="flex-1 min-w-0 text-[11px] text-white/50 truncate">
+                          {r.note || (rt ? `${rt.clock} ${rt.period}` : '')}
+                        </div>
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap"
+                          style={{ color: r.color, borderColor: `${r.color}40`, backgroundColor: `${r.color}15` }}
+                        >
+                          {r.label}
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
           </div>
-          <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${journey.percent * 100}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
-            />
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Today - the suggested workout assigned for today (do it any time) plus any coach session */}
       {(() => {
