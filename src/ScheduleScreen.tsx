@@ -58,11 +58,29 @@ function parseDateKey(key: string): Date | null {
 
 // "14:00" -> { clock: "2:00", period: "PM" }; anything unexpected is shown as-is.
 function formatTime(t: string): { clock: string; period: string } | null {
-  const m = /^(\d{1,2}):(\d{2})/.exec((t || '').trim());
+  // Accepts "14:00" (24-hour) and "02:00 PM" (what the coach app saves).
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
   if (!m) return null;
-  const h = Number(m[1]);
+  let h = Number(m[1]);
+  const suffix = m[3] ? m[3].toUpperCase() : '';
+  if (suffix) {
+    if (h < 1 || h > 12) return null;
+    if (suffix === 'PM' && h < 12) h += 12;
+    if (suffix === 'AM' && h === 12) h = 0;
+  }
   if (h > 23) return null;
   return { clock: `${h % 12 === 0 ? 12 : h % 12}:${m[2]}`, period: h >= 12 ? 'PM' : 'AM' };
+}
+
+// Same time as 24-hour "HH:MM" so sorting works for both formats.
+function to24h(t: string): string {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
+  if (!m) return '00:00';
+  let h = Number(m[1]);
+  const s = m[3] ? m[3].toUpperCase() : '';
+  if (s === 'PM' && h < 12) h += 12;
+  if (s === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${m[2]}`;
 }
 
 function startOfWeek(d: Date): Date {
@@ -99,7 +117,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
       sessionsQuery,
       (snapshot) => {
         const results = snapshot.docs.map((d) => d.data() as ScheduledSession);
-        results.sort((a, b) => new Date(`${a.date}T${a.time || '00:00'}`).getTime() - new Date(`${b.date}T${b.time || '00:00'}`).getTime());
+        results.sort((a, b) => new Date(`${a.date}T${to24h(a.time)}`).getTime() - new Date(`${b.date}T${to24h(b.time)}`).getTime());
         setSessions(results);
         setSessionsLoading(false);
       },
