@@ -22,6 +22,8 @@ interface ScheduledSession {
   sessionType: string;
   location: string;
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
+  attendanceStatus?: string;
+  postponedFromDates?: string[];
 }
 
 interface SuggestedPlan {
@@ -40,7 +42,25 @@ interface SuggestedPlan {
   clientCompletedAt?: string;
 }
 
-type ViewMode = 'today' | 'week' | 'month';
+type ViewMode = 'today' | 'week' | 'month' | 'history';
+type HistoryTag = 'Present' | 'Late' | 'Absent' | 'Postponed' | 'Cancelled' | 'Not marked';
+interface HistoryEntry {
+  key: string;
+  date: string;
+  time: string;
+  coachName: string;
+  sessionType: string;
+  tag: HistoryTag;
+  movedTo?: string;
+}
+const HISTORY_COLORS: Record<HistoryTag, string> = {
+  Present: '#34d399',
+  Late: '#fbbf24',
+  Absent: '#ec2226',
+  Postponed: '#f59e0b',
+  Cancelled: '#71717a',
+  'Not marked': '#71717a',
+};
 
 // Local calendar date (YYYY-MM-DD). toISOString() would use UTC and shift the
 // day for anyone ahead of UTC (e.g. Dubai) during the first hours of the day.
@@ -100,6 +120,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
   const [monthCursor, setMonthCursor] = useState(() => new Date());
   const [selectedWeekDay, setSelectedWeekDay] = useState<string | null>(null);
   const [selectedMonthDay, setSelectedMonthDay] = useState<string | null>(null);
+  const [historyFilter, setHistoryFilter] = useState<'All' | 'Present' | 'Absent' | 'Postponed'>('All');
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -163,6 +184,44 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     () => sessions.filter((s) => s.date === todayKey),
     [sessions, todayKey]
   );
+
+  // Attendance history: every session up to today, newest first.
+  const historyEntries = useMemo(() => {
+    const out: HistoryEntry[] = [];
+    sessions.forEach((s) => {
+      // Days this session was moved away from
+      (s.postponedFromDates || []).forEach((fromDate) => {
+        if (fromDate <= todayKey && fromDate !== s.date) {
+          out.push({ key: `${s.id}-from-${fromDate}`, date: fromDate, time: '', coachName: s.coachName, sessionType: s.sessionType, tag: 'Postponed', movedTo: s.date });
+        }
+      });
+      const a = s.attendanceStatus;
+      let tag: HistoryTag | null = null;
+      if (a === 'Present' || s.status === 'Completed') tag = 'Present';
+      if (a === 'Late') tag = 'Late';
+      if (a === 'Absent' || a === 'No Show') tag = 'Absent';
+      if (a === 'Cancelled' || s.status === 'Cancelled') tag = 'Cancelled';
+      if (!tag) {
+        if (s.status === 'Postponed' || a === 'Postponed') return; // already shown on its old day(s); the new day is in the future
+        if (s.date < todayKey) tag = 'Not marked';
+      }
+      if (!tag || s.date > todayKey) return;
+      out.push({ key: s.id, date: s.date, time: s.time, coachName: s.coachName, sessionType: s.sessionType, tag });
+    });
+    out.sort((x, y) => (x.date === y.date ? to24h(y.time).localeCompare(to24h(x.time)) : y.date.localeCompare(x.date)));
+    return out;
+  }, [sessions, todayKey]);
+
+  const historyCounts = useMemo(() => {
+    const c = { attended: 0, absent: 0, postponed: 0, cancelled: 0 };
+    historyEntries.forEach((e) => {
+      if (e.tag === 'Present' || e.tag === 'Late') c.attended++;
+      else if (e.tag === 'Absent') c.absent++;
+      else if (e.tag === 'Postponed') c.postponed++;
+      else if (e.tag === 'Cancelled') c.cancelled++;
+    });
+    return c;
+  }, [historyEntries]);
 
   const weekDays = useMemo(() => {
     const start = startOfWeek(new Date());
@@ -264,7 +323,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
       {/* View mode toggle */}
       <div className="flex gap-2 bg-white/[0.04] rounded-xl p-1">
-        {(['today', 'week', 'month'] as ViewMode[]).map((mode) => (
+        {(['today', 'week', 'month', 'history'] as ViewMode[]).map((mode) => (
           <button
             key={mode}
             onClick={() => {
@@ -284,6 +343,103 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
         <InlineLoader />
       ) : (
         <>
+          {viewMode === 'history' && (
+            <div className="space-y-3">
+              {(() => {
+                const total = historyCounts.attended + historyCounts.absent;
+                const pct = total > 0 ? Math.round((historyCounts.attended / total) * 100) : null;
+                const tiles: { label: string; value: string | number; color: string }[] = [
+                  { label: 'Attended', value: historyCounts.attended, color: '#34d399' },
+                  { label: 'Absent', value: historyCounts.absent, color: '#ec2226' },
+                  { label: 'Postponed', value: historyCounts.postponed, color: '#f59e0b' },
+                  { label: 'Attendance', value: pct === null ? '—' : `${pct}%`, color: '#6ccbde' },
+                ];
+                return (
+                  <div className="grid grid-cols-4 gap-2">
+                    {tiles.map((t) => (
+                      <div key={t.label} className="bg-white/[0.04] border border-white/[0.06] rounded-xl py-2.5 text-center">
+                        <div className="text-base font-semibold font-mono leading-none" style={{ color: t.color }}>{t.value}</div>
+                        <div className="text-[9px] font-bold uppercase tracking-wide text-white/40 mt-1.5">{t.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              <div className="flex gap-2">
+                {(['All', 'Present', 'Absent', 'Postponed'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setHistoryFilter(f)}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold border transition ${
+                      historyFilter === f ? 'bg-white/[0.12] text-white border-white/20' : 'text-white/40 border-white/[0.08]'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              {(() => {
+                const shown = historyEntries.filter((e) =>
+                  historyFilter === 'All' ? true : historyFilter === 'Present' ? e.tag === 'Present' || e.tag === 'Late' : e.tag === historyFilter
+                );
+                if (shown.length === 0) {
+                  return (
+                    <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+                      <p className="text-sm text-white/50 font-light">No sessions to show yet.</p>
+                    </div>
+                  );
+                }
+                const groups: { month: string; items: HistoryEntry[] }[] = [];
+                shown.forEach((e) => {
+                  const d = parseDateKey(e.date);
+                  const month = d ? d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : e.date;
+                  const last = groups[groups.length - 1];
+                  if (last && last.month === month) last.items.push(e);
+                  else groups.push({ month, items: [e] });
+                });
+                return groups.map((g) => (
+                  <div key={g.month} className="space-y-2">
+                    <span className="text-[11px] text-white/40 uppercase font-semibold block pt-1">{g.month}</span>
+                    {g.items.map((e) => {
+                      const d = parseDateKey(e.date);
+                      const t = e.time ? formatTime(e.time) : null;
+                      const md = e.movedTo ? parseDateKey(e.movedTo) : null;
+                      const color = HISTORY_COLORS[e.tag];
+                      return (
+                        <div key={e.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                          <div className="w-12 shrink-0 text-center">
+                            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+                              {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : ''}
+                            </div>
+                            <div className="text-lg font-semibold font-mono text-white leading-none mt-1">{d ? d.getDate() : ''}</div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-semibold text-white/80 truncate">
+                              {t ? `${t.clock} ${t.period} · ` : ''}{e.sessionType}
+                            </div>
+                            <div className="text-[11px] text-white/40 font-light truncate">
+                              {e.movedTo
+                                ? `Moved to ${md ? md.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : e.movedTo}`
+                                : `Coach ${e.coachName}`}
+                            </div>
+                          </div>
+                          <span
+                            className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap"
+                            style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
+                          >
+                            {e.tag.toUpperCase()}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+
           {viewMode === 'today' && (
             <div className="space-y-2">
               {todaySessions.length === 0 ? (
