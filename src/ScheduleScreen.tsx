@@ -154,6 +154,9 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
   };
 
   const todayKey = toDateKey(new Date());
+  // Month view: show the tapped day, or today's sessions by default when today is in the month being viewed.
+  const todayInViewedMonth = new Date().getFullYear() === monthCursor.getFullYear() && new Date().getMonth() === monthCursor.getMonth();
+  const activeMonthDay = selectedMonthDay || (todayInViewedMonth ? todayKey : null);
   const todaysWorkouts = plans.filter((p) => p.date === todayKey);
 
   const todaySessions = useMemo(
@@ -231,6 +234,31 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
       </div>
     );
   };
+
+  if (selectedWorkout) {
+    return (
+      <TrainingScreen
+        workout={{
+          id: selectedWorkout.id,
+          date: selectedWorkout.date,
+          planTitle: selectedWorkout.planTitle,
+          category: selectedWorkout.category,
+          planDetails: selectedWorkout.planDetails || '',
+          targetFocus: selectedWorkout.targetFocus || '',
+          durationMinutes: selectedWorkout.durationMinutes || 0,
+          rpeTarget: selectedWorkout.rpeTarget || 0,
+          coachName: selectedWorkout.coachName,
+          coachSessionNotes: selectedWorkout.coachSessionNotes,
+          structuredExercises: selectedWorkout.structuredExercises,
+          clientCompletedAt: selectedWorkout.clientCompletedAt,
+        }}
+        onBack={() => setSelectedWorkout(null)}
+        onMarkedComplete={() => {
+          setPlans((prev) => prev.map((p) => (p.id === selectedWorkout.id ? { ...p, clientCompletedAt: new Date().toISOString() } : p)));
+        }}
+      />
+    );
+  }
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
@@ -422,38 +450,13 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                   const inMonth = d.getMonth() === monthCursor.getMonth();
                   const hasSession = !!sessionsByDate[key]?.length;
                   const isToday = key === todayKey;
-                  if (selectedWorkout) {
-    return (
-      <TrainingScreen
-        workout={{
-          id: selectedWorkout.id,
-          date: selectedWorkout.date,
-          planTitle: selectedWorkout.planTitle,
-          category: selectedWorkout.category,
-          planDetails: selectedWorkout.planDetails || '',
-          targetFocus: selectedWorkout.targetFocus || '',
-          durationMinutes: selectedWorkout.durationMinutes || 0,
-          rpeTarget: selectedWorkout.rpeTarget || 0,
-          coachName: selectedWorkout.coachName,
-          coachSessionNotes: selectedWorkout.coachSessionNotes,
-          structuredExercises: selectedWorkout.structuredExercises,
-          clientCompletedAt: selectedWorkout.clientCompletedAt,
-        }}
-        onBack={() => setSelectedWorkout(null)}
-        onMarkedComplete={() => {
-          setPlans((prev) => prev.map((p) => (p.id === selectedWorkout.id ? { ...p, clientCompletedAt: new Date().toISOString() } : p)));
-        }}
-      />
-    );
-  }
-
-  return (
+                  return (
                     <button
                       key={key}
                       onClick={() => setSelectedMonthDay(key)}
                       className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs relative ${
                         inMonth ? 'text-white' : 'text-white/20'
-                      } ${selectedMonthDay === key ? 'bg-white/[0.15]' : 'hover:bg-white/[0.06]'} ${isToday ? 'border border-[#6ccbde]/50' : ''}`}
+                      } ${activeMonthDay === key ? 'bg-white/[0.15]' : 'hover:bg-white/[0.06]'} ${isToday ? 'border border-[#6ccbde]/50' : ''}`}
                     >
                       {d.getDate()}
                       {hasSession && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-[#ec2226]" />}
@@ -462,12 +465,12 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                 })}
               </div>
 
-              {selectedMonthDay && (
+              {activeMonthDay && (
                 <div className="space-y-2 pt-2">
-                  {(sessionsByDate[selectedMonthDay] || []).length === 0 ? (
+                  {(sessionsByDate[activeMonthDay] || []).length === 0 ? (
                     <div className="text-xs text-white/40 font-light text-center py-4">No session on this day.</div>
                   ) : (
-                    (sessionsByDate[selectedMonthDay] || []).map(renderSessionCard)
+                    (sessionsByDate[activeMonthDay] || []).map(renderSessionCard)
                   )}
                 </div>
               )}
