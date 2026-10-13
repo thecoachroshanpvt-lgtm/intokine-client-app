@@ -20,10 +20,27 @@ const MEAL_TIME_ICONS: Record<string, string> = {
 };
 const MEAL_ORDER = Object.keys(MEAL_TIME_ICONS);
 
+interface MealItem {
+  id: string;
+  name: string;
+  portion: string;
+}
+
+interface MealVariant {
+  id: string;
+  label?: string;
+  items: MealItem[];
+  calories?: number;
+  proteinGrams?: number;
+  carbsGrams?: number;
+  fatGrams?: number;
+}
+
 interface MealEntry {
   id: string;
   mealTime: string;
   description: string;
+  variants?: MealVariant[];
   calories?: number;
   proteinGrams?: number;
   carbsGrams?: number;
@@ -262,7 +279,31 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                     </span>
                     {meal.calories !== undefined && <span className="text-[10px] text-white/40 font-mono">{meal.calories} kcal</span>}
                   </span>
-                  <span className={`block text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>{meal.description}</span>
+                  {meal.variants && meal.variants.length > 0 ? (
+                    <span className="block space-y-2">
+                      {meal.variants.map((v, vi) => (
+                        <span key={v.id} className="block">
+                          {meal.variants!.length > 1 && (
+                            <span className="flex items-center justify-between gap-2 mb-0.5">
+                              <span className="text-[10px] font-semibold text-white/50 uppercase">
+                                {vi > 0 && 'Or · '}{v.label?.trim() || `Option ${vi + 1}`}
+                              </span>
+                              {vi > 0 && v.calories ? <span className="text-[10px] text-white/30 font-mono">{v.calories} kcal</span> : null}
+                            </span>
+                          )}
+                          {v.items.map((it) => (
+                            <span key={it.id} className={`flex items-baseline justify-between gap-3 text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>
+                              <span>{it.name}</span>
+                              {it.portion ? <span className="text-white/50 font-mono text-[11px] shrink-0">{it.portion}</span> : null}
+                            </span>
+                          ))}
+                        </span>
+                      ))}
+                      {meal.variants.length > 1 && <span className="block text-[10px] text-white/30">Choose one option.</span>}
+                    </span>
+                  ) : (
+                    <span className={`block text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>{meal.description}</span>
+                  )}
                   {(meal.proteinGrams || meal.carbsGrams || meal.fatGrams) ? (
                     <span className="flex items-center gap-3 text-[10px] text-white/40 font-mono">
                       <span>P {meal.proteinGrams || 0}g</span>
