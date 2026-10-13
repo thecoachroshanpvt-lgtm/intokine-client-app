@@ -473,7 +473,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                 )}
                 <button type="button" onClick={() => toggleMeal(meal.id)} aria-pressed={done} className="w-full text-left p-4 block">
                   <span className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${done ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent'}`} aria-hidden>✓</span>
+                    <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${done ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent ik-nudge'}`} aria-hidden>✓</span>
                     <span className="text-sm font-semibold text-white flex-1">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'} {meal.mealTime}</span>
                   </span>
                   <span className="block mt-2.5 pl-9">
