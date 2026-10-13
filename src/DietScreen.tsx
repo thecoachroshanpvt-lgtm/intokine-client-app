@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { SupplementsCard } from './SupplementsCard';
+import { ConsistencyChart } from './ConsistencyChart';
 import { FloatingWhatsApp } from './FloatingWhatsApp';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
@@ -521,57 +522,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       {meals.length > 0 && (
-        <div className="rounded-2xl p-4 space-y-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Meal consistency</div>
-              <div className="text-[11px] text-white/40"><span className="text-white font-bold font-mono text-sm">{avgPct}%</span> average</div>
-            </div>
-            <div className="inline-flex rounded-full bg-white/[0.04] border border-white/[0.08] p-0.5 shrink-0">
-              {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
-                <button key={k} type="button" onClick={() => setRange(k)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde]/15 text-[#6ccbde]' : 'text-white/50'}`}>{l}</button>
-              ))}
-            </div>
-          </div>
-
-          <button type="button" onClick={() => setDetail(true)} className="w-full text-left" aria-label="Open day by day details">
-            <div className="flex gap-2">
-              <div className="flex-1 min-w-0">
-                <div className="relative pt-[14px]">
-                  <div className="absolute inset-x-0 top-[14px] h-16 pointer-events-none">
-                    <div className="absolute inset-x-0 top-0 border-t border-white/[0.08]" />
-                    <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-white/[0.08]" />
-                    <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.14]" />
-                  </div>
-                  <div className={`relative flex items-end justify-between ${range === 'month' ? 'gap-px' : 'gap-1.5'}`}>
-                    {bars.map((d) => {
-                      const h = d.active ? Math.max(3, Math.round(d.frac * 100)) : 0;
-                      return (
-                        <div key={d.key} className="flex-1 min-w-0 h-16 relative flex justify-center">
-                          {d.active && range !== 'month' && (
-                            <span className="absolute left-0 right-0 text-center text-[8px] font-mono text-white/60" style={{ bottom: `calc(${h}% + 2px)` }}>{Math.round(d.frac * 100)}</span>
-                          )}
-                          <div className="absolute bottom-0 w-full max-w-[26px] rounded-t-md" style={{ height: `${h}%`, background: barColor(d.frac) }} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                {range !== 'month' ? (
-                  <div className="flex justify-between gap-1.5 mt-1">
-                    {bars.map((d) => (
-                      <span key={d.key} className={`flex-1 min-w-0 text-center text-[9px] truncate ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex justify-between text-[9px] text-white/40 mt-1"><span>30 days ago</span><span>Today</span></div>
-                )}
-              </div>
-            </div>
-            <div className="text-center text-[10px] font-semibold text-[#6ccbde] mt-2">Tap for day-by-day details</div>
-          </button>
-        </div>
+        <ConsistencyChart title="Meal consistency" bars={bars} range={range} onRange={setRange} avgPct={avgPct} fullDays={totalFull} periodLabel={rangeTitle} onOpen={() => setDetail(true)} />
       )}
     </div>
   );
