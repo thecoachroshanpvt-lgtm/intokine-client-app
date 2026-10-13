@@ -153,8 +153,7 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
                 <div key={t.id} className="w-full shrink-0 p-4">
                   <Stars value={t.rating} />
                   <p className="text-sm text-white/80 font-light leading-relaxed mt-2">&ldquo;{t.quote}&rdquo;</p>
-                  <p className="text-xs font-semibold text-white mt-3">{t.name}</p>
-                  {t.detail && <p className="text-[11px] text-[#6ccbde] font-light">{t.detail}</p>}
+                  {t.detail && <p className="text-[11px] text-[#6ccbde] font-light mt-3">{t.detail}</p>}
                 </div>
               ))}
             </div>
@@ -228,7 +227,7 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
           <label className="flex items-start gap-2 text-[11px] text-white/60 font-light leading-relaxed">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5" />
             <span>
-              I allow Intokine to show this to other clients with my first name and last initial ({publicName(clientName)}). I know it is only shown after the team approves it.
+              I allow Intokine to show this to other clients without my name. I know it is only shown after the team approves it.
             </span>
           </label>
           {error && <p className="text-xs text-[#ec2226]">{error}</p>}
