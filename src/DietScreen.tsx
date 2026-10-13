@@ -331,7 +331,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                       <span className="text-sm">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'}</span>
                       {meal.mealTime}
                     </span>
-                    {kcal !== undefined && <span className="text-[10px] text-white/40 font-mono">{kcal} kcal</span>}
                   </span>
                   {shown ? (
                     <span className="block">
@@ -346,11 +345,14 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                   ) : (
                     <span className={`block text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>{meal.description}</span>
                   )}
-                  {(prot || carb || fat) ? (
-                    <span className="flex items-center gap-3 text-[10px] text-white/40 font-mono">
-                      <span>P {prot || 0}g</span>
-                      <span>C {carb || 0}g</span>
-                      <span>F {fat || 0}g</span>
+                  {(kcal || prot || carb || fat) ? (
+                    <span className="grid grid-cols-4 gap-1.5 pt-1.5">
+                      {([['kcal', kcal, '', '#fbbf24'], ['Protein', prot, 'g', '#6ccbde'], ['Carbs', carb, 'g', '#ffffff'], ['Fats', fat, 'g', '#ec2226']] as const).map(([label, val, unit, color]) => (
+                        <span key={label} className="rounded-lg bg-black/25 py-1.5 text-center">
+                          <span className="block text-sm font-bold font-mono leading-none" style={{ color }}>{val || 0}<span className="text-[9px] font-normal text-white/40">{unit}</span></span>
+                          <span className="block text-[9px] text-white/40 uppercase mt-1">{label}</span>
+                        </span>
+                      ))}
                     </span>
                   ) : null}
                 </span>
