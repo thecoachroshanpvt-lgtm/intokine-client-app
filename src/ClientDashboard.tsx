@@ -3,6 +3,7 @@ import { ScheduleScreen } from './ScheduleScreen';
 import { PlansScreen } from './PlansScreen';
 import { ProgressScreen } from './ProgressScreen';
 import { DietScreen } from './DietScreen';
+import { RoutineScreen } from './RoutineScreen';
 import {
   initializeClientFirebaseApp,
   signOut,
@@ -23,7 +24,7 @@ interface ScheduledSession {
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
 }
 
-type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet';
+type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet' | 'routine';
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('plans');
@@ -140,6 +141,9 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
       {/* Diet tab */}
       {activeTab === 'diet' && <DietScreen clientId={clientId} />}
 
+      {/* Routine tab */}
+      {activeTab === 'routine' && <RoutineScreen clientId={clientId} />}
+
       {/* Bottom navigation */}
       <div className="bottom-nav fixed bottom-0 left-0 right-0 z-30 bg-[#1c1c1c]/95 backdrop-blur-md border-t border-white/[0.08]">
         <div className="flex items-center justify-around max-w-4xl mx-auto px-2 py-2">
@@ -175,6 +179,16 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
               ),
             },
             {
+              key: 'routine' as DashboardTab,
+              label: 'Routine',
+              icon: (active: boolean) => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="3" width="16" height="18" rx="2" />
+                  <path d="m8 9 1.5 1.5L12 8M8 15l1.5 1.5L12 14M14.5 9.5H17M14.5 15.5H17" />
+                </svg>
+              ),
+            },
+            {
               key: 'progress' as DashboardTab,
               label: 'Progress',
               icon: (active: boolean) => (
@@ -189,7 +203,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
               <button
                 key={tab.key}
                 onClick={() => setActiveTab(tab.key)}
-                className="flex flex-col items-center gap-1 px-4 py-1.5 relative"
+                className="flex flex-col items-center gap-1 px-3 py-1.5 relative"
               >
                 {active && (
                   <span
