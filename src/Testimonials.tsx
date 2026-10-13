@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, getDoc, setDoc } from './firebase';
 
 interface Testimonial {
@@ -34,9 +34,6 @@ const Stars: React.FC<{ value: number; size?: number }> = ({ value, size = 14 })
 // Feedback is saved as "waiting"; the owner approves it before other clients can see it.
 export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName }) => {
   const [items, setItems] = useState<Testimonial[]>([]);
-  const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const touchStartX = useRef<number | null>(null);
 
   const [mine, setMine] = useState<{ rating: number; quote: string; approved: boolean } | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -59,7 +56,6 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
         // Stable order so the strip doesn't jump around
         list.sort((a, b) => a.id.localeCompare(b.id));
         setItems(list);
-        setIndex(0);
       },
       (e) => console.warn('Could not load testimonials:', e)
     );
@@ -79,14 +75,6 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
       })
       .catch((e) => console.warn('Could not load own testimonial:', e));
   }, [clientId]);
-
-  useEffect(() => {
-    if (count < 2 || paused) return;
-    const t = setInterval(() => setIndex((i) => (i + 1) % count), 5000);
-    return () => clearInterval(t);
-  }, [count, paused]);
-
-  const go = (i: number) => setIndex(((i % count) + count) % count);
 
   const openForm = () => {
     setRating(mine?.rating || 0);
@@ -127,53 +115,35 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
 
   return (
     <div className="space-y-2">
-      {count > 0 && (
-        <>
-          <span className="text-[11px] text-white/40 uppercase font-semibold block">What our clients say</span>
-          <div
-            className="overflow-hidden rounded-2xl bg-white/[0.04] border border-white/[0.08]"
-            onMouseEnter={() => setPaused(true)}
-            onMouseLeave={() => setPaused(false)}
-            onTouchStart={(e) => {
-              setPaused(true);
-              touchStartX.current = e.touches[0].clientX;
-            }}
-            onTouchEnd={(e) => {
-              const start = touchStartX.current;
-              touchStartX.current = null;
-              if (start !== null) {
-                const dx = e.changedTouches[0].clientX - start;
-                if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1));
-              }
-              setPaused(false);
-            }}
-          >
-            <div className="flex transition-transform duration-500 ease-out" style={{ transform: `translateX(-${index * 100}%)` }}>
-              {items.map((t) => (
-                <div key={t.id} className="w-full shrink-0 p-4">
-                  <Stars value={t.rating} />
-                  <p className="text-sm text-white/80 font-light leading-relaxed mt-2">&ldquo;{t.quote}&rdquo;</p>
-                  {t.detail && <p className="text-[11px] text-[#6ccbde] font-light mt-3">{t.detail}</p>}
-                </div>
-              ))}
+      {count > 0 && (() => {
+        // One "set" of cards, repeated until it is wider than a phone screen, then the set is doubled
+        // so the belt can loop seamlessly. Cards slowly glide to the right.
+        const reps = Math.max(1, Math.ceil(6 / count));
+        const set = Array.from({ length: reps }).flatMap((_, r) => items.map((t) => ({ ...t, k: `${r}-${t.id}` })));
+        const seconds = set.length * 9; // ~9 seconds per card = slow
+        return (
+          <>
+            <span className="text-[11px] text-white/40 uppercase font-semibold block">What our clients say</span>
+            <style>{`
+              @keyframes intokineBeltRight { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+              .intokine-belt { animation: intokineBeltRight ${seconds}s linear infinite; will-change: transform; }
+              .intokine-belt-wrap:hover .intokine-belt, .intokine-belt-wrap:active .intokine-belt { animation-play-state: paused; }
+              @media (prefers-reduced-motion: reduce) { .intokine-belt { animation: none; } }
+            `}</style>
+            <div className="intokine-belt-wrap overflow-hidden rounded-2xl">
+              <div className="intokine-belt flex gap-3 w-max">
+                {[...set, ...set].map((t, i) => (
+                  <div key={`${t.k}-${i}`} className="w-[270px] shrink-0 rounded-2xl bg-white/[0.04] border border-white/[0.08] p-4">
+                    <Stars value={t.rating} />
+                    <p className="text-sm text-white/80 font-light leading-relaxed mt-2">&ldquo;{t.quote}&rdquo;</p>
+                    {t.detail && <p className="text-[11px] text-[#6ccbde] font-light mt-3">{t.detail}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          {count > 1 && (
-            <div className="flex justify-center gap-1.5">
-              {items.map((t, i) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  aria-label={`Testimonial ${i + 1}`}
-                  onClick={() => go(i)}
-                  className="h-1.5 rounded-full transition-all"
-                  style={{ width: i === index ? 16 : 6, background: i === index ? '#6ccbde' : 'rgba(255,255,255,0.2)' }}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+          </>
+        );
+      })()}
 
       {/* Share your own feedback */}
       {!formOpen && (
