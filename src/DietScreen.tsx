@@ -60,12 +60,14 @@ interface DietPlan {
   hydrationLiters: number;
   notes: string;
   meals?: MealEntry[];
+  supplements?: { id: string; name: string; detail?: string }[];
   lastUpdated: string;
 }
 
 interface MealLog {
   date: string;
   eaten: string[];
+  supplementsTaken?: string[];
 }
 
 function dateKey(d: Date): string {
@@ -126,6 +128,24 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const todayLog = logs.find((l) => l.date === today);
   const eatenToday = new Set((todayLog?.eaten || []).filter((id) => mealIds.has(id)));
 
+  const suppTaken = new Set(todayLog?.supplementsTaken || []);
+  const toggleSupplement = async (id: string) => {
+    const next = new Set(suppTaken);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    const supplementsTaken = Array.from(next);
+    setLogs((prev) => [...prev.filter((l) => l.date !== today), { eaten: [], ...(prev.find((l) => l.date === today) || {}), date: today, supplementsTaken }]);
+    setSaveError('');
+    try {
+      const { db } = initializeClientFirebaseApp();
+      if (!db) throw new Error('offline');
+      await setDoc(doc(db, 'intokine_meal_logs', `${clientId}_${today}`), { clientId, date: today, supplementsTaken, updatedAt: new Date().toISOString() }, { merge: true });
+    } catch (e) {
+      console.warn('Could not save supplement tick:', e);
+      setSaveError('Could not save that tick. Please check your connection and try again.');
+    }
+  };
+
   const toggleMeal = async (mealId: string) => {
     const next = new Set(eatenToday);
     if (next.has(mealId)) next.delete(mealId);
@@ -134,7 +154,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     // Show the tick straight away; the database listener confirms it.
     setLogs((prev) => {
       const others = prev.filter((l) => l.date !== today);
-      return [...others, { date: today, eaten }];
+      return [...others, { ...(prev.find((l) => l.date === today) || {}), date: today, eaten }];
     });
     setSaveError('');
     try {
@@ -145,7 +165,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         date: today,
         eaten,
         updatedAt: new Date().toISOString(),
-      });
+      }, { merge: true });
     } catch (e) {
       console.warn('Could not save meal tick:', e);
       setSaveError('Could not save that tick. Please check your connection and try again.');
@@ -164,7 +184,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             No diet plan shared yet — your coach will share your plan here once it's ready.
           </p>
         </div>
-        <div className="mt-4"><SupplementsCard clientId={clientId} /></div>
       </div>
     );
   }
@@ -338,7 +357,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </div>
       )}
 
-      <SupplementsCard clientId={clientId} />
+      <SupplementsCard items={plan.supplements || []} taken={suppTaken} onToggle={toggleSupplement} />
 
       {plan.notes && (
         <div>
