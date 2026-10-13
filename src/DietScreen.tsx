@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SupplementsCard } from './SupplementsCard';
+import { FloatingWhatsApp } from './FloatingWhatsApp';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
 // Builds a wa.me deep link from whatever format the contact number was stored in.
@@ -70,6 +71,11 @@ interface MealLog {
   supplementsTaken?: string[];
 }
 
+function niceDate(k: string): string {
+  const d = new Date(k + 'T00:00:00');
+  return isNaN(d.getTime()) ? k : d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -79,6 +85,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<MealLog[]>([]);
   const [saveError, setSaveError] = useState('');
+  const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [pickedVar, setPickedVar] = useState<Record<string, number>>({}); // which option tab is open on each meal
   // Re-check the date once a minute so the checklist resets at midnight.
   const [, setTick] = useState(0);
@@ -195,15 +202,41 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const kcalPct = plan.dailyCalories > 0 ? Math.min(100, Math.round((eatenKcal / plan.dailyCalories) * 100)) : 0;
   const allDone = meals.length > 0 && eatenToday.size === meals.length;
 
-  // Last 7 days, oldest first
-  const week = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const key = dateKey(d);
+  // Meal consistency: the share of planned meals ticked each day. Days before the first tick do not count against the client.
+  const dayFrac = (key: string) => {
     const log = logs.find((l) => l.date === key);
-    const count = log ? (log.eaten || []).filter((id) => mealIds.has(id)).length : 0;
-    return { key, label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), frac: meals.length ? count / meals.length : 0, isToday: key === today };
+    return meals.length && log ? Math.min(1, (log.eaten || []).filter((id) => mealIds.has(id)).length / meals.length) : 0;
+  };
+  const firstDay = logs.map((l) => l.date).sort()[0] || today;
+  const lastDays = (n: number, fmt: Intl.DateTimeFormatOptions) =>
+    Array.from({ length: n }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (n - 1 - i));
+      const key = dateKey(d);
+      return { key, label: d.toLocaleDateString(undefined, fmt), frac: dayFrac(key), active: key >= firstDay, isToday: key === today };
+    });
+  const week = lastDays(7, { weekday: 'narrow' });
+  const month = lastDays(30, { day: 'numeric' });
+  const year = Array.from({ length: 12 }, (_, i) => {
+    const start = new Date();
+    start.setDate(1);
+    start.setMonth(start.getMonth() - (11 - i));
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    let sumFrac = 0;
+    let n = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = dateKey(d);
+      if (key > today) break;
+      if (key < firstDay) continue;
+      sumFrac += dayFrac(key);
+      n++;
+    }
+    return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'narrow' }), full: start.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }), frac: n ? sumFrac / n : 0, active: n > 0, isToday: i === 11 };
   });
+  const bars = range === 'week' ? week : range === 'month' ? month : year;
+  const activeBars = bars.filter((x) => x.active);
+  const avgPct = activeBars.length ? Math.round((activeBars.reduce((t, x) => t + x.frac, 0) / activeBars.length) * 100) : 0;
+  const barColor = (f: number) => (f >= 0.8 ? '#34d399' : f >= 0.5 ? '#fbbf24' : '#f87171');
 
   const macros: { label: string; eaten: number; target: number; color: string }[] = [
     { label: 'Protein', eaten: sum('proteinGrams'), target: plan.proteinGrams, color: '#6ccbde' },
@@ -213,45 +246,56 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
+      {/* Plan name, who made it and when: first thing on the screen */}
+      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[10px] text-white/40 uppercase font-semibold">Your diet plan</div>
+            <div className="font-header text-2xl text-white tracking-wide leading-tight truncate">{plan.dietType}</div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="text-[10px] text-white/40 uppercase font-semibold">Updated</div>
+            <div className="text-xs text-white font-semibold">{niceDate(plan.lastUpdated)}</div>
+          </div>
+        </div>
+        <div className="text-[11px] text-white/50 mt-2">Plan by <span className="text-white font-semibold">{plan.nutritionistName}</span></div>
+      </div>
+      {plan.nutritionistContact && <FloatingWhatsApp href={buildWhatsAppLink(plan.nutritionistContact)} />}
+
       {meals.length > 0 && (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3">
-          <div className="text-[10px] text-white/40 uppercase font-semibold mb-2">Last 7 days</div>
-          <div className="flex items-end justify-between gap-1">
-            {week.map((d) => (
-              <div key={d.key} className="flex flex-col items-center gap-1 flex-1">
-                <div className="w-full max-w-[28px] h-10 rounded-md bg-white/[0.06] flex items-end overflow-hidden">
-                  <div className="w-full" style={{ height: `${Math.round(d.frac * 100)}%`, background: d.frac >= 1 ? '#34d399' : 'linear-gradient(180deg,#6ccbde,#ec2226)' }} />
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] text-white/40 uppercase font-semibold">Meal consistency</div>
+              <div className="text-sm font-bold text-white font-mono">{avgPct}%<span className="text-[10px] text-white/40 font-normal ml-1.5">average</span></div>
+            </div>
+            <div className="inline-flex rounded-full bg-black/30 border border-white/[0.08] p-0.5">
+              {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setRange(k)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde] text-[#0d0e12]' : 'text-white/50'}`}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className={`flex items-end justify-between ${range === 'month' ? 'gap-px' : 'gap-1'}`}>
+            {bars.map((d: any) => (
+              <div key={d.key} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${d.full || d.key}: ${d.active ? Math.round(d.frac * 100) + '%' : 'no data'}`}>
+                <div className={`w-full ${range === 'month' ? '' : 'max-w-[28px]'} h-14 rounded-md bg-white/[0.06] flex items-end overflow-hidden`}>
+                  <div className="w-full rounded-md" style={{ height: `${d.active ? Math.max(4, Math.round(d.frac * 100)) : 0}%`, background: barColor(d.frac) }} />
                 </div>
-                <span className={`text-[9px] ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
+                {range !== 'month' && <span className={`text-[9px] ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>}
               </div>
             ))}
           </div>
+          {range === 'month' && (
+            <div className="flex justify-between text-[9px] text-white/40"><span>{month[0].label} (30 days ago)</span><span>Today</span></div>
+          )}
+          <div className="flex items-center gap-3 text-[9px] text-white/40">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} />80%+</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbbf24' }} />50-79%</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#f87171' }} />under 50%</span>
+          </div>
         </div>
       )}
-
-      {/* Plan header */}
-      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-white">{plan.dietType}</span>
-          <span className="text-[10px] text-white/40 font-light shrink-0">Updated {plan.lastUpdated}</span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] text-white/40 uppercase font-semibold">Plan by</div>
-            <div className="text-sm text-white font-semibold truncate">{plan.nutritionistName}</div>
-          </div>
-          {plan.nutritionistContact && (
-            <a
-              href={buildWhatsAppLink(plan.nutritionistContact)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[11px] font-bold text-[#25D366] border border-[#25D366]/30 rounded-lg px-3 py-1.5 hover:bg-[#25D366]/10 transition shrink-0"
-            >
-              Chat on WhatsApp
-            </a>
-          )}
-        </div>
-      </div>
 
       {/* Today */}
       <div className="rounded-2xl p-4 space-y-3" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
