@@ -75,35 +75,44 @@ const Chip: React.FC<{ on: boolean; onClick: () => void; children: React.ReactNo
   </button>
 );
 
-// Energy, stress and mood are updated on a meter: tap a step and every step up to it lights up.
+// Energy, stress and mood are updated on a dial: tap a part of the arc and the needle moves to it.
 const METER_LABELS = ['energy', 'stress', 'mood'];
 const meterColor = (q: number) => (q < 0.25 ? '#ec2226' : q < 0.75 ? '#fbbf24' : '#34d399');
 const MeterControl: React.FC<{ item: TrackItem; options: string[]; value?: string; onChange: (v: string | undefined) => void }> = ({ item, options, value, onChange }) => {
   const label = item.label.toLowerCase();
-  // Left to right the meter always goes from "less" to "more" (mood lists Good first, so it is turned around).
+  // Left to right the dial always goes from "less" to "more" (mood lists Good first, so it is turned around).
   const opts = label === 'mood' ? [...options].reverse() : options;
   const n = opts.length;
   const sel = value === undefined ? -1 : opts.indexOf(value);
   // For stress, more is worse; for energy and mood, more is better.
   const quality = (i: number) => (n > 1 ? (label === 'stress' ? 1 - i / (n - 1) : i / (n - 1)) : 1);
-  const selColor = sel >= 0 ? meterColor(quality(sel)) : 'rgba(255,255,255,0.4)';
+  const CX = 100, CY = 100, R = 92, r = 64, GAP = 3;
+  const pt = (rad: number, deg: number) => `${(CX + rad * Math.cos((deg * Math.PI) / 180)).toFixed(2)} ${(CY - rad * Math.sin((deg * Math.PI) / 180)).toFixed(2)}`;
+  const span = 180 / n;
+  const segPath = (i: number) => {
+    const a0 = 180 - i * span - GAP / 2;
+    const a1 = 180 - (i + 1) * span + GAP / 2;
+    return `M ${pt(R, a0)} A ${R} ${R} 0 0 1 ${pt(R, a1)} L ${pt(r, a1)} A ${r} ${r} 0 0 0 ${pt(r, a0)} Z`;
+  };
+  const needleDeg = sel >= 0 ? 180 - (sel + 0.5) * span : 180;
+  const color = sel >= 0 ? meterColor(quality(sel)) : 'rgba(255,255,255,0.4)';
   return (
-    <div>
-      <div className="flex gap-1.5">
-        {opts.map((o, i) => {
-          const lit = sel >= 0 && i <= sel;
-          const c = meterColor(quality(i));
-          return (
-            <button key={o} type="button" onClick={() => onChange(sel === i ? undefined : o)} aria-pressed={sel === i} aria-label={o}
-              className="flex-1 h-9 rounded-md border transition active:scale-[0.97]"
-              style={{ background: lit ? c : 'rgba(255,255,255,0.05)', borderColor: lit ? c : 'rgba(255,255,255,0.1)', opacity: lit ? (sel === i ? 1 : 0.55) : 1 }} />
-          );
-        })}
-      </div>
-      <div className="flex gap-1.5 mt-1.5">
+    <div className="max-w-[260px]">
+      <svg viewBox="0 0 200 108" className="w-full block" role="group" aria-label={item.label}>
         {opts.map((o, i) => (
-          <span key={o} className={`flex-1 text-center text-[10px] truncate ${sel === i ? 'font-bold' : 'text-white/35'}`} style={sel === i ? { color: selColor } : undefined}>{o}</span>
+          <path key={o} d={segPath(i)} fill={meterColor(quality(i))} opacity={sel === i ? 1 : sel < 0 ? 0.45 : 0.22}
+            style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => onChange(sel === i ? undefined : o)}>
+            <title>{o}</title>
+          </path>
         ))}
+        <line x1={CX} y1={CY} x2={pt(r - 10, needleDeg).split(' ')[0]} y2={pt(r - 10, needleDeg).split(' ')[1]}
+          stroke={sel >= 0 ? '#ffffff' : 'rgba(255,255,255,0.3)'} strokeWidth="3.5" strokeLinecap="round" style={{ pointerEvents: 'none' }} />
+        <circle cx={CX} cy={CY} r="7" fill="#252525" stroke={sel >= 0 ? '#ffffff' : 'rgba(255,255,255,0.3)'} strokeWidth="3" style={{ pointerEvents: 'none' }} />
+      </svg>
+      <div className="flex items-center justify-between -mt-1 text-[10px] text-white/35 px-1">
+        <span>{opts[0]}</span>
+        <span className="text-sm font-bold" style={{ color }}>{sel >= 0 ? opts[sel] : 'Tap to set'}</span>
+        <span>{opts[n - 1]}</span>
       </div>
     </div>
   );
