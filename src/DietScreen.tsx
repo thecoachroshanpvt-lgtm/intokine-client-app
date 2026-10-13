@@ -311,7 +311,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   return (
     <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 pb-8`}>
       {/* Plan name, who made it and when: first thing on the screen */}
-      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4" style={{ borderLeft: '3px solid #ec2226' }}>
+      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="text-[10px] text-white/40 uppercase font-semibold tracking-wider">Your diet plan</div>
@@ -320,9 +320,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           <span className="shrink-0 text-[10px] text-white/50 bg-white/[0.06] rounded-full px-2.5 py-1 mt-0.5">Updated {niceDate(plan.lastUpdated)}</span>
         </div>
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.06]">
-          <span className="w-6 h-6 rounded-full bg-[#6ccbde]/15 text-[#6ccbde] text-[11px] font-bold flex items-center justify-center shrink-0">
-            {(plan.nutritionistName || '?').trim().charAt(0).toUpperCase()}
-          </span>
           <span className="text-xs text-white/50">Plan by <span className="text-white font-semibold">{plan.nutritionistName}</span></span>
         </div>
       </div>
