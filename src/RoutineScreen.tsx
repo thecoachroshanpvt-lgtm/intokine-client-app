@@ -75,44 +75,59 @@ const Chip: React.FC<{ on: boolean; onClick: () => void; children: React.ReactNo
   </button>
 );
 
-// Energy, stress and mood are updated on a dial: tap a part of the arc and the needle moves to it.
+// Energy, stress and mood are updated on a slider: drag the handle or tap the line, and the answer is saved when you let go.
 const METER_LABELS = ['energy', 'stress', 'mood'];
 const meterColor = (q: number) => (q < 0.25 ? '#ec2226' : q < 0.75 ? '#fbbf24' : '#34d399');
 const MeterControl: React.FC<{ item: TrackItem; options: string[]; value?: string; onChange: (v: string | undefined) => void }> = ({ item, options, value, onChange }) => {
   const label = item.label.toLowerCase();
-  // Left to right the dial always goes from "less" to "more" (mood lists Good first, so it is turned around).
+  // Left to right the slider always goes from "less" to "more" (mood lists Good first, so it is turned around).
   const opts = label === 'mood' ? [...options].reverse() : options;
   const n = opts.length;
   const sel = value === undefined ? -1 : opts.indexOf(value);
+  const [drag, setDrag] = useState<number | null>(null);
+  const trackRef = React.useRef<HTMLDivElement>(null);
   // For stress, more is worse; for energy and mood, more is better.
   const quality = (i: number) => (n > 1 ? (label === 'stress' ? 1 - i / (n - 1) : i / (n - 1)) : 1);
-  const CX = 100, CY = 100, R = 92, r = 64, GAP = 3;
-  const pt = (rad: number, deg: number) => `${(CX + rad * Math.cos((deg * Math.PI) / 180)).toFixed(2)} ${(CY - rad * Math.sin((deg * Math.PI) / 180)).toFixed(2)}`;
-  const span = 180 / n;
-  const segPath = (i: number) => {
-    const a0 = 180 - i * span - GAP / 2;
-    const a1 = 180 - (i + 1) * span + GAP / 2;
-    return `M ${pt(R, a0)} A ${R} ${R} 0 0 1 ${pt(R, a1)} L ${pt(r, a1)} A ${r} ${r} 0 0 0 ${pt(r, a0)} Z`;
+  const shown = drag !== null ? drag : sel;
+  const color = shown >= 0 ? meterColor(quality(shown)) : 'rgba(255,255,255,0.4)';
+  const pct = (i: number) => (n > 1 ? (i / (n - 1)) * 100 : 50);
+  const indexAt = (clientX: number) => {
+    const r = trackRef.current?.getBoundingClientRect();
+    if (!r || r.width === 0) return 0;
+    return Math.round(Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * (n - 1));
   };
-  const needleDeg = sel >= 0 ? 180 - (sel + 0.5) * span : 180;
-  const color = sel >= 0 ? meterColor(quality(sel)) : 'rgba(255,255,255,0.4)';
+  const stops = Array.from({ length: 21 }, (_, k) => `${meterColor(label === 'stress' ? 1 - k / 20 : k / 20)} ${k * 5}%`).join(', ');
   return (
-    <div className="max-w-[260px]">
-      <svg viewBox="0 0 200 108" className="w-full block" role="group" aria-label={item.label}>
+    <div data-no-pull className="max-w-[320px]">
+      <div className="flex items-center justify-between mb-2 min-h-[20px]">
+        <span className="text-[11px] text-white/35">{shown >= 0 ? 'Slide to change' : 'Slide or tap to set'}</span>
+        <span className="text-sm font-bold" style={{ color }}>{shown >= 0 ? opts[shown] : '—'}</span>
+      </div>
+      <div className="px-3.5">
+        <div
+          ref={trackRef}
+          className="relative h-8 select-none"
+          style={{ touchAction: 'none' }}
+          onPointerDown={(e) => { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); setDrag(indexAt(e.clientX)); }}
+          onPointerMove={(e) => { if (drag !== null) { const k = indexAt(e.clientX); if (k !== drag) setDrag(k); } }}
+          onPointerUp={(e) => { const k = indexAt(e.clientX); setDrag(null); if (k !== sel) onChange(opts[k]); }}
+          onPointerCancel={() => setDrag(null)}
+        >
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-2.5 rounded-full" style={{ background: `linear-gradient(90deg, ${stops})`, opacity: shown >= 0 ? 1 : 0.45 }} />
+          {opts.map((o, i) => (
+            <span key={o} className="absolute top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-black/40" style={{ left: `${pct(i)}%`, marginLeft: -2 }} />
+          ))}
+          <div
+            className="absolute top-1/2 w-7 h-7 rounded-full border-[3px] bg-[#1c1c1c] shadow-lg"
+            style={{ left: `${pct(shown >= 0 ? shown : 0)}%`, transform: 'translate(-50%, -50%)', borderColor: color, opacity: shown >= 0 ? 1 : 0.6, transition: drag !== null ? 'none' : 'left 0.15s ease-out' }}
+          />
+        </div>
+      </div>
+      <div className="relative h-4 mx-3.5 mt-0.5">
         {opts.map((o, i) => (
-          <path key={o} d={segPath(i)} fill={meterColor(quality(i))} opacity={sel === i ? 1 : sel < 0 ? 0.45 : 0.22}
-            style={{ cursor: 'pointer', transition: 'opacity 0.2s' }} onClick={() => onChange(sel === i ? undefined : o)}>
-            <title>{o}</title>
-          </path>
+          <span key={o} className={`absolute text-[10px] whitespace-nowrap ${shown === i ? 'font-bold' : 'text-white/35'}`}
+            style={{ left: `${pct(i)}%`, transform: `translateX(${n > 1 ? (i === 0 ? '-14px' : i === n - 1 ? 'calc(-100% + 14px)' : '-50%') : '-50%'})`, color: shown === i ? color : undefined }}>{o}</span>
         ))}
-        <line x1={CX} y1={CY} x2={pt(r - 10, needleDeg).split(' ')[0]} y2={pt(r - 10, needleDeg).split(' ')[1]}
-          stroke={sel >= 0 ? '#ffffff' : 'rgba(255,255,255,0.3)'} strokeWidth="3.5" strokeLinecap="round" style={{ pointerEvents: 'none' }} />
-        <circle cx={CX} cy={CY} r="7" fill="#252525" stroke={sel >= 0 ? '#ffffff' : 'rgba(255,255,255,0.3)'} strokeWidth="3" style={{ pointerEvents: 'none' }} />
-      </svg>
-      <div className="flex items-center justify-between -mt-1 text-[10px] text-white/35 px-1">
-        <span>{opts[0]}</span>
-        <span className="text-sm font-bold" style={{ color }}>{sel >= 0 ? opts[sel] : 'Tap to set'}</span>
-        <span>{opts[n - 1]}</span>
       </div>
     </div>
   );
