@@ -131,11 +131,11 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
               @media (prefers-reduced-motion: reduce) { .intokine-belt { animation: none; } }
             `}</style>
             <div className="intokine-belt-wrap overflow-hidden rounded-2xl">
-              <div className="intokine-belt flex gap-2 w-max">
+              <div className="intokine-belt flex gap-2 w-max items-start">
                 {[...set, ...set].map((t, i) => (
-                  <div key={`${t.k}-${i}`} className="w-[200px] shrink-0 rounded-xl bg-white/[0.04] border border-white/[0.08] px-3 py-2.5">
+                  <div key={`${t.k}-${i}`} className="w-[220px] shrink-0 rounded-xl bg-white/[0.04] border border-white/[0.08] px-3 py-2.5">
                     <Stars value={t.rating} size={11} />
-                    <p className="text-[11px] text-white/75 font-light leading-snug mt-1.5 line-clamp-3">&ldquo;{t.quote}&rdquo;</p>
+                    <p className="text-[11px] text-white/75 font-light leading-snug mt-1.5">&ldquo;{t.quote}&rdquo;</p>
                     {t.detail && <p className="text-[10px] text-[#6ccbde] font-light mt-1.5 truncate">{t.detail}</p>}
                   </div>
                 ))}
