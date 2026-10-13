@@ -17,9 +17,11 @@ interface RoutineLog {
 }
 
 // Exercise comes from sessions and suggested workouts, and protein/macros from the meals ticked in the Diet tab, so they are not asked here.
-const DAILY_HABITS = ['Post-meal walk', 'Dinner on time', 'No sugary drinks', 'Supplements taken', 'Relax / mind activity'];
+const DAILY_HABITS = ['Post-meal walk', 'Dinner on time', 'No sugary drinks', 'Supplements taken'];
+const ENERGY = ['Low', 'Okay', 'High'];
+const DIGESTION = ['Good', 'Bloated', 'Constipated', 'Loose'];
 const STRUGGLES = ['Sugar cravings', 'Emotional eating', 'Late-night eating', 'Outside food'];
-const SYMPTOMS = ['Acne', 'Hair fall', 'Bloating', 'Constipation', 'Sugar cravings'];
+const SYMPTOMS = ['Bloating', 'Constipation', 'Acidity / reflux', 'Low energy', 'Headaches', 'Sugar cravings'];
 const LEVELS = ['None', 'Mild', 'Moderate', 'Severe'];
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -234,6 +236,18 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             </div>
           </div>
           <div>
+            <Label>Energy today</Label>
+            <div className="flex flex-wrap gap-2">
+              {ENERGY.map((s) => <Chip key={s} on={dv.energy === s} onClick={() => setDaily({ energy: dv.energy === s ? undefined : s })}>{s}</Chip>)}
+            </div>
+          </div>
+          <div>
+            <Label>Digestion today</Label>
+            <div className="flex flex-wrap gap-2">
+              {DIGESTION.map((s) => <Chip key={s} on={dv.digestion === s} onClick={() => setDaily({ digestion: dv.digestion === s ? undefined : s })}>{s}</Chip>)}
+            </div>
+          </div>
+          <div>
             <Label>Stress today</Label>
             <div className="flex flex-wrap gap-2">
               {['Low', 'Mild', 'Moderate', 'High'].map((s) => <Chip key={s} on={dv.stress === s} onClick={() => setDaily({ stress: dv.stress === s ? undefined : s })}>{s}</Chip>)}
@@ -281,33 +295,11 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       ))}
 
       {/* MONTHLY */}
-      {card('monthly', 'This month', 'Cycle and body update, once a month.', !!monthlyNow, (
+      {card('monthly', 'This month', 'A quick health update, once a month.', !!monthlyNow, (
         <>
           <div>
-            <Label>Last period started</Label>
-            <input type="date" value={mf.periodStart ?? ''} max={today} onChange={(e) => setMf({ ...mf, periodStart: e.target.value })} className={inputCls + ' max-w-[200px]'} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Cycle length (days)</Label>
-              <input type="number" inputMode="numeric" min={0} value={mf.cycleLength ?? ''} onChange={(e) => setMf({ ...mf, cycleLength: e.target.value === '' ? undefined : Number(e.target.value) })} className={inputCls} />
-            </div>
-            <div>
-              <Label>Days delayed</Label>
-              <input type="number" inputMode="numeric" min={0} value={mf.daysDelayed ?? ''} onChange={(e) => setMf({ ...mf, daysDelayed: e.target.value === '' ? undefined : Number(e.target.value) })} className={inputCls} />
-            </div>
-          </div>
-          <div>
-            <Label>Heavy bleeding?</Label>
-            <div className="flex gap-2">
-              {['No', 'Yes'].map((s) => <Chip key={s} on={mf.heavyBleeding === s} onClick={() => setMf({ ...mf, heavyBleeding: mf.heavyBleeding === s ? undefined : s })}>{s}</Chip>)}
-            </div>
-          </div>
-          <div>
-            <Label>Period pain</Label>
-            <div className="flex flex-wrap gap-2">
-              {LEVELS.map((s) => <Chip key={s} on={mf.pain === s} onClick={() => setMf({ ...mf, pain: mf.pain === s ? undefined : s })}>{s}</Chip>)}
-            </div>
+            <Label>Any change in your health? (optional)</Label>
+            <textarea rows={2} placeholder="New diagnosis, test results, illness, injury..." value={mf.healthChange ?? ''} onChange={(e) => setMf({ ...mf, healthChange: e.target.value })} className={inputCls + ' resize-none'} />
           </div>
           <div>
             <Label>Medicine or supplement changes (optional)</Label>
