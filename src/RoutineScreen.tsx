@@ -21,6 +21,7 @@ interface TrackItem {
   step?: number;
   target?: number;
   options?: string[];
+  detail?: string;
 }
 
 interface FollowUp {
@@ -243,7 +244,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           <div className="px-4 pb-4 space-y-4 border-t border-white/[0.06] pt-4">
             {list.map(({ fu, it }) => (
               <div key={fu.id + it.id}>
-                <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}</div>
+                <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}{it.detail ? <span className="normal-case font-normal text-white/50"> · {it.detail}</span> : null}</div>
                 {control(fu, it)}
               </div>
             ))}
