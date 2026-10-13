@@ -21,7 +21,7 @@ export const SupplementsCard: React.FC<{
           const on = taken.has(x.id);
           return (
             <button key={x.id} type="button" onClick={() => onToggle(x.id)} aria-pressed={on} className="w-full flex items-center gap-3 text-left py-3">
-              <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${on ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent'}`}>✓</span>
+              <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${on ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent ik-nudge'}`}>✓</span>
               <span className="min-w-0">
                 <span className={`block text-xs font-semibold truncate ${on ? 'text-white/50' : 'text-white'}`}>{x.name}</span>
                 {x.detail && <span className="block text-[11px] text-white/45 font-light truncate">{x.detail}</span>}
