@@ -160,16 +160,6 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
               ),
             },
             {
-              key: 'schedule' as DashboardTab,
-              label: 'Schedule',
-              icon: (active: boolean) => (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
-                  <rect x="3" y="4" width="18" height="17" rx="2" />
-                  <path d="M3 9h18M8 2v4M16 2v4" />
-                </svg>
-              ),
-            },
-            {
               key: 'diet' as DashboardTab,
               label: 'Diet',
               icon: (active: boolean) => (
@@ -185,6 +175,16 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="4" y="3" width="16" height="18" rx="2" />
                   <path d="m8 9 1.5 1.5L12 8M8 15l1.5 1.5L12 14M14.5 9.5H17M14.5 15.5H17" />
+                </svg>
+              ),
+            },
+            {
+              key: 'schedule' as DashboardTab,
+              label: 'Schedule',
+              icon: (active: boolean) => (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
+                  <rect x="3" y="4" width="18" height="17" rx="2" />
+                  <path d="M3 9h18M8 2v4M16 2v4" />
                 </svg>
               ),
             },
