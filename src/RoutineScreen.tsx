@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
 // Lifestyle routine: a few quick things every day, a short check-in every week, and a monthly update.
+// Weight and waist come from the coach's assessments, diet from meal ticks, and exercise from sessions and workouts, so none of those are asked here.
 // Everything is saved to intokine_routine_logs and shows up automatically in the nutritionist's Tracker.
 // Document id = <clientId>_<daily|weekly|monthly>_<period>   (period = day, Monday of the week, or YYYY-MM)
 
@@ -15,7 +16,8 @@ interface RoutineLog {
   values: Vals;
 }
 
-const DAILY_HABITS = ['Exercise / movement', 'Post-meal walk', 'Dinner on time', 'No sugary drinks', 'Protein target met', 'Supplements taken', 'Relax / mind activity'];
+// Exercise comes from sessions and suggested workouts, and protein/macros from the meals ticked in the Diet tab, so they are not asked here.
+const DAILY_HABITS = ['Post-meal walk', 'Dinner on time', 'No sugary drinks', 'Supplements taken', 'Relax / mind activity'];
 const STRUGGLES = ['Sugar cravings', 'Emotional eating', 'Late-night eating', 'Outside food'];
 const SYMPTOMS = ['Acne', 'Hair fall', 'Bloating', 'Constipation', 'Sugar cravings'];
 const LEVELS = ['None', 'Mild', 'Moderate', 'Severe'];
@@ -243,28 +245,6 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       {/* WEEKLY */}
       {card('weekly', 'This week', 'A short check-in, once a week.', !!weeklyNow, (
         <>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Weight (kg)</Label>
-              <input type="number" inputMode="decimal" step="0.1" min={0} value={wf.weightKg ?? ''} onChange={(e) => setWf({ ...wf, weightKg: e.target.value === '' ? undefined : Number(e.target.value) })} className={inputCls} />
-            </div>
-            <div>
-              <Label>Waist (cm)</Label>
-              <input type="number" inputMode="decimal" step="0.1" min={0} value={wf.waistCm ?? ''} onChange={(e) => setWf({ ...wf, waistCm: e.target.value === '' ? undefined : Number(e.target.value) })} className={inputCls} />
-            </div>
-          </div>
-          <div>
-            <Label>How did you follow your diet this week?</Label>
-            <div className="flex flex-wrap gap-2">
-              {['On track', 'Partially on track', 'Not on track'].map((s) => <Chip key={s} on={wf.dietAdh === s} onClick={() => setWf({ ...wf, dietAdh: wf.dietAdh === s ? undefined : s })}>{s}</Chip>)}
-            </div>
-          </div>
-          <div>
-            <Label>How was your exercise / movement?</Label>
-            <div className="flex flex-wrap gap-2">
-              {['On track', 'Partially on track', 'Not on track'].map((s) => <Chip key={s} on={wf.exAdh === s} onClick={() => setWf({ ...wf, exAdh: wf.exAdh === s ? undefined : s })}>{s}</Chip>)}
-            </div>
-          </div>
           <div>
             <Label>Symptoms this week</Label>
             <div className="space-y-2.5">
@@ -327,16 +307,6 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             <Label>Period pain</Label>
             <div className="flex flex-wrap gap-2">
               {LEVELS.map((s) => <Chip key={s} on={mf.pain === s} onClick={() => setMf({ ...mf, pain: mf.pain === s ? undefined : s })}>{s}</Chip>)}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label>Weight (kg)</Label>
-              <input type="number" inputMode="decimal" step="0.1" min={0} value={mf.weightKg ?? ''} onChange={(e) => setMf({ ...mf, weightKg: e.target.value === '' ? undefined : Number(e.target.value) })} className={inputCls} />
-            </div>
-            <div>
-              <Label>Waist (cm)</Label>
-              <input type="number" inputMode="decimal" step="0.1" min={0} value={mf.waistCm ?? ''} onChange={(e) => setMf({ ...mf, waistCm: e.target.value === '' ? undefined : Number(e.target.value) })} className={inputCls} />
             </div>
           </div>
           <div>
