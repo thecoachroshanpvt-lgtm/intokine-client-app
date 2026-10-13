@@ -43,6 +43,13 @@ interface RoutineLog {
   values: Record<string, any>;
 }
 
+// An item counts as done when it has a real answer: a tick is on, a number is above 0 (water, sleep, steps at 0 are not done), anything else is filled in.
+const hasAnswer = (type: ItemType, v: any) => {
+  if (type === 'tick') return v === true;
+  if (type === 'number') return typeof v === 'number' && v > 0;
+  return v !== undefined && v !== '';
+};
+
 const LEVELS = ['None', 'Mild', 'Moderate', 'Severe'];
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -197,8 +204,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   // Supplements are ticked in the Diet tab, not here.
   const itemsFor = (freq: Freq) => active.flatMap((fu) => fu.items.filter((i) => i.freq === freq && i.category !== 'Supplements').map((it) => ({ fu, it })));
   const isDone = (fu: FollowUp, it: TrackItem) => {
-    const v = valueOf(fu, it);
-    return it.type === 'tick' ? v === true : v !== undefined && v !== '';
+    return hasAnswer(it.type, valueOf(fu, it));
   };
 
   // Routine consistency: the share of daily items answered each day. Days before the first answer do not count against the client.
@@ -206,7 +212,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const answeredOn = (key: string) =>
     dailyItems.filter(({ fu, it }) => {
       const v = logFor(fu.id, 'daily', key)?.values?.[it.id];
-      return it.type === 'tick' ? v === true : v !== undefined && v !== '';
+      return hasAnswer(it.type, v);
     });
   const dayFrac = (key: string) => (dailyItems.length ? Math.min(1, answeredOn(key).length / dailyItems.length) : 0);
   const firstDay = logs.filter((l) => l.freq === 'daily').map((l) => l.period).sort()[0] || today;
