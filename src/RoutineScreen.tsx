@@ -179,7 +179,8 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     }
   };
 
-  const itemsFor = (freq: Freq) => active.flatMap((fu) => fu.items.filter((i) => i.freq === freq).map((it) => ({ fu, it })));
+  // Supplements are ticked in the Diet tab, not here.
+  const itemsFor = (freq: Freq) => active.flatMap((fu) => fu.items.filter((i) => i.freq === freq && i.category !== 'Supplements').map((it) => ({ fu, it })));
   const isDone = (fu: FollowUp, it: TrackItem) => {
     const v = valueOf(fu, it);
     return it.type === 'tick' ? v === true : v !== undefined && v !== '';
