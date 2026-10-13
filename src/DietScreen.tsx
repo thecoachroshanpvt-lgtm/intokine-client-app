@@ -86,6 +86,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [logs, setLogs] = useState<MealLog[]>([]);
   const [saveError, setSaveError] = useState('');
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
+  const [detail, setDetail] = useState(false); // the day-by-day popup of the consistency card
   const [pickedVar, setPickedVar] = useState<Record<string, number>>({}); // which option tab is open on each meal
   // Re-check the date once a minute so the checklist resets at midnight.
   const [, setTick] = useState(0);
@@ -203,19 +204,31 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const allDone = meals.length > 0 && eatenToday.size === meals.length;
 
   // Meal consistency: the share of planned meals ticked each day. Days before the first tick do not count against the client.
-  const dayFrac = (key: string) => {
+  const tickedOn = (key: string) => {
     const log = logs.find((l) => l.date === key);
-    return meals.length && log ? Math.min(1, (log.eaten || []).filter((id) => mealIds.has(id)).length / meals.length) : 0;
+    return log ? (log.eaten || []).filter((id) => mealIds.has(id)) : [];
   };
+  const dayFrac = (key: string) => (meals.length ? Math.min(1, tickedOn(key).length / meals.length) : 0);
   const firstDay = logs.map((l) => l.date).sort()[0] || today;
   const lastDays = (n: number, fmt: Intl.DateTimeFormatOptions) =>
     Array.from({ length: n }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - (n - 1 - i));
       const key = dateKey(d);
-      return { key, label: d.toLocaleDateString(undefined, fmt), frac: dayFrac(key), active: key >= firstDay, isToday: key === today };
+      return {
+        key,
+        label: d.toLocaleDateString(undefined, fmt),
+        full: d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }),
+        frac: dayFrac(key),
+        ticked: tickedOn(key),
+        active: key >= firstDay,
+        isToday: key === today,
+        fullDays: 0,
+        logged: 0,
+        n: 1,
+      };
     });
-  const week = lastDays(7, { weekday: 'narrow' });
+  const week = lastDays(7, { weekday: 'short' });
   const month = lastDays(30, { day: 'numeric' });
   const year = Array.from({ length: 12 }, (_, i) => {
     const start = new Date();
@@ -224,19 +237,39 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
     let sumFrac = 0;
     let n = 0;
+    let fullDays = 0;
+    let logged = 0;
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       const key = dateKey(d);
       if (key > today) break;
       if (key < firstDay) continue;
-      sumFrac += dayFrac(key);
+      const f = dayFrac(key);
+      sumFrac += f;
       n++;
+      if (f >= 0.999) fullDays++;
+      if (f > 0) logged++;
     }
-    return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'narrow' }), full: start.toLocaleDateString(undefined, { month: 'short', year: '2-digit' }), frac: n ? sumFrac / n : 0, active: n > 0, isToday: i === 11 };
+    return {
+      key: dateKey(start),
+      label: start.toLocaleDateString(undefined, { month: 'short' }),
+      full: start.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+      frac: n ? sumFrac / n : 0,
+      ticked: [] as string[],
+      active: n > 0,
+      isToday: i === 11,
+      fullDays,
+      logged,
+      n,
+    };
   });
   const bars = range === 'week' ? week : range === 'month' ? month : year;
   const activeBars = bars.filter((x) => x.active);
   const avgPct = activeBars.length ? Math.round((activeBars.reduce((t, x) => t + x.frac, 0) / activeBars.length) * 100) : 0;
   const barColor = (f: number) => (f >= 0.8 ? '#34d399' : f >= 0.5 ? '#fbbf24' : '#f87171');
+  const totalFull = range === 'year' ? activeBars.reduce((t, x) => t + x.fullDays, 0) : activeBars.filter((x) => x.frac >= 0.999).length;
+  const totalLogged = range === 'year' ? activeBars.reduce((t, x) => t + x.logged, 0) : activeBars.filter((x) => x.ticked.length > 0).length;
+  const totalDays = range === 'year' ? activeBars.reduce((t, x) => t + x.n, 0) : activeBars.length;
+  const rangeTitle = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Last 12 months';
 
   const macros: { label: string; eaten: number; target: number; color: string }[] = [
     { label: 'Protein', eaten: sum('proteinGrams'), target: plan.proteinGrams, color: '#6ccbde' },
@@ -267,32 +300,110 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="text-[10px] text-white/40 uppercase font-semibold">Meal consistency</div>
-              <div className="text-sm font-bold text-white font-mono">{avgPct}%<span className="text-[10px] text-white/40 font-normal ml-1.5">average</span></div>
+              <div className="text-sm font-bold text-white font-mono">{avgPct}%<span className="text-[10px] text-white/40 font-normal ml-1.5">average of planned meals eaten</span></div>
             </div>
-            <div className="inline-flex rounded-full bg-black/30 border border-white/[0.08] p-0.5">
+            <div className="inline-flex rounded-full bg-black/30 border border-white/[0.08] p-0.5 shrink-0">
               {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setRange(k)}
                   className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde] text-[#0d0e12]' : 'text-white/50'}`}>{l}</button>
               ))}
             </div>
           </div>
-          <div className={`flex items-end justify-between ${range === 'month' ? 'gap-px' : 'gap-1'}`}>
-            {bars.map((d: any) => (
-              <div key={d.key} className="flex flex-col items-center gap-1 flex-1 min-w-0" title={`${d.full || d.key}: ${d.active ? Math.round(d.frac * 100) + '%' : 'no data'}`}>
-                <div className={`w-full ${range === 'month' ? '' : 'max-w-[28px]'} h-14 rounded-md bg-white/[0.06] flex items-end overflow-hidden`}>
-                  <div className="w-full rounded-md" style={{ height: `${d.active ? Math.max(4, Math.round(d.frac * 100)) : 0}%`, background: barColor(d.frac) }} />
-                </div>
-                {range !== 'month' && <span className={`text-[9px] ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>}
+
+          <button type="button" onClick={() => setDetail(true)} className="w-full text-left" aria-label="Open day by day details">
+            <div className="flex gap-2">
+              <div className="h-16 mt-[14px] flex flex-col justify-between text-[8px] text-white/30 font-mono w-6 text-right shrink-0">
+                <span>100</span><span>50</span><span>0</span>
               </div>
-            ))}
-          </div>
-          {range === 'month' && (
-            <div className="flex justify-between text-[9px] text-white/40"><span>{month[0].label} (30 days ago)</span><span>Today</span></div>
-          )}
-          <div className="flex items-center gap-3 text-[9px] text-white/40">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} />80%+</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbbf24' }} />50-79%</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#f87171' }} />under 50%</span>
+              <div className="flex-1 min-w-0">
+                <div className="relative pt-[14px]">
+                  <div className="absolute inset-x-0 top-[14px] h-16 pointer-events-none">
+                    <div className="absolute inset-x-0 top-0 border-t border-white/[0.08]" />
+                    <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-white/[0.08]" />
+                    <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.14]" />
+                  </div>
+                  <div className={`relative flex items-end justify-between ${range === 'month' ? 'gap-px' : 'gap-1.5'}`}>
+                    {bars.map((d) => {
+                      const h = d.active ? Math.max(3, Math.round(d.frac * 100)) : 0;
+                      return (
+                        <div key={d.key} className="flex-1 min-w-0 h-16 relative flex justify-center">
+                          {d.active && range !== 'month' && (
+                            <span className="absolute left-0 right-0 text-center text-[8px] font-mono text-white/60" style={{ bottom: `calc(${h}% + 2px)` }}>{Math.round(d.frac * 100)}</span>
+                          )}
+                          <div className="absolute bottom-0 w-full max-w-[26px] rounded-t-md" style={{ height: `${h}%`, background: barColor(d.frac) }} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {range !== 'month' ? (
+                  <div className="flex justify-between gap-1.5 mt-1">
+                    {bars.map((d) => (
+                      <span key={d.key} className={`flex-1 min-w-0 text-center text-[9px] truncate ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-[9px] text-white/40 mt-1"><span>30 days ago</span><span>Today</span></div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-3 text-[9px] text-white/40">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} />80%+</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbbf24' }} />50-79%</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#f87171' }} />under 50%</span>
+              </div>
+              <span className="text-[10px] font-semibold text-[#6ccbde]">Tap for details</span>
+            </div>
+          </button>
+        </div>
+      )}
+
+      {detail && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
+          <div className="w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
+              <div>
+                <div className="text-sm font-semibold text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} meal consistency</div>
+                <div className="text-[11px] text-white/40">{rangeTitle}</div>
+              </div>
+              <button type="button" onClick={() => setDetail(false)} className="text-white/50 text-xl leading-none px-1" aria-label="Close">×</button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 p-4 pb-2">
+              {([['Average', `${avgPct}%`], ['Full days', String(totalFull)], ['Days logged', `${totalLogged}/${totalDays}`]] as const).map(([l, v]) => (
+                <div key={l} className="bg-black/30 rounded-xl py-2 text-center">
+                  <div className="text-sm font-bold text-white font-mono">{v}</div>
+                  <div className="text-[9px] text-white/40 uppercase mt-0.5">{l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="overflow-y-auto px-4 pb-4 pt-2 space-y-2.5">
+              {[...bars].reverse().map((d) => (
+                <div key={d.key}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-24 shrink-0 text-xs ${d.isToday ? 'text-white font-bold' : 'text-white/70'}`}>{d.full}{d.isToday && range !== 'year' ? ' (today)' : ''}</div>
+                    <div className="flex-1 h-2 rounded-full bg-white/[0.08] overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${d.active ? Math.round(d.frac * 100) : 0}%`, background: barColor(d.frac) }} />
+                    </div>
+                    <div className="w-12 shrink-0 text-right text-xs font-mono font-bold" style={{ color: d.active ? barColor(d.frac) : 'rgba(255,255,255,0.3)' }}>{d.active ? `${Math.round(d.frac * 100)}%` : '—'}</div>
+                  </div>
+                  {range === 'year' ? (
+                    <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">{d.active ? `${d.fullDays} full days · ${d.logged} of ${d.n} days logged` : 'No data yet'}</div>
+                  ) : (
+                    <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">
+                      {!d.active ? 'Before you started' : `${d.ticked.length} of ${meals.length} meals`}
+                      {range === 'week' && d.active && (
+                        <span className="flex flex-wrap gap-1 mt-1">
+                          {meals.map((m) => (
+                            <span key={m.id} className={`px-1.5 py-0.5 rounded-full text-[9px] ${d.ticked.includes(m.id) ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/[0.05] text-white/30'}`}>{d.ticked.includes(m.id) ? '✓ ' : ''}{m.mealTime}</span>
+                          ))}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
