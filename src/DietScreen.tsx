@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { SupplementsCard } from './SupplementsCard';
 import { FloatingWhatsApp } from './FloatingWhatsApp';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
@@ -87,6 +88,17 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [saveError, setSaveError] = useState('');
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [detail, setDetail] = useState(false); // the day-by-day popup of the consistency card
+  // Same as the other popups in the app: the page behind stays still and the pull-to-refresh is switched off while it is open.
+  useEffect(() => {
+    if (!detail) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => {
+      document.body.style.overflow = prev;
+      document.body.removeAttribute('data-popup-open');
+    };
+  }, [detail]);
   const [pickedVar, setPickedVar] = useState<Record<string, number>>({}); // which option tab is open on each meal
   // Re-check the date once a minute so the checklist resets at midnight.
   const [, setTick] = useState(0);
@@ -359,9 +371,9 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </div>
       )}
 
-      {detail && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
-          <div className="w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      {detail && createPortal(
+        <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
+          <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
               <div>
                 <div className="text-sm font-semibold text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} meal consistency</div>
@@ -377,7 +389,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                 </div>
               ))}
             </div>
-            <div className="overflow-y-auto px-4 pb-4 pt-2 space-y-2.5">
+            <div className="overflow-y-auto px-4 pb-4 pt-2 space-y-2.5" style={{ overscrollBehavior: 'contain' }}>
               {[...bars].reverse().map((d) => (
                 <div key={d.key}>
                   <div className="flex items-center gap-3">
@@ -405,7 +417,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Today */}
