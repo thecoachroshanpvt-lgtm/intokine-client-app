@@ -54,9 +54,9 @@ export const ConsistencyChart: React.FC<{
             const c = consistencyColor(d.frac);
             return (
               <div key={d.key} className="flex-1 min-w-0 flex flex-col items-center">
-                <div className="relative w-full h-20 rounded-full bg-white/[0.05] overflow-hidden">
+                <div className="relative w-full h-20 rounded-md bg-white/[0.05] overflow-hidden">
                   {d.active && (
-                    <div className="absolute bottom-0 inset-x-0 rounded-full" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${c}, ${c}99)` }} />
+                    <div className="absolute bottom-0 inset-x-0 rounded-sm" style={{ height: `${h}%`, background: `linear-gradient(180deg, ${c}, ${c}99)` }} />
                   )}
                 </div>
                 {!dense && (
