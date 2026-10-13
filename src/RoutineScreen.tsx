@@ -334,11 +334,41 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   };
 
   const notes = active.filter((f) => f.note && f.note.trim());
+  const todayDone = answeredOn(today).length;
+  // Streak: days in a row with every daily item done (today counts once it is complete).
+  let streak = 0;
+  for (let i = todayDone === dailyItems.length ? 0 : 1; i < 400; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = dateKey(d);
+    if (key < firstDay || dayFrac(key) < 0.999) break;
+    streak++;
+  }
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
       {dailyItems.length > 0 && (
-        <ConsistencyChart title="Routine consistency" bars={bars} range={range} onRange={setRange} avgPct={avgPct} fullDays={totalFull} periodLabel={rangeTitle} onOpen={() => setDetail(true)} />
+        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Today's routine</div>
+              <div className="mt-1.5 flex items-baseline gap-1.5">
+                <span className="text-4xl font-header text-white leading-none">{todayDone}</span>
+                <span className="text-sm text-white/50 font-semibold">of {dailyItems.length} done</span>
+              </div>
+            </div>
+            <div className="text-right text-[11px] text-white/40 leading-snug pt-0.5">
+              <div><span className="text-white font-bold font-mono">{streak}</span> day streak</div>
+              <div>{todayDone === dailyItems.length ? 'All done' : `${dailyItems.length - todayDone} to go`}</div>
+            </div>
+          </div>
+          <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
+            <div className="h-full rounded-full" style={{ width: `${Math.round((todayDone / dailyItems.length) * 100)}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
+          </div>
+          <div className="text-[11px] text-white/45 font-light">
+            {todayDone === dailyItems.length ? 'Great work, today is complete.' : todayDone === 0 ? 'Start with the first item below.' : 'Keep going, you are on your way.'}
+          </div>
+        </div>
       )}
 
       {detail && createPortal(
@@ -410,6 +440,10 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       {section('daily', 'Today', 'Saves as you tap.')}
       {section('weekly', 'This week', 'Once a week.')}
       {section('monthly', 'This month', 'Once a month.')}
+
+      {dailyItems.length > 0 && (
+        <ConsistencyChart title="Routine consistency" bars={bars} range={range} onRange={setRange} avgPct={avgPct} fullDays={totalFull} periodLabel={rangeTitle} onOpen={() => setDetail(true)} />
+      )}
     </div>
   );
 };
