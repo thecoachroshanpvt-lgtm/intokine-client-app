@@ -99,6 +99,7 @@ export const FloatingWhatsApp: React.FC<{ href: string }> = ({ href }) => {
     <div
       ref={ref}
       role="button"
+      data-no-pull
       aria-label="Chat with your nutritionist on WhatsApp. Drag to move."
       onPointerDown={down}
       onPointerMove={move}
