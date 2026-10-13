@@ -87,7 +87,7 @@ export const DistanceDurationChart: React.FC<{ data: Row[] }> = ({ data }) => {
           return (
             <g key={`d${k}`} onClick={() => setSelected(selected === idx ? null : idx)} style={{ cursor: 'pointer' }}>
               <circle cx={p.x} cy={p.y} r="9" fill="transparent" />
-              <circle cx={p.x} cy={p.y} r="3" fill={DIST_COLOR} stroke="#242426" strokeWidth="1.5" />
+              <circle cx={p.x} cy={p.y} r="3" fill={DIST_COLOR} stroke="#252525" strokeWidth="1.5" />
               {(!crowded || idx === selected || k === linePts.length - 1) && (
                 <text x={p.x} y={p.y - 8} fontSize="8" fill={DIST_COLOR} textAnchor="middle" fontFamily="monospace" fontWeight="bold">{p.v}</text>
               )}
