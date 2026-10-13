@@ -345,7 +345,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
       {detail && createPortal(
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
-          <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1e] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
               <div>
                 <div className="text-sm font-semibold text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} meal consistency</div>
@@ -401,7 +401,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
       {confirmOpen && createPortal(
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5">
-          <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1e] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-white/[0.08]">
               <div className="text-sm font-semibold text-white">Confirm today's update</div>
               <div className="text-[11px] text-white/40">{niceDate(today)} · check it and confirm to save</div>
