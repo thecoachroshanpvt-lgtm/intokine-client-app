@@ -1,3 +1,4 @@
+import { Testimonials } from './Testimonials';
 import React, { useEffect, useState } from 'react';
 import {
   initializeClientFirebaseApp,
@@ -703,6 +704,9 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           </>
         );
       })()}
+
+      {/* Testimonials - auto-scrolling approved client feedback + a form to share your own */}
+      <Testimonials clientId={clientId} clientName={clientName} />
     </div>
   );
 };
