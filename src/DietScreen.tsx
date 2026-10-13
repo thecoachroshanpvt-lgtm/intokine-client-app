@@ -79,6 +79,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<MealLog[]>([]);
   const [saveError, setSaveError] = useState('');
+  const [pickedVar, setPickedVar] = useState<Record<string, number>>({}); // which option tab is open on each meal
   // Re-check the date once a minute so the checklist resets at midnight.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -212,6 +213,22 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
+      {meals.length > 0 && (
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3">
+          <div className="text-[10px] text-white/40 uppercase font-semibold mb-2">Last 7 days</div>
+          <div className="flex items-end justify-between gap-1">
+            {week.map((d) => (
+              <div key={d.key} className="flex flex-col items-center gap-1 flex-1">
+                <div className="w-full max-w-[28px] h-10 rounded-md bg-white/[0.06] flex items-end overflow-hidden">
+                  <div className="w-full" style={{ height: `${Math.round(d.frac * 100)}%`, background: d.frac >= 1 ? '#34d399' : 'linear-gradient(180deg,#6ccbde,#ec2226)' }} />
+                </div>
+                <span className={`text-[9px] ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Plan header */}
       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -274,15 +291,31 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           <div className="text-[10px] text-white/40 uppercase font-semibold">Tap a meal when you have eaten it</div>
           {meals.map((meal) => {
             const done = eatenToday.has(meal.id);
+            const options = meal.variants || [];
+            const multi = options.length > 1;
+            const vi = multi ? Math.min(pickedVar[meal.id] || 0, options.length - 1) : 0;
+            const shown = options.length > 0 ? options[vi] : undefined;
+            const kcal = shown?.calories || meal.calories;
+            const prot = shown?.proteinGrams ?? meal.proteinGrams;
+            const carb = shown?.carbsGrams ?? meal.carbsGrams;
+            const fat = shown?.fatGrams ?? meal.fatGrams;
             return (
+              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden ${done ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#242426] border-white/[0.06]'}`}>
+                {multi && (
+                  <div className="flex gap-1.5 overflow-x-auto px-3 pt-3 pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                    {options.map((v, i) => (
+                      <button key={v.id} type="button" onClick={() => setPickedVar((p) => ({ ...p, [meal.id]: i }))}
+                        className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold border transition ${i === vi ? 'bg-[#6ccbde] text-[#0d0e12] border-[#6ccbde]' : 'border-white/15 text-white/60'}`}>
+                        {v.label?.trim() || `Option ${i + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
               <button
-                key={meal.id}
                 type="button"
                 onClick={() => toggleMeal(meal.id)}
                 aria-pressed={done}
-                className={`w-full text-left rounded-2xl p-3 flex items-start gap-3 border transition ${
-                  done ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#242426] border-white/[0.06]'
-                }`}
+                className="w-full text-left p-3 flex items-start gap-3"
               >
                 <span
                   className={`mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${
@@ -298,42 +331,31 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                       <span className="text-sm">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'}</span>
                       {meal.mealTime}
                     </span>
-                    {meal.calories !== undefined && <span className="text-[10px] text-white/40 font-mono">{meal.calories} kcal</span>}
+                    {kcal !== undefined && <span className="text-[10px] text-white/40 font-mono">{kcal} kcal</span>}
                   </span>
-                  {meal.variants && meal.variants.length > 0 ? (
-                    <span className="block space-y-2">
-                      {meal.variants.map((v, vi) => (
-                        <span key={v.id} className="block">
-                          {meal.variants!.length > 1 && (
-                            <span className="flex items-center justify-between gap-2 mb-0.5">
-                              <span className="text-[10px] font-semibold text-white/50 uppercase">
-                                {vi > 0 && 'Or · '}{v.label?.trim() || `Option ${vi + 1}`}
-                              </span>
-                              {vi > 0 && v.calories ? <span className="text-[10px] text-white/30 font-mono">{v.calories} kcal</span> : null}
-                            </span>
-                          )}
-                          {v.items.map((it) => (
-                            <span key={it.id} className={`flex items-baseline justify-between gap-3 text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>
-                              <span>{it.name}</span>
-                              {it.portion ? <span className="text-white/50 font-mono text-[11px] shrink-0">{it.portion}</span> : null}
-                            </span>
-                          ))}
+                  {shown ? (
+                    <span className="block">
+                      {shown.items.map((it) => (
+                        <span key={it.id} className={`flex items-baseline justify-between gap-3 text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>
+                          <span>{it.name}</span>
+                          {it.portion ? <span className="text-white/50 font-mono text-[11px] shrink-0">{it.portion}</span> : null}
                         </span>
                       ))}
-                      {meal.variants.length > 1 && <span className="block text-[10px] text-white/30">Choose one option.</span>}
+                      {multi && <span className="block text-[10px] text-white/30 mt-1">Choose one option.</span>}
                     </span>
                   ) : (
                     <span className={`block text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>{meal.description}</span>
                   )}
-                  {(meal.proteinGrams || meal.carbsGrams || meal.fatGrams) ? (
+                  {(prot || carb || fat) ? (
                     <span className="flex items-center gap-3 text-[10px] text-white/40 font-mono">
-                      <span>P {meal.proteinGrams || 0}g</span>
-                      <span>C {meal.carbsGrams || 0}g</span>
-                      <span>F {meal.fatGrams || 0}g</span>
+                      <span>P {prot || 0}g</span>
+                      <span>C {carb || 0}g</span>
+                      <span>F {fat || 0}g</span>
                     </span>
                   ) : null}
                 </span>
               </button>
+              </div>
             );
           })}
           {saveError && <p className="text-xs text-[#ec2226]">{saveError}</p>}
@@ -341,22 +363,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       {/* Last 7 days */}
-      {meals.length > 0 && (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3">
-          <div className="text-[10px] text-white/40 uppercase font-semibold mb-2">Last 7 days</div>
-          <div className="flex items-end justify-between gap-1">
-            {week.map((d) => (
-              <div key={d.key} className="flex flex-col items-center gap-1 flex-1">
-                <div className="w-full max-w-[28px] h-10 rounded-md bg-white/[0.06] flex items-end overflow-hidden">
-                  <div className="w-full" style={{ height: `${Math.round(d.frac * 100)}%`, background: d.frac >= 1 ? '#34d399' : 'linear-gradient(180deg,#6ccbde,#ec2226)' }} />
-                </div>
-                <span className={`text-[9px] ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       <SupplementsCard items={plan.supplements || []} taken={suppTaken} onToggle={toggleSupplement} />
 
       {plan.notes && (
