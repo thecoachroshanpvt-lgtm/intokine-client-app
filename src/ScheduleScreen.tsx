@@ -260,7 +260,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     const t = formatTime(s.time);
     const color = statusColor(s.status);
     return (
-      <div key={s.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+      <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
         <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
           <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
             {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
@@ -408,7 +408,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                       const md = e.movedTo ? parseDateKey(e.movedTo) : null;
                       const color = HISTORY_COLORS[e.tag];
                       return (
-                        <div key={e.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                        <div key={e.key} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
                           <div className="w-12 shrink-0 text-center">
                             <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
                               {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : ''}
@@ -513,7 +513,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                         className={`rounded-xl py-2.5 flex flex-col items-center gap-1 border transition ${
                           isActive
                             ? 'bg-gradient-to-b from-[#ec2226]/25 to-[#6ccbde]/20 border-[#6ccbde]/50'
-                            : 'bg-[#242426] border-white/[0.06]'
+                            : 'bg-[#252525] border-white/[0.06]'
                         }`}
                       >
                         <span className={`text-[9px] font-bold uppercase tracking-wide ${isToday ? 'text-[#6ccbde]' : 'text-white/40'}`}>
@@ -530,11 +530,11 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+                  <div className="bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-white/40"><span className="w-1.5 h-1.5 rounded-full bg-[#ec2226]" />Coach sessions</div>
                     <div className="text-2xl font-semibold font-mono text-white mt-1">{weekSessionCount}</div>
                   </div>
-                  <div className="bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3">
+                  <div className="bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3">
                     <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-white/40"><span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />Suggested workouts</div>
                     <div className="text-2xl font-semibold font-mono text-white mt-1">{weekWorkoutCount}</div>
                   </div>
