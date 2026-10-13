@@ -325,70 +325,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       </div>
       {plan.nutritionistContact && <FloatingWhatsApp href={buildWhatsAppLink(plan.nutritionistContact)} />}
 
-      {meals.length > 0 && (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3 space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <div className="text-[10px] text-white/40 uppercase font-semibold">Meal consistency</div>
-              <div className="text-sm font-bold text-white font-mono">{avgPct}%<span className="text-[10px] text-white/40 font-normal ml-1.5">average of planned meals eaten</span></div>
-            </div>
-            <div className="inline-flex rounded-full bg-black/30 border border-white/[0.08] p-0.5 shrink-0">
-              {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
-                <button key={k} type="button" onClick={() => setRange(k)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde] text-[#0d0e12]' : 'text-white/50'}`}>{l}</button>
-              ))}
-            </div>
-          </div>
-
-          <button type="button" onClick={() => setDetail(true)} className="w-full text-left" aria-label="Open day by day details">
-            <div className="flex gap-2">
-              <div className="h-16 mt-[14px] flex flex-col justify-between text-[8px] text-white/30 font-mono w-6 text-right shrink-0">
-                <span>100</span><span>50</span><span>0</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="relative pt-[14px]">
-                  <div className="absolute inset-x-0 top-[14px] h-16 pointer-events-none">
-                    <div className="absolute inset-x-0 top-0 border-t border-white/[0.08]" />
-                    <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-white/[0.08]" />
-                    <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.14]" />
-                  </div>
-                  <div className={`relative flex items-end justify-between ${range === 'month' ? 'gap-px' : 'gap-1.5'}`}>
-                    {bars.map((d) => {
-                      const h = d.active ? Math.max(3, Math.round(d.frac * 100)) : 0;
-                      return (
-                        <div key={d.key} className="flex-1 min-w-0 h-16 relative flex justify-center">
-                          {d.active && range !== 'month' && (
-                            <span className="absolute left-0 right-0 text-center text-[8px] font-mono text-white/60" style={{ bottom: `calc(${h}% + 2px)` }}>{Math.round(d.frac * 100)}</span>
-                          )}
-                          <div className="absolute bottom-0 w-full max-w-[26px] rounded-t-md" style={{ height: `${h}%`, background: barColor(d.frac) }} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                {range !== 'month' ? (
-                  <div className="flex justify-between gap-1.5 mt-1">
-                    {bars.map((d) => (
-                      <span key={d.key} className={`flex-1 min-w-0 text-center text-[9px] truncate ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex justify-between text-[9px] text-white/40 mt-1"><span>30 days ago</span><span>Today</span></div>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex items-center gap-3 text-[9px] text-white/40">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} />80%+</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbbf24' }} />50-79%</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#f87171' }} />under 50%</span>
-              </div>
-              <span className="text-[10px] font-semibold text-[#6ccbde]">Tap for details</span>
-            </div>
-          </button>
-        </div>
-      )}
-
       {detail && createPortal(
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
           <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
@@ -606,6 +542,70 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div>
           <div className="text-[10px] text-white/40 uppercase font-semibold mb-1">Notes from your coach</div>
           <div className="text-xs text-white/70 font-light whitespace-pre-wrap leading-relaxed bg-white/[0.03] rounded-xl p-3">{plan.notes}</div>
+        </div>
+      )}
+
+      {meals.length > 0 && (
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3 space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] text-white/40 uppercase font-semibold">Meal consistency</div>
+              <div className="text-sm font-bold text-white font-mono">{avgPct}%<span className="text-[10px] text-white/40 font-normal ml-1.5">average of planned meals eaten</span></div>
+            </div>
+            <div className="inline-flex rounded-full bg-black/30 border border-white/[0.08] p-0.5 shrink-0">
+              {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setRange(k)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde] text-[#0d0e12]' : 'text-white/50'}`}>{l}</button>
+              ))}
+            </div>
+          </div>
+
+          <button type="button" onClick={() => setDetail(true)} className="w-full text-left" aria-label="Open day by day details">
+            <div className="flex gap-2">
+              <div className="h-16 mt-[14px] flex flex-col justify-between text-[8px] text-white/30 font-mono w-6 text-right shrink-0">
+                <span>100</span><span>50</span><span>0</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="relative pt-[14px]">
+                  <div className="absolute inset-x-0 top-[14px] h-16 pointer-events-none">
+                    <div className="absolute inset-x-0 top-0 border-t border-white/[0.08]" />
+                    <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-white/[0.08]" />
+                    <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.14]" />
+                  </div>
+                  <div className={`relative flex items-end justify-between ${range === 'month' ? 'gap-px' : 'gap-1.5'}`}>
+                    {bars.map((d) => {
+                      const h = d.active ? Math.max(3, Math.round(d.frac * 100)) : 0;
+                      return (
+                        <div key={d.key} className="flex-1 min-w-0 h-16 relative flex justify-center">
+                          {d.active && range !== 'month' && (
+                            <span className="absolute left-0 right-0 text-center text-[8px] font-mono text-white/60" style={{ bottom: `calc(${h}% + 2px)` }}>{Math.round(d.frac * 100)}</span>
+                          )}
+                          <div className="absolute bottom-0 w-full max-w-[26px] rounded-t-md" style={{ height: `${h}%`, background: barColor(d.frac) }} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                {range !== 'month' ? (
+                  <div className="flex justify-between gap-1.5 mt-1">
+                    {bars.map((d) => (
+                      <span key={d.key} className={`flex-1 min-w-0 text-center text-[9px] truncate ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex justify-between text-[9px] text-white/40 mt-1"><span>30 days ago</span><span>Today</span></div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-3 text-[9px] text-white/40">
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} />80%+</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbbf24' }} />50-79%</span>
+                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#f87171' }} />under 50%</span>
+              </div>
+              <span className="text-[10px] font-semibold text-[#6ccbde]">Tap for details</span>
+            </div>
+          </button>
         </div>
       )}
     </div>
