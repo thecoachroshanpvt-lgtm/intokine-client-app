@@ -99,7 +99,7 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
           className="fixed left-0 right-0 z-[45] flex justify-center pointer-events-none"
           style={{ top: 10, transform: `translateY(${Math.min(pull, 80)}px)`, transition: pull === 0 ? 'transform 0.2s' : 'none' }}
         >
-          <div className="w-9 h-9 rounded-full bg-[#242426] border border-white/[0.12] shadow-lg flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-[#252525] border border-white/[0.12] shadow-lg flex items-center justify-center">
             <svg
               width="18"
               height="18"
