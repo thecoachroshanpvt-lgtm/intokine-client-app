@@ -311,7 +311,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   return (
     <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 pb-8`}>
       {/* Plan and today in one card: name, who made it, then how today is going */}
-      <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 space-y-4">
+      <div className="rounded-2xl p-4 space-y-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
         <div>
           <div className="text-lg font-bold text-white leading-snug">{plan.dietType}</div>
           <div className="text-[11px] text-white/40 mt-0.5">Plan by <span className="text-white/70 font-medium">{plan.nutritionistName}</span> · Updated {niceDate(plan.lastUpdated)}</div>
