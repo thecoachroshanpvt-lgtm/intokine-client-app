@@ -9,7 +9,7 @@ export const SupplementsCard: React.FC<{
   if (items.length === 0) return null;
   const done = items.filter((x) => taken.has(x.id)).length;
   return (
-    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+    <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
         <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Supplements</div>
         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${done === items.length ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/[0.06] text-white/50'}`}>
