@@ -29,12 +29,17 @@ interface PerfRecord {
   exercises: PerfExercise[];
 }
 
+// Time is shown like kg and reps: a number with its unit beside it (45 sec, 2 min, 1:30 min).
+const timeParts = (sec: number): { big: string; unit: string } => {
+  const total = Math.round(sec);
+  if (total < 60) return { big: `${total}`, unit: 'sec' };
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return { big: s ? `${m}:${String(s).padStart(2, '0')}` : `${m}`, unit: 'min' };
+};
 const fmtTime = (sec: number) => {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  if (m && s) return `${m}m ${s}s`;
-  if (m) return `${m} min`;
-  return `${s} sec`;
+  const t = timeParts(sec);
+  return `${t.big} ${t.unit}`;
 };
 
 const TYPE_COLOR: Record<ExType, string> = {
@@ -62,12 +67,12 @@ const bestOf = (ex: PerfExercise): { big: string; unit: string; sub?: string } |
   }
   if (ex.type === 'Isometric') {
     const maxSec = Math.max(...entries.map((e) => e.durationSec ?? 0));
-    return maxSec > 0 ? { big: fmtTime(maxSec), unit: '', sub: 'Longest hold' } : null;
+    return maxSec > 0 ? { ...timeParts(maxSec), sub: 'Longest hold' } : null;
   }
   const maxDist = Math.max(0, ...entries.map((e) => e.distanceKm ?? 0));
   const maxDur = Math.max(0, ...entries.map((e) => e.durationSec ?? 0));
   if (maxDist > 0) return { big: `${maxDist}`, unit: 'km', sub: maxDur > 0 ? `Longest time ${fmtTime(maxDur)}` : 'Best distance' };
-  if (maxDur > 0) return { big: fmtTime(maxDur), unit: '', sub: 'Longest time' };
+  if (maxDur > 0) return { ...timeParts(maxDur), sub: 'Longest time' };
   return null;
 };
 
@@ -235,13 +240,8 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
         const first = points[0];
         const latest = points[points.length - 1];
         const diff = first && latest ? Math.round((latest.value - first.value) * 100) / 100 : 0;
-        const short = (v: number) => {
-          const m = Math.floor(v / 60);
-          const sec = Math.round(v % 60);
-          return m && sec ? `${m}m ${sec}s` : m ? `${m}m` : `${sec}s`;
-        };
         const isTime = openEx.type === 'Isometric' || (openEx.type === 'Cardio' && unit === 's');
-        const fmt = (v: number) => (isTime ? short(v) : openEx.type === 'Bodyweight' ? `${v} reps` : `${v} ${unit}`);
+        const fmt = (v: number) => (isTime ? fmtTime(v) : openEx.type === 'Bodyweight' ? `${v} reps` : `${v} ${unit}`);
         return createPortal(
           <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4 pb-24" onClick={() => setOpenEx(null)}>
             <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
