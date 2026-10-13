@@ -462,7 +462,10 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             return (
               <div key={meal.id} className={`rounded-2xl border transition overflow-hidden bg-white/[0.04] ${done ? 'border-emerald-500/40' : 'border-white/[0.08]'}`}>
                 {multi && (
-                  <div className="flex gap-1.5 overflow-x-auto px-4 pt-3" style={{ scrollbarWidth: 'none' }}>
+                  <div className="px-4 pt-3 text-[10px] text-white/40">Choose one option</div>
+                )}
+                {multi && (
+                  <div className="flex gap-1.5 overflow-x-auto px-4 pt-1.5" style={{ scrollbarWidth: 'none' }}>
                     {options.map((v, i) => (
                       <button key={v.id} type="button" onClick={() => setPickedVar((p) => ({ ...p, [meal.id]: i }))}
                         className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold border transition ${i === vi ? 'bg-[#6ccbde]/15 text-[#6ccbde] border-[#6ccbde]/50' : 'border-white/[0.1] text-white/50'}`}>
@@ -485,7 +488,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                             {it.portion ? <span className="text-white/45 font-mono text-[11px] shrink-0">{it.portion}</span> : null}
                           </span>
                         ))}
-                        {multi && <span className="block text-[10px] text-white/30 mt-1">Choose one option.</span>}
                       </>
                     ) : (
                       <span className={`block text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/85'}`}>{meal.description}</span>
