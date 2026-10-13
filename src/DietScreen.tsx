@@ -88,9 +88,15 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [saveError, setSaveError] = useState('');
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [detail, setDetail] = useState(false); // the day-by-day popup of the consistency card
+  // Ticks are collected first and only saved after the client confirms them in a popup.
+  const [pendingMeals, setPendingMeals] = useState<Set<string> | null>(null);
+  const [pendingSupps, setPendingSupps] = useState<Set<string> | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState(false);
   // Same as the other popups in the app: the page behind stays still and the pull-to-refresh is switched off while it is open.
   useEffect(() => {
-    if (!detail) return;
+    if (!detail && !confirmOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     document.body.setAttribute('data-popup-open', '1');
@@ -98,7 +104,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       document.body.style.overflow = prev;
       document.body.removeAttribute('data-popup-open');
     };
-  }, [detail]);
+  }, [detail, confirmOpen]);
   const [pickedVar, setPickedVar] = useState<Record<string, number>>({}); // which option tab is open on each meal
   // Re-check the date once a minute so the checklist resets at midnight.
   const [, setTick] = useState(0);
@@ -150,46 +156,52 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const eatenToday = new Set((todayLog?.eaten || []).filter((id) => mealIds.has(id)));
 
   const suppTaken = new Set(todayLog?.supplementsTaken || []);
-  const toggleSupplement = async (id: string) => {
-    const next = new Set(suppTaken);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    const supplementsTaken = Array.from(next);
-    setLogs((prev) => [...prev.filter((l) => l.date !== today), { eaten: [], ...(prev.find((l) => l.date === today) || {}), date: today, supplementsTaken }]);
+  const flip = (base: Set<string>, id: string) => {
+    const n = new Set(base);
+    if (n.has(id)) n.delete(id);
+    else n.add(id);
+    return n;
+  };
+  const sameSet = (a: Set<string>, b: Set<string>) => a.size === b.size && Array.from(a).every((x) => b.has(x));
+  const shownMeals = pendingMeals ?? eatenToday;
+  const shownSupps = pendingSupps ?? suppTaken;
+  const mealsChanged = pendingMeals !== null && !sameSet(pendingMeals, eatenToday);
+  const suppsChanged = pendingSupps !== null && !sameSet(pendingSupps, suppTaken);
+  const dirty = mealsChanged || suppsChanged;
+  const changeCount =
+    (mealsChanged ? Array.from(pendingMeals!).filter((x) => !eatenToday.has(x)).length + Array.from(eatenToday).filter((x) => !pendingMeals!.has(x)).length : 0) +
+    (suppsChanged ? Array.from(pendingSupps!).filter((x) => !suppTaken.has(x)).length + Array.from(suppTaken).filter((x) => !pendingSupps!.has(x)).length : 0);
+
+  const toggleMeal = (mealId: string) => setPendingMeals(flip(pendingMeals ?? eatenToday, mealId));
+  const toggleSupplement = (id: string) => setPendingSupps(flip(pendingSupps ?? suppTaken, id));
+  const undoChanges = () => {
+    setPendingMeals(null);
+    setPendingSupps(null);
+    setConfirmOpen(false);
     setSaveError('');
-    try {
-      const { db } = initializeClientFirebaseApp();
-      if (!db) throw new Error('offline');
-      await setDoc(doc(db, 'intokine_meal_logs', `${clientId}_${today}`), { clientId, date: today, supplementsTaken, updatedAt: new Date().toISOString() }, { merge: true });
-    } catch (e) {
-      console.warn('Could not save supplement tick:', e);
-      setSaveError('Could not save that tick. Please check your connection and try again.');
-    }
   };
 
-  const toggleMeal = async (mealId: string) => {
-    const next = new Set(eatenToday);
-    if (next.has(mealId)) next.delete(mealId);
-    else next.add(mealId);
-    const eaten = Array.from(next);
-    // Show the tick straight away; the database listener confirms it.
-    setLogs((prev) => {
-      const others = prev.filter((l) => l.date !== today);
-      return [...others, { ...(prev.find((l) => l.date === today) || {}), date: today, eaten }];
-    });
+  const confirmSave = async () => {
+    setSaving(true);
     setSaveError('');
+    const payload: Record<string, any> = { clientId, date: today, updatedAt: new Date().toISOString() };
+    if (mealsChanged) payload.eaten = Array.from(pendingMeals!);
+    if (suppsChanged) payload.supplementsTaken = Array.from(pendingSupps!);
     try {
       const { db } = initializeClientFirebaseApp();
       if (!db) throw new Error('offline');
-      await setDoc(doc(db, 'intokine_meal_logs', `${clientId}_${today}`), {
-        clientId,
-        date: today,
-        eaten,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
+      await setDoc(doc(db, 'intokine_meal_logs', `${clientId}_${today}`), payload, { merge: true });
+      setLogs((prev) => [...prev.filter((l) => l.date !== today), { eaten: [], ...(prev.find((l) => l.date === today) || {}), date: today, ...(mealsChanged ? { eaten: payload.eaten } : {}), ...(suppsChanged ? { supplementsTaken: payload.supplementsTaken } : {}) }]);
+      setPendingMeals(null);
+      setPendingSupps(null);
+      setConfirmOpen(false);
+      setSavedMsg(true);
+      window.setTimeout(() => setSavedMsg(false), 2500);
     } catch (e) {
-      console.warn('Could not save meal tick:', e);
-      setSaveError('Could not save that tick. Please check your connection and try again.');
+      console.warn('Could not save update:', e);
+      setSaveError('Could not save. Please check your connection and try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -290,7 +302,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   ];
 
   return (
-    <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
+    <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 ${dirty ? 'pb-36' : 'pb-8'}`}>
       {/* Plan name, who made it and when: first thing on the screen */}
       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
         <div className="flex items-start justify-between gap-3">
@@ -421,6 +433,68 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         document.body
       )}
 
+      {dirty && !confirmOpen && (
+        <div className="fixed left-0 right-0 bottom-24 z-40 px-5 pointer-events-none">
+          <div className="max-w-md mx-auto bg-[#242426] border border-[#6ccbde]/40 rounded-2xl p-3 flex items-center gap-3 shadow-xl pointer-events-auto">
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold text-white">Update not saved yet</div>
+              <div className="text-[10px] text-white/40">{changeCount} change{changeCount === 1 ? '' : 's'} to confirm</div>
+            </div>
+            <button type="button" onClick={undoChanges} className="text-[11px] font-semibold text-white/50 px-2 py-2">Undo</button>
+            <button type="button" onClick={() => setConfirmOpen(true)} className="px-4 py-2 rounded-xl bg-[#ec2226] text-white text-xs font-bold shrink-0">Review &amp; confirm</button>
+          </div>
+        </div>
+      )}
+
+      {savedMsg && (
+        <div className="fixed left-0 right-0 bottom-28 z-40 flex justify-center pointer-events-none">
+          <span className="px-4 py-2 rounded-full bg-emerald-500 text-black text-xs font-bold shadow-lg">Update saved</span>
+        </div>
+      )}
+
+      {confirmOpen && createPortal(
+        <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => !saving && setConfirmOpen(false)}>
+          <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-white/[0.08]">
+              <div className="text-sm font-semibold text-white">Confirm today's update</div>
+              <div className="text-[11px] text-white/40">{niceDate(today)}</div>
+            </div>
+            <div className="overflow-y-auto p-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+              <div>
+                <div className="text-[10px] text-white/40 uppercase font-semibold mb-2">Meals eaten · {shownMeals.size} of {meals.length}</div>
+                <div className="space-y-1.5">
+                  {meals.map((m) => (
+                    <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
+                      <span className={shownMeals.has(m.id) ? 'text-white' : 'text-white/40'}>{m.mealTime}</span>
+                      <span className={`text-[10px] font-bold ${shownMeals.has(m.id) ? 'text-emerald-400' : 'text-white/30'}`}>{shownMeals.has(m.id) ? '✓ Eaten' : 'Not eaten'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {(plan.supplements || []).length > 0 && (
+                <div>
+                  <div className="text-[10px] text-white/40 uppercase font-semibold mb-2">Supplements taken · {(plan.supplements || []).filter((x) => shownSupps.has(x.id)).length} of {(plan.supplements || []).length}</div>
+                  <div className="space-y-1.5">
+                    {(plan.supplements || []).map((x) => (
+                      <div key={x.id} className="flex items-center justify-between gap-2 text-xs">
+                        <span className={shownSupps.has(x.id) ? 'text-white' : 'text-white/40'}>{x.name}</span>
+                        <span className={`text-[10px] font-bold ${shownSupps.has(x.id) ? 'text-emerald-400' : 'text-white/30'}`}>{shownSupps.has(x.id) ? '✓ Taken' : 'Not taken'}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {saveError && <p className="text-xs text-[#ec2226]">{saveError}</p>}
+            </div>
+            <div className="p-3 border-t border-white/[0.08] flex items-center gap-2">
+              <button type="button" disabled={saving} onClick={() => setConfirmOpen(false)} className="flex-1 py-2.5 rounded-xl border border-white/[0.12] text-xs font-bold text-white/70">Back</button>
+              <button type="button" disabled={saving} onClick={confirmSave} className="flex-[2] py-2.5 rounded-xl bg-[#ec2226] disabled:opacity-60 text-white text-xs font-bold">{saving ? 'Saving...' : 'Confirm & save'}</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* Today */}
       <div className="rounded-2xl p-4 space-y-3" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
         <div className="flex items-end justify-between">
@@ -456,9 +530,9 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       {/* Meals checklist */}
       {meals.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] text-white/40 uppercase font-semibold">Tap a meal when you have eaten it</div>
+          <div className="text-[10px] text-white/40 uppercase font-semibold">Tap the meals you have eaten, then confirm</div>
           {meals.map((meal) => {
-            const done = eatenToday.has(meal.id);
+            const done = shownMeals.has(meal.id);
             const options = meal.variants || [];
             const multi = options.length > 1;
             const vi = multi ? Math.min(pickedVar[meal.id] || 0, options.length - 1) : 0;
@@ -533,7 +607,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       {/* Last 7 days */}
-      <SupplementsCard items={plan.supplements || []} taken={suppTaken} onToggle={toggleSupplement} />
+      <SupplementsCard items={plan.supplements || []} taken={shownSupps} onToggle={toggleSupplement} />
 
       {plan.notes && (
         <div>
