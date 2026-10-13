@@ -13,7 +13,7 @@ export const SupplementsCard: React.FC<{
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="text-sm font-semibold text-white">Supplements</div>
-          <div className="text-[11px] text-white/40 font-light">Tap each one when you have taken it today</div>
+          <div className="text-[11px] text-white/40 font-light">Tap the ones you have taken today, then confirm</div>
         </div>
         <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${done === items.length ? 'bg-emerald-500/15 text-emerald-400' : 'bg-[#ec2226]/15 text-[#ec2226]'}`}>
           {done === items.length ? 'All taken' : `${done}/${items.length}`}
