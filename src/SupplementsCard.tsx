@@ -11,7 +11,7 @@ export const SupplementsCard: React.FC<{
   return (
     <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <div className="text-sm font-semibold text-white">Supplements</div>
+        <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Supplements</div>
         <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${done === items.length ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/[0.06] text-white/50'}`}>
           {done === items.length ? 'All taken' : `${done}/${items.length}`}
         </span>
