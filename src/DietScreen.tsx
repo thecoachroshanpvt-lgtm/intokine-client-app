@@ -519,7 +519,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       {meals.length > 0 && (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 space-y-4">
+        <div className="rounded-2xl p-4 space-y-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Meal consistency</div>
