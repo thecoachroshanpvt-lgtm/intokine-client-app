@@ -311,7 +311,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   return (
     <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 pb-8`}>
       {/* Plan and today in one card: name, who made it, then how today is going */}
-      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-4">
+      <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 space-y-4">
         <div>
           <div className="text-lg font-bold text-white leading-snug">{plan.dietType}</div>
           <div className="text-[11px] text-white/40 mt-0.5">Plan by <span className="text-white/70 font-medium">{plan.nutritionistName}</span> · Updated {niceDate(plan.lastUpdated)}</div>
@@ -460,7 +460,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             const carb = shown?.carbsGrams ?? meal.carbsGrams;
             const fat = shown?.fatGrams ?? meal.fatGrams;
             return (
-              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden bg-[#242426] ${done ? 'border-emerald-500/40' : 'border-white/[0.06]'}`}>
+              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden bg-white/[0.04] ${done ? 'border-emerald-500/40' : 'border-white/[0.08]'}`}>
                 {multi && (
                   <div className="flex gap-1.5 overflow-x-auto px-4 pt-3" style={{ scrollbarWidth: 'none' }}>
                     {options.map((v, i) => (
@@ -512,14 +512,14 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       <SupplementsCard items={plan.supplements || []} taken={shownSupps} onToggle={toggleSupplement} />
 
       {plan.notes && (
-        <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
           <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] mb-2">Notes from your coach</div>
           <div className="text-xs text-white/60 font-light whitespace-pre-wrap leading-relaxed">{plan.notes}</div>
         </div>
       )}
 
       {meals.length > 0 && (
-        <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-4">
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Meal consistency</div>
