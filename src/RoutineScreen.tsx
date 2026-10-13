@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
 // Routine: shows ONLY what the dietitian added for this client (a follow-up note and the things to track).
@@ -106,6 +107,19 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState<Freq | ''>('daily');
   const [error, setError] = useState('');
+  const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
+  const [detail, setDetail] = useState(false); // the day-by-day popup of the consistency card
+  // Same as the other popups: the page behind stays still and pull-to-refresh is off while it is open.
+  useEffect(() => {
+    if (!detail) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => {
+      document.body.style.overflow = prev;
+      document.body.removeAttribute('data-popup-open');
+    };
+  }, [detail]);
   // Re-check the date once a minute so "today" rolls over at midnight.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -186,18 +200,75 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     return it.type === 'tick' ? v === true : v !== undefined && v !== '';
   };
 
-  // last 7 days: share of today's-type items answered each day
+  // Routine consistency: the share of daily items answered each day. Days before the first answer do not count against the client.
   const dailyItems = itemsFor('daily');
-  const strip = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const key = dateKey(d);
-    const done = dailyItems.filter(({ fu, it }) => {
+  const answeredOn = (key: string) =>
+    dailyItems.filter(({ fu, it }) => {
       const v = logFor(fu.id, 'daily', key)?.values?.[it.id];
       return it.type === 'tick' ? v === true : v !== undefined && v !== '';
-    }).length;
-    return { key, label: d.toLocaleDateString(undefined, { weekday: 'narrow' }), frac: dailyItems.length ? done / dailyItems.length : 0, isToday: key === today };
+    });
+  const dayFrac = (key: string) => (dailyItems.length ? Math.min(1, answeredOn(key).length / dailyItems.length) : 0);
+  const firstDay = logs.filter((l) => l.freq === 'daily').map((l) => l.period).sort()[0] || today;
+  const lastDays = (n: number, fmt: Intl.DateTimeFormatOptions) =>
+    Array.from({ length: n }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (n - 1 - i));
+      const key = dateKey(d);
+      return {
+        key,
+        label: d.toLocaleDateString(undefined, fmt),
+        full: d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }),
+        frac: dayFrac(key),
+        done: answeredOn(key),
+        active: key >= firstDay,
+        isToday: key === today,
+        fullDays: 0,
+        logged: 0,
+        n: 1,
+      };
+    });
+  const week = lastDays(7, { weekday: 'short' });
+  const month = lastDays(30, { day: 'numeric' });
+  const year = Array.from({ length: 12 }, (_, i) => {
+    const start = new Date();
+    start.setDate(1);
+    start.setMonth(start.getMonth() - (11 - i));
+    const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    let sumFrac = 0;
+    let n = 0;
+    let fullDays = 0;
+    let logged = 0;
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = dateKey(d);
+      if (key > today) break;
+      if (key < firstDay) continue;
+      const f = dayFrac(key);
+      sumFrac += f;
+      n++;
+      if (f >= 0.999) fullDays++;
+      if (f > 0) logged++;
+    }
+    return {
+      key: dateKey(start),
+      label: start.toLocaleDateString(undefined, { month: 'short' }),
+      full: start.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }),
+      frac: n ? sumFrac / n : 0,
+      done: [] as typeof dailyItems,
+      active: n > 0,
+      isToday: i === 11,
+      fullDays,
+      logged,
+      n,
+    };
   });
+  const bars = range === 'week' ? week : range === 'month' ? month : year;
+  const activeBars = bars.filter((x) => x.active);
+  const avgPct = activeBars.length ? Math.round((activeBars.reduce((t, x) => t + x.frac, 0) / activeBars.length) * 100) : 0;
+  const barColor = (f: number) => (f >= 0.8 ? '#34d399' : f >= 0.5 ? '#fbbf24' : '#ec2226');
+  const totalFull = range === 'year' ? activeBars.reduce((t, x) => t + x.fullDays, 0) : activeBars.filter((x) => x.frac >= 0.999).length;
+  const totalLogged = range === 'year' ? activeBars.reduce((t, x) => t + x.logged, 0) : activeBars.filter((x) => x.frac > 0).length;
+  const totalDays = range === 'year' ? activeBars.reduce((t, x) => t + x.n, 0) : activeBars.length;
+  const rangeTitle = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Last 12 months';
 
   if (loading) return <div className="text-center py-12 text-white/40 text-sm font-light">Loading your routine...</div>;
 
@@ -266,19 +337,106 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
       {dailyItems.length > 0 && (
-        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
-          <div className="text-[10px] text-white/40 uppercase font-bold tracking-[0.15em]">My routine · last 7 days</div>
-          <div className="flex items-end justify-between gap-1">
-            {strip.map((d) => (
-              <div key={d.key} className="flex flex-col items-center gap-1 flex-1">
-                <div className="w-full h-10 bg-white/[0.06] rounded-md flex items-end overflow-hidden">
-                  <div className="w-full rounded-md" style={{ height: `${d.frac * 100}%`, background: 'linear-gradient(180deg, #6ccbde, #ec2226)' }} />
-                </div>
-                <span className={`text-[9px] font-bold ${d.isToday ? 'text-white' : 'text-white/30'}`}>{d.label}</span>
-              </div>
-            ))}
+        <div className="rounded-2xl p-4 space-y-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Routine consistency</div>
+              <div className="text-[11px] text-white/40"><span className="text-white font-bold font-mono text-sm">{avgPct}%</span> average</div>
+            </div>
+            <div className="inline-flex rounded-full bg-white/[0.04] border border-white/[0.08] p-0.5 shrink-0">
+              {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
+                <button key={k} type="button" onClick={() => setRange(k)}
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde]/15 text-[#6ccbde]' : 'text-white/50'}`}>{l}</button>
+              ))}
+            </div>
           </div>
+
+          <button type="button" onClick={() => setDetail(true)} className="w-full text-left" aria-label="Open day by day details">
+            <div className="relative pt-[14px]">
+              <div className="absolute inset-x-0 top-[14px] h-16 pointer-events-none">
+                <div className="absolute inset-x-0 top-0 border-t border-white/[0.08]" />
+                <div className="absolute inset-x-0 top-1/2 border-t border-dashed border-white/[0.08]" />
+                <div className="absolute inset-x-0 bottom-0 border-t border-white/[0.14]" />
+              </div>
+              <div className={`relative flex items-end justify-between ${range === 'month' ? 'gap-px' : 'gap-1.5'}`}>
+                {bars.map((d) => {
+                  const h = d.active ? Math.max(3, Math.round(d.frac * 100)) : 0;
+                  return (
+                    <div key={d.key} className="flex-1 min-w-0 h-16 relative flex justify-center">
+                      {d.active && range !== 'month' && (
+                        <span className="absolute left-0 right-0 text-center text-[8px] font-mono text-white/60" style={{ bottom: `calc(${h}% + 2px)` }}>{Math.round(d.frac * 100)}</span>
+                      )}
+                      <div className="absolute bottom-0 w-full max-w-[26px] rounded-t-md" style={{ height: `${h}%`, background: barColor(d.frac) }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            {range !== 'month' ? (
+              <div className="flex justify-between gap-1.5 mt-1">
+                {bars.map((d) => (
+                  <span key={d.key} className={`flex-1 min-w-0 text-center text-[9px] truncate ${d.isToday ? 'text-white font-bold' : 'text-white/40'}`}>{d.label}</span>
+                ))}
+              </div>
+            ) : (
+              <div className="flex justify-between text-[9px] text-white/40 mt-1"><span>30 days ago</span><span>Today</span></div>
+            )}
+            <div className="text-center text-[10px] font-semibold text-[#6ccbde] mt-2">Tap for day-by-day details</div>
+          </button>
         </div>
+      )}
+
+      {detail && createPortal(
+        <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
+          <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
+              <div>
+                <div className="text-sm font-semibold text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} routine consistency</div>
+                <div className="text-[11px] text-white/40">{rangeTitle}</div>
+              </div>
+              <button type="button" onClick={() => setDetail(false)} className="text-white/50 text-xl leading-none px-1" aria-label="Close">×</button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 p-4 pb-2">
+              {([['Average', `${avgPct}%`], ['Full days', String(totalFull)], ['Days logged', `${totalLogged}/${totalDays}`]] as const).map(([l, v]) => (
+                <div key={l} className="bg-black/30 rounded-xl py-2 text-center">
+                  <div className="text-sm font-bold text-white font-mono">{v}</div>
+                  <div className="text-[9px] text-white/40 uppercase mt-0.5">{l}</div>
+                </div>
+              ))}
+            </div>
+            <div className="overflow-y-auto px-4 pb-4 pt-2 space-y-2.5" style={{ overscrollBehavior: 'contain' }}>
+              {[...bars].reverse().map((d) => (
+                <div key={d.key}>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-24 shrink-0 text-xs ${d.isToday ? 'text-white font-bold' : 'text-white/70'}`}>{d.full}{d.isToday && range !== 'year' ? ' (today)' : ''}</div>
+                    <div className="flex-1 h-2 rounded-full bg-white/[0.08] overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${d.active ? Math.round(d.frac * 100) : 0}%`, background: barColor(d.frac) }} />
+                    </div>
+                    <div className="w-12 shrink-0 text-right text-xs font-mono font-bold" style={{ color: d.active ? barColor(d.frac) : 'rgba(255,255,255,0.3)' }}>{d.active ? `${Math.round(d.frac * 100)}%` : '—'}</div>
+                  </div>
+                  {range === 'year' ? (
+                    <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">{d.active ? `${d.fullDays} full days · ${d.logged} of ${d.n} days logged` : 'No data yet'}</div>
+                  ) : (
+                    <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">
+                      {!d.active ? 'Before you started' : `${d.done.length} of ${dailyItems.length} items`}
+                      {range === 'week' && d.active && (
+                        <span className="flex flex-wrap gap-1 mt-1">
+                          {dailyItems.map(({ fu, it }) => {
+                            const ok = d.done.some((x) => x.fu.id === fu.id && x.it.id === it.id);
+                            return (
+                              <span key={fu.id + it.id} className={`px-1.5 py-0.5 rounded-full text-[9px] ${ok ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/[0.05] text-white/30'}`}>{ok ? '✓ ' : ''}{it.label}</span>
+                            );
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {notes.map((f) => (
