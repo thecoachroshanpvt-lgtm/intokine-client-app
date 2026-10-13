@@ -310,18 +310,36 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
   return (
     <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 pb-8`}>
-      {/* Plan name, who made it and when: first thing on the screen */}
-      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] text-white/40 uppercase font-semibold tracking-wider">Your diet plan</div>
-            <div className="text-lg font-bold text-white leading-snug mt-0.5">{plan.dietType}</div>
+      {/* Plan and today in one card: name, who made it, then how today is going */}
+      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-4">
+        <div>
+          <div className="text-lg font-bold text-white leading-snug">{plan.dietType}</div>
+          <div className="text-[11px] text-white/40 mt-0.5">Plan by <span className="text-white/70 font-medium">{plan.nutritionistName}</span> · Updated {niceDate(plan.lastUpdated)}</div>
+        </div>
+        <div>
+          <div className="flex items-end justify-between">
+            <div className="font-header text-3xl text-white tracking-wide leading-none">
+              {eatenKcal}<span className="text-sm font-light text-white/50 ml-1 font-sans">/ {plan.dailyCalories} kcal</span>
+            </div>
+            <div className="text-xs text-white/50"><span className="text-white font-semibold font-mono">{eatenToday.size}/{meals.length}</span> meals</div>
           </div>
-          <span className="shrink-0 text-[10px] text-white/50 bg-white/[0.06] rounded-full px-2.5 py-1 mt-0.5">Updated {niceDate(plan.lastUpdated)}</span>
+          <div className="w-full h-1.5 bg-white/[0.08] rounded-full overflow-hidden mt-2.5">
+            <div className="h-full rounded-full transition-all" style={{ width: `${kcalPct}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
+          </div>
         </div>
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/[0.06]">
-          <span className="text-xs text-white/50">Plan by <span className="text-white font-semibold">{plan.nutritionistName}</span></span>
+        <div className="grid grid-cols-4 divide-x divide-white/[0.08] text-center">
+          {macros.map((m) => (
+            <div key={m.label} className="px-1">
+              <div className="text-xs font-bold font-mono" style={{ color: m.color }}>{m.eaten}<span className="text-white/35 font-normal">/{m.target}g</span></div>
+              <div className="text-[9px] text-white/40 uppercase mt-0.5">{m.label}</div>
+            </div>
+          ))}
+          <div className="px-1">
+            <div className="text-xs font-bold text-white font-mono">{plan.hydrationLiters}L</div>
+            <div className="text-[9px] text-white/40 uppercase mt-0.5">Water</div>
+          </div>
         </div>
+        {allDone && <p className="text-xs text-emerald-400 font-semibold text-center">All meals done today. Great work!</p>}
       </div>
       {plan.nutritionistContact && <FloatingWhatsApp href={buildWhatsAppLink(plan.nutritionistContact)} />}
 
@@ -424,42 +442,13 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         document.body
       )}
 
-      {/* Today */}
-      <div className="rounded-2xl p-4 space-y-3" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="text-[10px] text-white/40 uppercase font-bold tracking-[0.15em]">Today</div>
-            <div className="font-header text-3xl text-white tracking-wide leading-none mt-1">
-              {eatenKcal}<span className="text-sm font-light text-white/50 ml-1 font-sans">/ {plan.dailyCalories} kcal</span>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm font-semibold text-white font-mono">{eatenToday.size}/{meals.length}</div>
-            <div className="text-[10px] text-white/40 uppercase">meals</div>
-          </div>
-        </div>
-        <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
-          <div className="h-full rounded-full transition-all" style={{ width: `${kcalPct}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
-        </div>
-        <div className="grid grid-cols-4 gap-2 text-center">
-          {macros.map((m) => (
-            <div key={m.label} className="bg-black/20 rounded-xl p-2">
-              <div className="text-[9px] text-white/40 uppercase">{m.label}</div>
-              <div className="text-xs font-bold font-mono" style={{ color: m.color }}>{m.eaten}<span className="text-white/40 font-normal">/{m.target}g</span></div>
-            </div>
-          ))}
-          <div className="bg-black/20 rounded-xl p-2">
-            <div className="text-[9px] text-white/40 uppercase">Water</div>
-            <div className="text-xs font-bold text-white font-mono">{plan.hydrationLiters}L</div>
-          </div>
-        </div>
-        {allDone && <p className="text-xs text-emerald-400 font-semibold text-center">All meals done today. Great work!</p>}
-      </div>
-
       {/* Meals checklist */}
       {meals.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-[10px] text-white/40 uppercase font-semibold">Tap the meals you have eaten, then confirm</div>
+        <div className="space-y-2.5">
+          <div className="flex items-baseline justify-between px-1">
+            <div className="text-sm font-semibold text-white">Today's meals</div>
+            <div className="text-[10px] text-white/40">Tap a meal when you have eaten it</div>
+          </div>
           {meals.map((meal) => {
             const done = shownMeals.has(meal.id);
             const options = meal.variants || [];
@@ -473,61 +462,46 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             return (
               <div key={meal.id} className={`rounded-2xl border transition overflow-hidden ${done ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#242426] border-white/[0.06]'}`}>
                 {multi && (
-                  <div className="flex gap-1.5 overflow-x-auto px-3 pt-3 pb-0.5" style={{ scrollbarWidth: 'none' }}>
+                  <div className="flex gap-1.5 overflow-x-auto px-4 pt-3" style={{ scrollbarWidth: 'none' }}>
                     {options.map((v, i) => (
                       <button key={v.id} type="button" onClick={() => setPickedVar((p) => ({ ...p, [meal.id]: i }))}
-                        className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-semibold border transition ${i === vi ? 'bg-[#6ccbde] text-[#0d0e12] border-[#6ccbde]' : 'border-white/15 text-white/60'}`}>
+                        className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold border transition ${i === vi ? 'bg-[#6ccbde] text-[#0d0e12] border-[#6ccbde]' : 'border-white/15 text-white/60'}`}>
                         {v.label?.trim() || `Option ${i + 1}`}
                       </button>
                     ))}
                   </div>
                 )}
-              <button
-                type="button"
-                onClick={() => toggleMeal(meal.id)}
-                aria-pressed={done}
-                className="w-full text-left p-3 flex items-start gap-3"
-              >
-                <span
-                  className={`mt-0.5 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${
-                    done ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent'
-                  }`}
-                  aria-hidden
-                >
-                  ✓
-                </span>
-                <span className="flex-1 min-w-0 space-y-1">
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="text-[10px] font-semibold text-[#6ccbde] uppercase flex items-center gap-1.5">
-                      <span className="text-sm">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'}</span>
-                      {meal.mealTime}
-                    </span>
+                <button type="button" onClick={() => toggleMeal(meal.id)} aria-pressed={done} className="w-full text-left p-4 block">
+                  <span className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${done ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent'}`} aria-hidden>✓</span>
+                    <span className="text-sm font-semibold text-white flex-1">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'} {meal.mealTime}</span>
                   </span>
-                  {shown ? (
-                    <span className="block">
-                      {shown.items.map((it) => (
-                        <span key={it.id} className={`flex items-baseline justify-between gap-3 text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>
-                          <span>{it.name}</span>
-                          {it.portion ? <span className="text-white/50 font-mono text-[11px] shrink-0">{it.portion}</span> : null}
-                        </span>
-                      ))}
-                      {multi && <span className="block text-[10px] text-white/30 mt-1">Choose one option.</span>}
-                    </span>
-                  ) : (
-                    <span className={`block text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/90'}`}>{meal.description}</span>
-                  )}
+                  <span className="block mt-2.5 pl-9">
+                    {shown ? (
+                      <>
+                        {shown.items.map((it) => (
+                          <span key={it.id} className={`flex items-baseline justify-between gap-3 text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/85'}`}>
+                            <span>{it.name}</span>
+                            {it.portion ? <span className="text-white/45 font-mono text-[11px] shrink-0">{it.portion}</span> : null}
+                          </span>
+                        ))}
+                        {multi && <span className="block text-[10px] text-white/30 mt-1">Choose one option.</span>}
+                      </>
+                    ) : (
+                      <span className={`block text-xs font-light leading-relaxed ${done ? 'text-white/50' : 'text-white/85'}`}>{meal.description}</span>
+                    )}
+                  </span>
                   {(kcal || prot || carb || fat) ? (
-                    <span className="grid grid-cols-4 gap-1.5 pt-1.5">
+                    <span className="grid grid-cols-4 divide-x divide-white/[0.08] text-center mt-3 pt-3 border-t border-white/[0.06]">
                       {([['kcal', kcal, '', '#fbbf24'], ['Protein', prot, 'g', '#6ccbde'], ['Carbs', carb, 'g', '#ffffff'], ['Fats', fat, 'g', '#ec2226']] as const).map(([label, val, unit, color]) => (
-                        <span key={label} className="rounded-lg bg-black/25 py-1.5 text-center">
+                        <span key={label} className="px-1">
                           <span className="block text-sm font-bold font-mono leading-none" style={{ color }}>{val || 0}<span className="text-[9px] font-normal text-white/40">{unit}</span></span>
                           <span className="block text-[9px] text-white/40 uppercase mt-1">{label}</span>
                         </span>
                       ))}
                     </span>
                   ) : null}
-                </span>
-              </button>
+                </button>
               </div>
             );
           })}
@@ -535,22 +509,21 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </div>
       )}
 
-      {/* Last 7 days */}
       <SupplementsCard items={plan.supplements || []} taken={shownSupps} onToggle={toggleSupplement} />
 
       {plan.notes && (
-        <div>
-          <div className="text-[10px] text-white/40 uppercase font-semibold mb-1">Notes from your coach</div>
-          <div className="text-xs text-white/70 font-light whitespace-pre-wrap leading-relaxed bg-white/[0.03] rounded-xl p-3">{plan.notes}</div>
+        <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+          <div className="text-sm font-semibold text-white mb-1.5">Notes from your coach</div>
+          <div className="text-xs text-white/60 font-light whitespace-pre-wrap leading-relaxed">{plan.notes}</div>
         </div>
       )}
 
       {meals.length > 0 && (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3 space-y-3">
+        <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <div className="text-[10px] text-white/40 uppercase font-semibold">Meal consistency</div>
-              <div className="text-sm font-bold text-white font-mono">{avgPct}%<span className="text-[10px] text-white/40 font-normal ml-1.5">average of planned meals eaten</span></div>
+              <div className="text-sm font-semibold text-white">Meal consistency</div>
+              <div className="text-[11px] text-white/40"><span className="text-white font-bold font-mono text-sm">{avgPct}%</span> average</div>
             </div>
             <div className="inline-flex rounded-full bg-black/30 border border-white/[0.08] p-0.5 shrink-0">
               {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
@@ -562,9 +535,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
           <button type="button" onClick={() => setDetail(true)} className="w-full text-left" aria-label="Open day by day details">
             <div className="flex gap-2">
-              <div className="h-16 mt-[14px] flex flex-col justify-between text-[8px] text-white/30 font-mono w-6 text-right shrink-0">
-                <span>100</span><span>50</span><span>0</span>
-              </div>
               <div className="flex-1 min-w-0">
                 <div className="relative pt-[14px]">
                   <div className="absolute inset-x-0 top-[14px] h-16 pointer-events-none">
@@ -597,14 +567,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                 )}
               </div>
             </div>
-            <div className="flex items-center justify-between mt-2">
-              <div className="flex items-center gap-3 text-[9px] text-white/40">
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#34d399' }} />80%+</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#fbbf24' }} />50-79%</span>
-                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full" style={{ background: '#f87171' }} />under 50%</span>
-              </div>
-              <span className="text-[10px] font-semibold text-[#6ccbde]">Tap for details</span>
-            </div>
+            <div className="text-center text-[10px] font-semibold text-[#6ccbde] mt-2">Tap for day-by-day details</div>
           </button>
         </div>
       )}
