@@ -118,9 +118,9 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
       {count > 0 && (() => {
         // One "set" of cards, repeated until it is wider than a phone screen, then the set is doubled
         // so the belt can loop seamlessly. Cards slowly glide to the right.
-        const reps = Math.max(1, Math.ceil(6 / count));
+        const reps = Math.max(1, Math.ceil(8 / count));
         const set = Array.from({ length: reps }).flatMap((_, r) => items.map((t) => ({ ...t, k: `${r}-${t.id}` })));
-        const seconds = set.length * 9; // ~9 seconds per card = slow
+        const seconds = set.length * 7; // ~7 seconds per card = slow
         return (
           <>
             <span className="text-[11px] text-white/40 uppercase font-semibold block">What our clients say</span>
@@ -131,12 +131,12 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
               @media (prefers-reduced-motion: reduce) { .intokine-belt { animation: none; } }
             `}</style>
             <div className="intokine-belt-wrap overflow-hidden rounded-2xl">
-              <div className="intokine-belt flex gap-3 w-max">
+              <div className="intokine-belt flex gap-2 w-max">
                 {[...set, ...set].map((t, i) => (
-                  <div key={`${t.k}-${i}`} className="w-[270px] shrink-0 rounded-2xl bg-white/[0.04] border border-white/[0.08] p-4">
-                    <Stars value={t.rating} />
-                    <p className="text-sm text-white/80 font-light leading-relaxed mt-2">&ldquo;{t.quote}&rdquo;</p>
-                    {t.detail && <p className="text-[11px] text-[#6ccbde] font-light mt-3">{t.detail}</p>}
+                  <div key={`${t.k}-${i}`} className="w-[200px] shrink-0 rounded-xl bg-white/[0.04] border border-white/[0.08] px-3 py-2.5">
+                    <Stars value={t.rating} size={11} />
+                    <p className="text-[11px] text-white/75 font-light leading-snug mt-1.5 line-clamp-3">&ldquo;{t.quote}&rdquo;</p>
+                    {t.detail && <p className="text-[10px] text-[#6ccbde] font-light mt-1.5 truncate">{t.detail}</p>}
                   </div>
                 ))}
               </div>
