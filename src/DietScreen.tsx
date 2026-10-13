@@ -184,7 +184,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   // When the client has finished tapping (a very short pause after the last tap), the confirmation popup opens by itself.
   useEffect(() => {
     if (!dirty || confirmOpen) return;
-    const t = window.setTimeout(() => setConfirmOpen(true), 350);
+    const t = window.setTimeout(() => setConfirmOpen(true), 80);
     return () => window.clearTimeout(t);
   }, [dirty, pendingMeals, pendingSupps, confirmOpen]);
 
