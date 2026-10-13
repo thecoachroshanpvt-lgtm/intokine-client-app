@@ -6,6 +6,7 @@ interface Testimonial {
   name: string;
   rating: number;
   quote: string;
+  detail?: string;
 }
 
 interface TestimonialsProps {
@@ -153,6 +154,7 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
                   <Stars value={t.rating} />
                   <p className="text-sm text-white/80 font-light leading-relaxed mt-2">&ldquo;{t.quote}&rdquo;</p>
                   <p className="text-xs font-semibold text-white mt-3">{t.name}</p>
+                  {t.detail && <p className="text-[11px] text-[#6ccbde] font-light">{t.detail}</p>}
                 </div>
               ))}
             </div>
