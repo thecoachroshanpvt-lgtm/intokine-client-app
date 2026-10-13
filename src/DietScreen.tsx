@@ -181,6 +181,13 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     setSaveError('');
   };
 
+  // When the client has finished tapping (a short pause after the last tap), the confirmation popup opens by itself.
+  useEffect(() => {
+    if (!dirty || confirmOpen) return;
+    const t = window.setTimeout(() => setConfirmOpen(true), 1200);
+    return () => window.clearTimeout(t);
+  }, [dirty, pendingMeals, pendingSupps, confirmOpen]);
+
   const confirmSave = async () => {
     setSaving(true);
     setSaveError('');
@@ -302,7 +309,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   ];
 
   return (
-    <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 ${dirty ? 'pb-36' : 'pb-8'}`}>
+    <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 pb-8`}>
       {/* Plan name, who made it and when: first thing on the screen */}
       <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
         <div className="flex items-start justify-between gap-3">
@@ -433,19 +440,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         document.body
       )}
 
-      {dirty && !confirmOpen && (
-        <div className="fixed left-0 right-0 bottom-24 z-40 px-5 pointer-events-none">
-          <div className="max-w-md mx-auto bg-[#242426] border border-[#6ccbde]/40 rounded-2xl p-3 flex items-center gap-3 shadow-xl pointer-events-auto">
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-white">Update not saved yet</div>
-              <div className="text-[10px] text-white/40">{changeCount} change{changeCount === 1 ? '' : 's'} to confirm</div>
-            </div>
-            <button type="button" onClick={undoChanges} className="text-[11px] font-semibold text-white/50 px-2 py-2">Undo</button>
-            <button type="button" onClick={() => setConfirmOpen(true)} className="px-4 py-2 rounded-xl bg-[#ec2226] text-white text-xs font-bold shrink-0">Review &amp; confirm</button>
-          </div>
-        </div>
-      )}
-
       {savedMsg && (
         <div className="fixed left-0 right-0 bottom-28 z-40 flex justify-center pointer-events-none">
           <span className="px-4 py-2 rounded-full bg-emerald-500 text-black text-xs font-bold shadow-lg">Update saved</span>
@@ -453,11 +447,11 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       {confirmOpen && createPortal(
-        <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => !saving && setConfirmOpen(false)}>
+        <div className="anim-overlay fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-5">
           <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-white/[0.08]">
               <div className="text-sm font-semibold text-white">Confirm today's update</div>
-              <div className="text-[11px] text-white/40">{niceDate(today)}</div>
+              <div className="text-[11px] text-white/40">{niceDate(today)} · check it and confirm to save</div>
             </div>
             <div className="overflow-y-auto p-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
               <div>
@@ -487,7 +481,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
               {saveError && <p className="text-xs text-[#ec2226]">{saveError}</p>}
             </div>
             <div className="p-3 border-t border-white/[0.08] flex items-center gap-2">
-              <button type="button" disabled={saving} onClick={() => setConfirmOpen(false)} className="flex-1 py-2.5 rounded-xl border border-white/[0.12] text-xs font-bold text-white/70">Back</button>
+              <button type="button" disabled={saving} onClick={undoChanges} className="flex-1 py-2.5 rounded-xl border border-white/[0.12] text-xs font-bold text-white/70">Cancel</button>
               <button type="button" disabled={saving} onClick={confirmSave} className="flex-[2] py-2.5 rounded-xl bg-[#ec2226] disabled:opacity-60 text-white text-xs font-bold">{saving ? 'Saving...' : 'Confirm & save'}</button>
             </div>
           </div>
