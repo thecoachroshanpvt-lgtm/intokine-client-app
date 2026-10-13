@@ -194,14 +194,14 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   return createPortal(
     <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5 pb-24" onClick={onClose}>
-      <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
           <h3 className="text-sm font-bold text-white uppercase tracking-wide">{mode === 'menu' ? 'Settings' : 'Change password'}</h3>
           <button type="button" onClick={onClose} className="text-white/40 text-lg leading-none px-1">×</button>
         </div>
         {mode === 'menu' ? (
           <div className="p-4 space-y-2.5">
-            <button type="button" onClick={() => setMode('password')} className="w-full text-left bg-[#242426] border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-semibold text-white">
+            <button type="button" onClick={() => setMode('password')} className="w-full text-left bg-[#252525] border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-semibold text-white">
               Change password
             </button>
             <button type="button" onClick={logOut} className="w-full text-left bg-[#ec2226]/10 border border-[#ec2226]/30 rounded-xl px-4 py-3 text-sm font-semibold text-[#ec2226]">
@@ -515,7 +515,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         rows.sort((p, q) => q.date.localeCompare(p.date));
         const absentCount = rows.filter((r) => r.label === 'ABSENT').length;
         return (
-          <div className="bg-white/[0.05] border border-white/[0.08] rounded-2xl overflow-hidden">
+          <div className="bg-[#252525] border border-white/[0.08] rounded-2xl overflow-hidden">
             <button type="button" onClick={() => setPackageHistoryOpen((o) => !o)} className="w-full text-left p-4 space-y-2" aria-expanded={packageHistoryOpen}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-white">
@@ -557,7 +557,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                     const rd = parseDateKey(r.date);
                     const rt = r.time ? formatTime(r.time) : null;
                     return (
-                      <div key={r.key} className="flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-xl px-3 py-2">
+                      <div key={r.key} className="flex items-center gap-3 bg-[#252525] border border-white/[0.06] rounded-xl px-3 py-2">
                         <div className="w-16 shrink-0 text-xs font-semibold text-white">
                           {rd ? rd.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : r.date}
                           <div className="text-[10px] text-white/40 font-light">{rd ? rd.toLocaleDateString(undefined, { weekday: 'short' }) : ''}</div>
@@ -614,7 +614,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
               const movedTo = movedAway ? parseDateKey(s.date) : null;
               const movedTime = movedAway ? formatTime(s.time) : null;
               return (
-                <div key={s.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
                   <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
                       {sd ? sd.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
