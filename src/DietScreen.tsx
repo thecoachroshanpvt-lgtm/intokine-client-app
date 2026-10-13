@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { SupplementsCard } from './SupplementsCard';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
 // Builds a wa.me deep link from whatever format the contact number was stored in.
@@ -163,6 +164,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             No diet plan shared yet — your coach will share your plan here once it's ready.
           </p>
         </div>
+        <div className="mt-4"><SupplementsCard clientId={clientId} /></div>
       </div>
     );
   }
@@ -335,6 +337,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           </div>
         </div>
       )}
+
+      <SupplementsCard clientId={clientId} />
 
       {plan.notes && (
         <div>
