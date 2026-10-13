@@ -424,7 +424,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
             <button
               type="button"
               onClick={() => setOpenId(it.id)}
-              className="w-full text-left bg-[#242426] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-xl p-3 transition active:scale-[0.99]"
+              className="w-full text-left bg-[#252525] border border-white/[0.06] hover:border-[#6ccbde]/40 rounded-xl p-3 transition active:scale-[0.99]"
             >
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-bold text-white uppercase tracking-wide">{it.name}<span className="block h-[2px] w-6 mt-1 rounded-full bg-[#ec2226]" /></span>
@@ -445,8 +445,8 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
     })}
     {openItem && (
       <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5" onClick={(e) => { e.stopPropagation(); setOpenId(null); }}>
-        <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+        <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
             <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
             <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
           </div>
@@ -478,7 +478,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{openItem.rowsTitle || 'Result journey'}</span>
                 <div className="space-y-1.5">
                   {openItem.rows.map((d, k) => (
-                    <div key={`${d.date}-${k}`} className="flex flex-col items-start bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                    <div key={`${d.date}-${k}`} className="flex flex-col items-start bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
                       <div className="flex items-center justify-between w-full gap-2">
                         <span className="text-[11px] text-white/50 font-mono">{d.date}</span>
                         <span className="text-[11px] font-black text-white font-mono text-right">{d.text}</span>
@@ -499,7 +499,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Result journey</span>
                 <div className="space-y-1.5">
                   {openItem.sides.map((d, k) => (
-                    <div key={`${d.date}-${k}`} className="flex flex-col items-start bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                    <div key={`${d.date}-${k}`} className="flex flex-col items-start bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
                       <div className="flex items-center justify-between w-full">
                         <span className="text-[11px] text-white/50 font-mono">{d.date}</span>
                         <span className="text-xs font-black text-white font-mono">L {d.left ?? '—'}{unit} · R {d.right ?? '—'}{unit}</span>
@@ -525,7 +525,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                     const prevV = k > 0 ? hist[k - 1].value : null;
                     const d = prevV !== null ? Math.round((h.value - prevV) * 10) / 10 : null;
                     return (
-                      <div key={`${h.date}-${k}`} className="flex flex-col items-start bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                      <div key={`${h.date}-${k}`} className="flex flex-col items-start bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
                         <div className="flex items-center justify-between w-full">
                           <span className="text-[11px] text-white/50 font-mono">{h.date}</span>
                           <span className="flex items-center gap-2">
@@ -584,7 +584,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
         <path d={d} fill="none" stroke="#6ccbde" strokeWidth="3" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
       </svg>
       <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${summit.x}%`, top: summit.y }}>
-        <div className="w-12 h-12 rounded-full bg-[#242426] border-2 border-[#6ccbde] flex items-center justify-center text-xl shadow-[0_0_24px_rgba(108,203,222,0.45)]">🏆</div>
+        <div className="w-12 h-12 rounded-full bg-[#252525] border-2 border-[#6ccbde] flex items-center justify-center text-xl shadow-[0_0_24px_rgba(108,203,222,0.45)]">🏆</div>
         <span className="block mx-auto mt-1.5 h-[2px] w-6 rounded-full bg-[#ec2226]" />
       </div>
       <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: `${start.x}%`, top: start.y }}>
@@ -598,7 +598,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
             <button
               type="button"
               onClick={() => setOpenId(it.id)}
-              className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#6ccbde] text-[#0a0a0b] text-sm font-bold flex items-center justify-center border-4 border-[#1c1c1e] shadow-[0_0_16px_rgba(108,203,222,0.5)] active:scale-95 transition-transform"
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-[#6ccbde] text-[#0a0a0b] text-sm font-bold flex items-center justify-center border-4 border-[#1c1c1c] shadow-[0_0_16px_rgba(108,203,222,0.5)] active:scale-95 transition-transform"
               style={{ left: `${pt.x}%`, top: pt.y }}
             >
               {i + 1}
@@ -606,7 +606,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
             <button
               type="button"
               onClick={() => setOpenId(it.id)}
-              className="absolute -translate-y-1/2 bg-[#242426] border border-white/[0.08] hover:border-[#6ccbde]/40 rounded-xl px-3 py-2 text-left transition active:scale-[0.98]"
+              className="absolute -translate-y-1/2 bg-[#252525] border border-white/[0.08] hover:border-[#6ccbde]/40 rounded-xl px-3 py-2 text-left transition active:scale-[0.98]"
               style={left ? { left: `calc(${pt.x}% + 28px)`, top: pt.y, maxWidth: 'calc(50% - 36px)' } : { right: `calc(${100 - pt.x}% + 28px)`, top: pt.y, maxWidth: 'calc(50% - 36px)' }}
             >
               <span className="text-[11px] font-bold text-white uppercase tracking-wide block leading-tight">{it.name}</span>
@@ -620,8 +620,8 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
       })}
       {openItem && createPortal(
         <div className="anim-overlay fixed inset-0 z-[110] bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenId(null)}>
-          <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+          <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
               <div>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
                 <span className="text-[10px] text-white/40 font-mono">{openItem.date}{openItem.scoreText ? ` · ${openItem.scoreText}` : ''}</span>
@@ -636,7 +636,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
                   <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{openItem.rowsTitle || 'Roadmap'}</span>
                   <div className="space-y-2">
                     {openItem.rows.map((r, k) => (
-                      <div key={k} className="bg-[#242426] border border-white/[0.06] rounded-lg p-2.5">
+                      <div key={k} className="bg-[#252525] border border-white/[0.06] rounded-lg p-2.5">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-[11px] text-white font-semibold">{r.text}</span>
                           {r.date && <span className="text-[10px] text-white/40 font-mono shrink-0">{r.date}</span>}
@@ -692,8 +692,8 @@ const ActivityGraphModal: React.FC<{ item: RoadmapItem; tag: string; fit: boolea
   const points = hist.map((h) => ({ date: h.date, value: h.value }));
   return createPortal(
     <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5 pb-24" onClick={(e) => { e.stopPropagation(); onClose(); }}>
-      <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+      <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
           <h3 className="text-sm font-bold text-white uppercase tracking-wide">{item.name}</h3>
           <button type="button" onClick={onClose} className="text-white/40 text-lg leading-none px-1">×</button>
         </div>
@@ -720,7 +720,7 @@ const ActivityGraphModal: React.FC<{ item: RoadmapItem; tag: string; fit: boolea
             <div className="space-y-1.5">
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block">{item.rowsTitle || 'Result journey'}</span>
               {item.rows.map((d, k) => (
-                <div key={`${d.date}-${k}`} className="flex items-center justify-between gap-2 bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+                <div key={`${d.date}-${k}`} className="flex items-center justify-between gap-2 bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
                   <span className="text-[11px] text-white/50 font-mono">{d.date}</span>
                   <span className="text-[11px] font-black text-white font-mono text-right">{d.text}</span>
                 </div>
@@ -728,7 +728,7 @@ const ActivityGraphModal: React.FC<{ item: RoadmapItem; tag: string; fit: boolea
             </div>
           )}
           {item.note && (
-            <div className="bg-[#242426] border border-white/[0.06] rounded-lg px-3 py-2">
+            <div className="bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
               <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
               <p className="text-xs text-white/90 leading-relaxed whitespace-pre-line">{item.note}</p>
             </div>
@@ -748,7 +748,7 @@ const AlreadyFitTiles: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
     {sel && <ActivityGraphModal item={sel} tag="Already fit" fit onClose={() => setSel(null)} />}
     <p className="text-[10px] font-bold uppercase tracking-widest text-amber-300">🎓 Already fit</p>
     {items.map((it) => (
-      <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
+      <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
         <span className="w-9 h-9 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 text-base font-bold shrink-0">✓</span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white truncate">{it.name}</p>
@@ -769,7 +769,7 @@ const AchievedTiles: React.FC<{ items: RoadmapItem[]; label: string }> = ({ item
     {sel && <ActivityGraphModal item={sel} tag={label} fit={false} onClose={() => setSel(null)} />}
     <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 {label}</p>
     {items.map((it) => (
-      <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#242426] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
+      <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
         <span className="w-9 h-9 rounded-full bg-[#6ccbde]/15 border border-[#6ccbde]/40 flex items-center justify-center text-[#6ccbde] text-base font-bold shrink-0">✓</span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold text-white truncate">{it.name}</p>
@@ -802,7 +802,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
           type="button"
           disabled={items.length === 0}
           onClick={() => setOpen(true)}
-          className={`text-left bg-[#242426] border border-white/[0.06] rounded-2xl p-4 transition active:scale-[0.98] ${items.length === 0 ? 'opacity-40' : 'hover:border-[#6ccbde]/40'}`}
+          className={`text-left bg-[#252525] border border-white/[0.06] rounded-2xl p-4 transition active:scale-[0.98] ${items.length === 0 ? 'opacity-40' : 'hover:border-[#6ccbde]/40'}`}
         >
           <span className="text-xl block mb-1">🏆</span>
           <span className="text-sm font-bold text-white block">{title} achievements</span>
@@ -812,7 +812,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
         </button>
       </div>}
       {open && (
-        <div className="anim-page bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden">
+        <div className="anim-page bg-[#252525] border border-white/[0.06] rounded-2xl overflow-hidden">
           <div className="border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
             <button type="button" onClick={() => setOpen(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
             <div>
@@ -839,7 +839,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
   const allFit = items.length > 0 && passedItems.length === 0;
   return (
     <div className="space-y-4">
-      <div className={`relative overflow-hidden bg-[#242426] border rounded-2xl p-5 text-center ${allFit ? 'border-amber-400/30' : 'border-[#ec2226]/25'}`} style={{ background: allFit ? 'linear-gradient(180deg, rgba(245,158,11,0.18), #242426 70%)' : 'linear-gradient(180deg, rgba(236,34,38,0.16), #242426 70%)' }}>
+      <div className={`relative overflow-hidden bg-[#252525] border rounded-2xl p-5 text-center ${allFit ? 'border-amber-400/30' : 'border-[#ec2226]/25'}`} style={{ background: allFit ? 'linear-gradient(180deg, rgba(245,158,11,0.18), #252525 70%)' : 'linear-gradient(180deg, rgba(236,34,38,0.16), #252525 70%)' }}>
         {allFit
           ? <div className="mx-auto w-14 h-14 mb-2 rounded-full flex items-center justify-center text-3xl border-2 border-amber-400/60" style={{ background: 'rgba(245,158,11,0.12)', boxShadow: '0 0 28px rgba(245,158,11,0.25)' }}>🎓</div>
           : <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />}
@@ -850,7 +850,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
       </div>
       {allFit && <AlreadyFitTiles items={fitItems} />}
       {items.length > 0 && !allFit && (
-        <div className="bg-[#1c1c1e] border border-white/[0.06] rounded-2xl p-4 space-y-3">
+        <div className="bg-[#1c1c1c] border border-white/[0.06] rounded-2xl p-4 space-y-3">
           {passedItems.length > 0 && (route ? <SkillRouteMap items={passedItems} badge={passedLabel} /> : <AchievedTiles items={passedItems} label={passedLabel} />)}
           {fitItems.length > 0 && <AlreadyFitTiles items={fitItems} />}
         </div>
@@ -1250,7 +1250,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 onClick={() => setShowWhereYouStandPopup(true)}
                 className="w-full text-left rounded-2xl overflow-hidden border active:scale-[0.98] transition-transform"
                 style={{
-                  background: 'linear-gradient(160deg, #242426, #1c1c1e)',
+                  background: 'linear-gradient(160deg, #252525, #1c1c1c)',
                   animation: 'cardBorderPulse 2.4s ease-in-out infinite',
                 }}
               >
@@ -1266,8 +1266,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
             {showWhereYouStandPopup && (
               <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6" onClick={() => setShowWhereYouStandPopup(false)}>
-                <div className="anim-card bg-[#1c1c1e] border border-white/[0.1] rounded-2xl w-full max-w-xs max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                  <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1e]">
+                <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-xs max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
                     <h3 className="text-sm font-bold text-white">Where you stand</h3>
                     <button type="button" onClick={() => setShowWhereYouStandPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                   </div>
@@ -1295,27 +1295,27 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+            <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Weight</span>
               <MiniLineChart data={weightData} color="#ec2226" unit="kg" />
             </div>
-            <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+            <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Fat</span>
               <MiniLineChart data={bodyFatData} color="#f59e0b" unit="%" />
             </div>
-            <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+            <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Skeletal Muscle Mass</span>
               <MiniLineChart data={muscleData} color="#6ccbde" unit="kg" />
             </div>
-            <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+            <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #10b981, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">BMI</span>
               <MiniLineChart data={bmiData} color="#10b981" unit="" />
             </div>
-            <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+            <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Visceral Fat</span>
               <MiniLineChart data={visceralData} color="#a78bfa" unit="" />
@@ -1368,7 +1368,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             return (
               <div className="space-y-3">
                 <h3 className="text-sm font-bold text-white">Circumferences</h3>
-                <div className="relative bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden" style={{ aspectRatio: '1027 / 1531' }}>
+                <div className="relative bg-[#252525] border border-white/[0.06] rounded-2xl overflow-hidden" style={{ aspectRatio: '1027 / 1531' }}>
                   <img
                     src="/bca-body-outline.png"
                     alt="Body diagram"
@@ -1411,7 +1411,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <span className="absolute inline-flex h-full w-full rounded-full bg-[#ec2226] opacity-60" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
                           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#ec2226]" />
                         </div>
-                        <span className="text-[11px] font-bold text-[#6ccbde] font-mono bg-[#1c1c1e]/80 rounded px-1">{value}in</span>
+                        <span className="text-[11px] font-bold text-[#6ccbde] font-mono bg-[#1c1c1c]/80 rounded px-1">{value}in</span>
                         <span className="text-[9px] text-white/50">{part.label}</span>
                       </button>
                     );
@@ -1425,7 +1425,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <button
                       type="button"
                       onClick={() => setOpenBodyPartPopup('waistToHipRatio')}
-                      className={`w-full rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform border ${tone ? tone.box : 'bg-[#242426] border-white/[0.08]'}`}
+                      className={`w-full rounded-2xl p-4 flex items-center justify-between active:scale-[0.98] transition-transform border ${tone ? tone.box : 'bg-[#252525] border-white/[0.08]'}`}
                       style={tone ? { animation: 'whrBlink 1.4s ease-in-out infinite' } : undefined}
                     >
                       <span className="text-left">
@@ -1440,7 +1440,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 {openBodyPartPopup && (
                   <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenBodyPartPopup(null)}>
-                    <div className="bg-[#242426] border border-white/[0.1] rounded-2xl p-4 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-[#252525] border border-white/[0.1] rounded-2xl p-4 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="text-sm font-bold text-white">
                           {openBodyPartPopup === 'waistToHipRatio' ? 'Waist : Hip Ratio' : bodyParts.find((p) => p.key === openBodyPartPopup)?.label}
@@ -1466,7 +1466,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                   {(['low', 'increased', 'high'] as WhrLevel[]).map((lv) => {
                                     const active = clientSex === sx && level === lv;
                                     return (
-                                      <div key={lv} className={`flex items-center justify-between rounded-lg px-3 py-1.5 border ${active ? WHR_TONE[lv].box : 'bg-[#1c1c1e] border-white/[0.06]'}`}>
+                                      <div key={lv} className={`flex items-center justify-between rounded-lg px-3 py-1.5 border ${active ? WHR_TONE[lv].box : 'bg-[#1c1c1c] border-white/[0.06]'}`}>
                                         <span className={`text-[11px] font-bold ${WHR_TONE[lv].text}`}>{WHR_TONE[lv].label}</span>
                                         <span className="text-[11px] text-white/70 font-mono">{WHR_RANGES[sx][lv]}</span>
                                       </div>
@@ -1568,7 +1568,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           <div className="space-y-3">
             <AchievementFitRow route title="Skill" items={skillItems} />
             {[...activeRoadmaps].reverse().map(([skillName, steps]) => (
-              <div key={skillName} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-3">
+              <div key={skillName} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 space-y-3">
                 <span className="text-sm font-bold text-white">{skillName}</span>
                 <div className="space-y-2">
                   {steps.map((step, i) => {
@@ -1618,52 +1618,52 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
           {perfCategory === 'hub' && (
             <div className="space-y-5">
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1`}>
+                <button onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1`}>
                   <XRayBackground type="posture" />
                   <h3 className="text-sm font-bold text-white">Posture</h3>
                   <p className="text-[11px] text-white/40 font-light">Postural alignment.</p>
                 </button>
-                <button disabled={!catHasData.flexibility} onClick={() => setPerfCategory('flexibility')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.flexibility ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.flexibility} onClick={() => setPerfCategory('flexibility')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.flexibility ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="flexibility" />
                   <h3 className="text-sm font-bold text-white">Flexibility & Mobility</h3>
                   <p className="text-[11px] text-white/40 font-light">Thomas, SLR, shoulder tests.</p>
                 </button>
-                <button disabled={!catHasData.balance} onClick={() => setPerfCategory('balance')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.balance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.balance} onClick={() => setPerfCategory('balance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.balance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="balance" />
                   <h3 className="text-sm font-bold text-white">Balance</h3>
                   <p className="text-[11px] text-white/40 font-light">Unipedal Stance Test.</p>
                 </button>
-                <button disabled={!catHasData.core_endurance} onClick={() => setPerfCategory('core_endurance')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.core_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.core_endurance} onClick={() => setPerfCategory('core_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.core_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="core_endurance" />
                   <h3 className="text-sm font-bold text-white">Core Endurance & Stability</h3>
                   <p className="text-[11px] text-white/40 font-light">McGill's Core Endurance Test.</p>
                 </button>
-                <button disabled={!catHasData.movement} onClick={() => setPerfCategory('movement')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.movement ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.movement} onClick={() => setPerfCategory('movement')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.movement ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="movement" />
                   <h3 className="text-sm font-bold text-white">Movement</h3>
                   <p className="text-[11px] text-white/40 font-light">Movement pattern screens.</p>
                 </button>
-                <button disabled={!catHasData.cardio} onClick={() => setPerfCategory('cardio')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.cardio ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.cardio} onClick={() => setPerfCategory('cardio')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.cardio ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="cardio" />
                   <h3 className="text-sm font-bold text-white">Cardio</h3>
                   <p className="text-[11px] text-white/40 font-light">VO2 Max & aerobic tests.</p>
                 </button>
-                <button disabled={!catHasData.muscular_endurance} onClick={() => setPerfCategory('muscular_endurance')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.muscular_endurance} onClick={() => setPerfCategory('muscular_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="muscular_endurance" />
                   <h3 className="text-sm font-bold text-white">Muscular Endurance</h3>
                   <p className="text-[11px] text-white/40 font-light">Push-ups, pull-ups, squats.</p>
                 </button>
-                <button disabled={!catHasData.muscular_strength} onClick={() => setPerfCategory('muscular_strength')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_strength ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.muscular_strength} onClick={() => setPerfCategory('muscular_strength')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_strength ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="muscular_strength" />
                   <h3 className="text-sm font-bold text-white">Muscular Strength</h3>
                   <p className="text-[11px] text-white/40 font-light">1RM bench, squat, deadlift, OHP.</p>
                 </button>
-                <button disabled={!catHasData.saq} onClick={() => setPerfCategory('saq')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.saq ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.saq} onClick={() => setPerfCategory('saq')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.saq ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="saq" />
                   <h3 className="text-sm font-bold text-white">SAQ</h3>
                   <p className="text-[11px] text-white/40 font-light">Speed, Agility & Quickness.</p>
                 </button>
-                <button disabled={!catHasData.power} onClick={() => setPerfCategory('power')} className={`relative overflow-hidden bg-[#242426] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.power ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.power} onClick={() => setPerfCategory('power')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.power ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="power" />
                   <h3 className="text-sm font-bold text-white">Power</h3>
                   <p className="text-[11px] text-white/40 font-light">Vertical Jump.</p>
@@ -1689,7 +1689,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
                 if (customGoals.length === 0) {
                   return (
-                    <div className="relative overflow-hidden bg-[#242426] border border-[#6ccbde]/25 rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.16), #242426 75%)' }}>
+                    <div className="relative overflow-hidden bg-[#252525] border border-[#6ccbde]/25 rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.16), #252525 75%)' }}>
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde, transparent)' }} />
                       <img src="/posture-achievement-icon.PNG" alt="" className="w-16 h-16 mx-auto mb-3 object-contain" />
                       <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Posture</p>
@@ -1719,7 +1719,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           const cardColor = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'][idx % 4];
                           const reviewText = g.coachReview || g.observation;
                           return (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${cardColor}, transparent)` }} />
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Posture: ', '')}</span>
@@ -1793,7 +1793,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
                       const latest = [...chronological].reverse().find((a) => a[t.key] != null);
                       return (
-                        <div key={t.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <div key={t.key} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                           <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
@@ -1814,7 +1814,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       );
                     })}
                     {visibleCustom.map((g) => (
-                      <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                      <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
                         <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
                         {g.value && <span className="text-[11px] text-white/40 font-light">Score: <span className="font-mono">{g.value}/10</span></span>}
                         {g.coachReview && (
@@ -1878,7 +1878,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="space-y-3">
                     <AchievementFitRow title="Balance" items={[...achieved].reverse().map(toItem)} />
                     {showStd && (
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Unipedal Stance Test <span className="normal-case text-white/30">(in seconds)</span></span>
                         <SideComparison data={sideData} unit="s" />
@@ -1897,7 +1897,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           const label = g.activityName.replace(BAL, '');
                           if (g.valueType === 'unilateral_time') {
                             return (
-                              <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
+                              <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
                                 <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                                 <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label} <span className="normal-case text-white/30">(in seconds)</span></span>
                                 <SideComparison data={customSides(g)} unit="s" />
@@ -1911,7 +1911,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             );
                           }
                           return (
-                            <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{label} <span className="normal-case text-white/30">(in seconds)</span></span>
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
@@ -2001,22 +2001,22 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </button>
                       <div className="text-sm font-bold text-white">McGill's Core Endurance Test</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Flexor Endurance <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={flexorData} color="#ec2226" unit="s" />
                       </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Extensor Endurance <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={extensorData} color="#f59e0b" unit="s" />
                       </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Right Side Bridge <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={rightData} color="#6ccbde" unit="s" />
                       </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Left Side Bridge <span className="normal-case text-white/30">(in seconds)</span></span>
                         <MiniLineChart data={leftData} color="#a78bfa" unit="s" />
@@ -2030,7 +2030,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           const num = parseFloat(val);
                           const alert = Number.isFinite(num) && r.out(num);
                           return (
-                            <div key={r.key} className={`rounded-2xl p-3 border ${alert ? 'bg-rose-500/10 border-rose-500/50' : 'bg-[#242426] border-white/[0.06]'}`}>
+                            <div key={r.key} className={`rounded-2xl p-3 border ${alert ? 'bg-rose-500/10 border-rose-500/50' : 'bg-[#252525] border-white/[0.06]'}`}>
                               <span className={`text-[9px] uppercase font-bold block ${alert ? 'text-rose-300' : 'text-white/40'}`}>{r.label}</span>
                               <span className={`text-sm font-mono ${alert ? 'text-rose-300 font-bold' : 'text-white'}`}>{val}</span>
                               {alert && <span className="text-[9px] text-rose-300/80 block mt-1">⚠ Not in normal range ({r.normal})</span>}
@@ -2040,7 +2040,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       </div>
                     )}
                       {mcgillReview && (
-                        <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                        <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
                           <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
                           <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{mcgillReview}</p>
                         </div>
@@ -2055,7 +2055,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <button
                       type="button"
                       onClick={() => setMcgillOpen(true)}
-                      className="w-full text-left bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden active:scale-[0.98] transition-transform"
+                      className="w-full text-left bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden active:scale-[0.98] transition-transform"
                     >
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
                       <div className="flex items-start justify-between gap-2 mb-3">
@@ -2068,7 +2068,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       {hasMcgill && (
                         <div className="grid grid-cols-4 gap-2 mb-3">
                           {([['Flexor', lastOf(flexorData)], ['Extensor', lastOf(extensorData)], ['Right', lastOf(rightData)], ['Left', lastOf(leftData)]] as [string, number | undefined][]).map(([lbl, v]) => (
-                            <div key={lbl} className="bg-[#1c1c1e] border border-white/[0.06] rounded-xl px-2 py-2 text-center">
+                            <div key={lbl} className="bg-[#1c1c1c] border border-white/[0.06] rounded-xl px-2 py-2 text-center">
                               <span className="text-[9px] text-white/40 uppercase font-bold block">{lbl}</span>
                               <span className="text-sm font-black text-white font-mono">{v ?? '—'}{v != null && <span className="text-[9px] text-white/40 font-normal">s</span>}</span>
                             </div>
@@ -2090,7 +2090,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           const color = palette[idx % palette.length];
                           const review = g.coachReview || g.observation;
                           return (
-                            <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(CORE, '')} <span className="normal-case text-white/30">(in seconds)</span></span>
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
@@ -2172,7 +2172,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           // A review belongs to a result: once every score is deleted, it is not shown any more.
                           const reviewText = historyFor(g.activityName).length > 0 ? (g.coachReview || g.observation) : undefined;
                           return (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${cardColor}, transparent)` }} />
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Movement: ', '')}</span>
@@ -2217,17 +2217,17 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 return (
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">VO2 Max</span>
                         <MiniLineChart data={vo2Data} color="#ec2226" unit="ml/kg/min" />
                       </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Systolic BP</span>
                         <MiniLineChart data={bpData} color="#f59e0b" unit="mmHg" />
                       </div>
-                      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
+                      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden sm:col-span-2">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
                         <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Conditioning Score</span>
                         <MiniLineChart data={conditioningData} color="#6ccbde" unit="/100" />
@@ -2248,7 +2248,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           const circuitData = chronological
                             .filter((a) => (a.activityCircuits?.[name] || []).length > 0)
                             .map((a) => ({ date: a.date, value: a.activityCircuits![name].reduce((t, x) => t + x, 0) }));
-                          const box = 'bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden';
+                          const box = 'bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden';
                           const title = (extra?: string) => (
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">
                               {name.replace('Cardio: ', '')} {extra && <span className="normal-case text-white/30">({extra})</span>}
@@ -2348,7 +2348,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {(visibleStandards.length > 0 ? visibleStandards : nothingElse ? standards : []).map((x) => (
-                        <div key={String(x.key)} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                        <div key={String(x.key)} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                           <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${x.color}, transparent)` }} />
                           <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{x.label} <span className="normal-case text-white/30">(in reps)</span></span>
                           <MiniBarChart data={standardHistory(x)} color={x.color} unit=" reps" />
@@ -2358,7 +2358,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       {visibleCustom.map((g, idx) => {
                         const color = palette[idx % palette.length];
                         return (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(ME, '')} <span className="normal-case text-white/30">(in reps)</span></span>
                             <MiniBarChart data={customHistory(g)} color={color} unit=" reps" />
@@ -2394,7 +2394,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       {lifts.map((l) => {
                         const data = chronological.filter((a) => a[l.key] != null).map((a) => ({ date: a.date, value: a[l.key] as number }));
                         return (
-                          <div key={l.key} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                          <div key={l.key} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${l.color}, transparent)` }} />
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{l.label} <span className="normal-case text-white/30">(in kg)</span></span>
                             <MiniBarChart data={data} color={l.color} unit=" kg" />
@@ -2411,7 +2411,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     {customGoals.length > 0 && (
                       <div className="space-y-2">
                         {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                          <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace('Muscular Strength: ', '')} <span className="normal-case text-white/30">(in kg)</span></span>
                             <MiniBarChart data={chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }))} color="#6ccbde" unit=" kg" />
                             {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} kg</span></span>}
@@ -2439,7 +2439,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const customGoals = goals.filter((g) => g.activityName.startsWith('SAQ:') && g.activityName !== 'SAQ: T Test');
                 return (
                   <div className="space-y-3">
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                    <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
                       <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">T Test <span className="normal-case text-white/30">(in seconds)</span></span>
                       <MiniBarChart data={tTestData} color="#ec2226" unit=" s" />
@@ -2447,7 +2447,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     {customGoals.length > 0 && (
                       <div className="space-y-2">
                         {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                          <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace('SAQ: ', '')} <span className="normal-case text-white/30">(in seconds)</span></span>
                             <MiniBarChart data={chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }))} color="#6ccbde" unit=" s" />
                           </div>
@@ -2468,7 +2468,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const customGoals = goals.filter((g) => g.activityName.startsWith('Power:'));
                 return (
                   <div className="space-y-3">
-                    <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                    <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #a78bfa, transparent)' }} />
                       <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Vertical Jump <span className="normal-case text-white/30">(in cm)</span></span>
                       <MiniBarChart data={jumpData} color="#a78bfa" unit=" cm" />
@@ -2476,7 +2476,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     {customGoals.length > 0 && (
                       <div className="space-y-2">
                         {customGoals.map((g) => (
-                          <div key={g.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                          <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
                             <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace('Power: ', '')} <span className="normal-case text-white/30">(in cm)</span></span>
                             <MiniBarChart data={chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName] }))} color="#6ccbde" unit=" cm" />
                           </div>
@@ -2504,7 +2504,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 return (
                   <div className="space-y-2">
                     {passedGoals.map((goal) => (
-                      <div key={goal.id} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                      <div key={goal.id} className="flex items-center justify-between bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
                         <span className="text-sm text-white font-semibold">{goal.activityName}</span>
                         <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300">
                           ✓ Pass
@@ -2533,7 +2533,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 return (
                   <div className="space-y-2">
                     {alreadyFitGoals.map((goal) => (
-                      <div key={goal.id} className="flex items-center justify-between bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
+                      <div key={goal.id} className="flex items-center justify-between bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
                         <span className="text-sm text-white font-semibold">{goal.activityName}</span>
                         <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-amber-500/20 text-amber-300">
                           🎓 Already Fit
