@@ -126,7 +126,13 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     const u1 = onSnapshot(
       query(collection(db, 'intokine_followups'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
       (snap) => {
-        setFollowUps(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as FollowUp[]);
+        setFollowUps(
+          snap.docs.map((d) => {
+            const f = { id: d.id, ...(d.data() as any) } as FollowUp;
+            // Mood is always a daily item, even in a follow-up saved when it was weekly.
+            return { ...f, items: (f.items || []).map((i) => (i.label.toLowerCase() === 'mood' && i.type === 'choice' ? { ...i, freq: 'daily' as Freq } : i)) };
+          })
+        );
         setLoading(false);
       },
       (e) => {
