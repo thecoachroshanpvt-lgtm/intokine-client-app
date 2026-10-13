@@ -75,6 +75,40 @@ const Chip: React.FC<{ on: boolean; onClick: () => void; children: React.ReactNo
   </button>
 );
 
+// Energy, stress and mood are updated on a meter: tap a step and every step up to it lights up.
+const METER_LABELS = ['energy', 'stress', 'mood'];
+const meterColor = (q: number) => (q < 0.25 ? '#ec2226' : q < 0.75 ? '#fbbf24' : '#34d399');
+const MeterControl: React.FC<{ item: TrackItem; options: string[]; value?: string; onChange: (v: string | undefined) => void }> = ({ item, options, value, onChange }) => {
+  const label = item.label.toLowerCase();
+  // Left to right the meter always goes from "less" to "more" (mood lists Good first, so it is turned around).
+  const opts = label === 'mood' ? [...options].reverse() : options;
+  const n = opts.length;
+  const sel = value === undefined ? -1 : opts.indexOf(value);
+  // For stress, more is worse; for energy and mood, more is better.
+  const quality = (i: number) => (n > 1 ? (label === 'stress' ? 1 - i / (n - 1) : i / (n - 1)) : 1);
+  const selColor = sel >= 0 ? meterColor(quality(sel)) : 'rgba(255,255,255,0.4)';
+  return (
+    <div>
+      <div className="flex gap-1.5">
+        {opts.map((o, i) => {
+          const lit = sel >= 0 && i <= sel;
+          const c = meterColor(quality(i));
+          return (
+            <button key={o} type="button" onClick={() => onChange(sel === i ? undefined : o)} aria-pressed={sel === i} aria-label={o}
+              className="flex-1 h-9 rounded-md border transition active:scale-[0.97]"
+              style={{ background: lit ? c : 'rgba(255,255,255,0.05)', borderColor: lit ? c : 'rgba(255,255,255,0.1)', opacity: lit ? (sel === i ? 1 : 0.55) : 1 }} />
+          );
+        })}
+      </div>
+      <div className="flex gap-1.5 mt-1.5">
+        {opts.map((o, i) => (
+          <span key={o} className={`flex-1 text-center text-[10px] truncate ${sel === i ? 'font-bold' : 'text-white/35'}`} style={sel === i ? { color: selColor } : undefined}>{o}</span>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const NumberControl: React.FC<{ item: TrackItem; value?: number; onChange: (v: number | undefined) => void }> = ({ item, value, onChange }) => {
   const step = item.step || 1;
   const round = (n: number) => Math.round(n * 100) / 100;
@@ -304,6 +338,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       );
     if (it.type === 'choice' || it.type === 'level') {
       const opts = it.options && it.options.length ? it.options : LEVELS;
+      if (METER_LABELS.includes(it.label.trim().toLowerCase())) return <MeterControl item={it} options={opts} value={typeof v === 'string' ? v : undefined} onChange={(o) => setValue(fu, it, o)} />;
       return <div className="flex flex-wrap gap-2">{opts.map((o) => <Chip key={o} on={v === o} onClick={() => setValue(fu, it, v === o ? undefined : o)}>{o}</Chip>)}</div>;
     }
     return <TextControl value={typeof v === 'string' ? v : undefined} onChange={(t) => setValue(fu, it, t)} />;
