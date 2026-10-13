@@ -296,7 +296,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const bars = range === 'week' ? week : range === 'month' ? month : year;
   const activeBars = bars.filter((x) => x.active);
   const avgPct = activeBars.length ? Math.round((activeBars.reduce((t, x) => t + x.frac, 0) / activeBars.length) * 100) : 0;
-  const barColor = (f: number) => (f >= 0.8 ? '#34d399' : f >= 0.5 ? '#fbbf24' : '#f87171');
+  const barColor = (f: number) => (f >= 0.8 ? '#34d399' : f >= 0.5 ? '#fbbf24' : '#ec2226');
   const totalFull = range === 'year' ? activeBars.reduce((t, x) => t + x.fullDays, 0) : activeBars.filter((x) => x.frac >= 0.999).length;
   const totalLogged = range === 'year' ? activeBars.reduce((t, x) => t + x.logged, 0) : activeBars.filter((x) => x.ticked.length > 0).length;
   const totalDays = range === 'year' ? activeBars.reduce((t, x) => t + x.n, 0) : activeBars.length;
@@ -345,7 +345,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
       {detail && createPortal(
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
-          <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1e] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
               <div>
                 <div className="text-sm font-semibold text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} meal consistency</div>
@@ -400,8 +400,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       {confirmOpen && createPortal(
-        <div className="anim-overlay fixed inset-0 z-[120] bg-black/80 backdrop-blur-sm flex items-center justify-center p-5">
-          <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5">
+          <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1e] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-white/[0.08]">
               <div className="text-sm font-semibold text-white">Confirm today's update</div>
               <div className="text-[11px] text-white/40">{niceDate(today)} · check it and confirm to save</div>
@@ -446,7 +446,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       {meals.length > 0 && (
         <div className="space-y-2.5">
           <div className="flex items-baseline justify-between px-1">
-            <div className="text-sm font-semibold text-white">Today's meals</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Today's meals</div>
             <div className="text-[10px] text-white/40">Tap a meal when you have eaten it</div>
           </div>
           {meals.map((meal) => {
@@ -460,12 +460,12 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             const carb = shown?.carbsGrams ?? meal.carbsGrams;
             const fat = shown?.fatGrams ?? meal.fatGrams;
             return (
-              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden ${done ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-[#242426] border-white/[0.06]'}`}>
+              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden bg-[#242426] ${done ? 'border-emerald-500/40' : 'border-white/[0.06]'}`}>
                 {multi && (
                   <div className="flex gap-1.5 overflow-x-auto px-4 pt-3" style={{ scrollbarWidth: 'none' }}>
                     {options.map((v, i) => (
                       <button key={v.id} type="button" onClick={() => setPickedVar((p) => ({ ...p, [meal.id]: i }))}
-                        className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold border transition ${i === vi ? 'bg-[#6ccbde] text-[#0d0e12] border-[#6ccbde]' : 'border-white/15 text-white/60'}`}>
+                        className={`shrink-0 px-3 py-1 rounded-full text-[11px] font-semibold border transition ${i === vi ? 'bg-[#6ccbde]/15 text-[#6ccbde] border-[#6ccbde]/50' : 'border-white/[0.1] text-white/50'}`}>
                         {v.label?.trim() || `Option ${i + 1}`}
                       </button>
                     ))}
@@ -493,7 +493,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                   </span>
                   {(kcal || prot || carb || fat) ? (
                     <span className="grid grid-cols-4 divide-x divide-white/[0.08] text-center mt-3 pt-3 border-t border-white/[0.06]">
-                      {([['kcal', kcal, '', '#fbbf24'], ['Protein', prot, 'g', '#6ccbde'], ['Carbs', carb, 'g', '#ffffff'], ['Fats', fat, 'g', '#ec2226']] as const).map(([label, val, unit, color]) => (
+                      {([['kcal', kcal, '', '#ffffff'], ['Protein', prot, 'g', '#6ccbde'], ['Carbs', carb, 'g', '#ffffff'], ['Fats', fat, 'g', '#ec2226']] as const).map(([label, val, unit, color]) => (
                         <span key={label} className="px-1">
                           <span className="block text-sm font-bold font-mono leading-none" style={{ color }}>{val || 0}<span className="text-[9px] font-normal text-white/40">{unit}</span></span>
                           <span className="block text-[9px] text-white/40 uppercase mt-1">{label}</span>
@@ -513,7 +513,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
       {plan.notes && (
         <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4">
-          <div className="text-sm font-semibold text-white mb-1.5">Notes from your coach</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] mb-2">Notes from your coach</div>
           <div className="text-xs text-white/60 font-light whitespace-pre-wrap leading-relaxed">{plan.notes}</div>
         </div>
       )}
@@ -522,13 +522,13 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <div className="text-sm font-semibold text-white">Meal consistency</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Meal consistency</div>
               <div className="text-[11px] text-white/40"><span className="text-white font-bold font-mono text-sm">{avgPct}%</span> average</div>
             </div>
-            <div className="inline-flex rounded-full bg-black/30 border border-white/[0.08] p-0.5 shrink-0">
+            <div className="inline-flex rounded-full bg-white/[0.04] border border-white/[0.08] p-0.5 shrink-0">
               {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
                 <button key={k} type="button" onClick={() => setRange(k)}
-                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde] text-[#0d0e12]' : 'text-white/50'}`}>{l}</button>
+                  className={`px-3 py-1 rounded-full text-[11px] font-bold ${range === k ? 'bg-[#6ccbde]/15 text-[#6ccbde]' : 'text-white/50'}`}>{l}</button>
               ))}
             </div>
           </div>
