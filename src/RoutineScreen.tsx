@@ -237,7 +237,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     const done = list.filter(({ fu, it }) => isDone(fu, it)).length;
     const all = done === list.length;
     return (
-      <div className="bg-[#242426] border border-white/[0.06] rounded-2xl overflow-hidden">
+      <div className="bg-[#252525] border border-white/[0.06] rounded-2xl overflow-hidden">
         <button type="button" onClick={() => setOpen(open === freq ? '' : freq)} className="w-full flex items-center justify-between gap-3 p-4 text-left">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-white">{title}</div>
@@ -282,7 +282,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       {notes.map((f) => (
-        <div key={f.id} className="bg-[#242426] border border-white/[0.06] rounded-2xl p-4 space-y-2">
+        <div key={f.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-[0.12em]">From your dietitian</span>
             <span className="text-[10px] text-white/30">{f.date}</span>
