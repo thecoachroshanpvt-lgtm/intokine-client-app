@@ -515,7 +515,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         rows.sort((p, q) => q.date.localeCompare(p.date));
         const absentCount = rows.filter((r) => r.label === 'ABSENT').length;
         return (
-          <div className="bg-[#252525] border border-white/[0.08] rounded-2xl overflow-hidden">
+          <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
             <button type="button" onClick={() => setPackageHistoryOpen((o) => !o)} className="w-full text-left p-4 space-y-2" aria-expanded={packageHistoryOpen}>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-white">
