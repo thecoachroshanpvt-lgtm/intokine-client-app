@@ -262,7 +262,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     return (
       <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
         <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
             {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
           </div>
           <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
@@ -410,7 +410,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                       return (
                         <div key={e.key} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
                           <div className="w-12 shrink-0 text-center">
-                            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+                            <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
                               {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : ''}
                             </div>
                             <div className="text-lg font-semibold font-mono text-white leading-none mt-1">{d ? d.getDate() : ''}</div>
@@ -468,8 +468,8 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                           </svg>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">Do it yourself</div>
-                          <div className="text-base font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
+                          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Do it yourself</div>
+                          <div className="font-subheader text-[19px] text-white mt-1.5 truncate">{w.planTitle}</div>
                           <div className="text-[11px] text-white/50 font-light truncate">
                             Do it any time today
                             {w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}
@@ -560,8 +560,8 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                           className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 border border-[#6ccbde]/20 rounded-2xl p-4 flex items-center gap-3"
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">Suggested workout</div>
-                            <div className="text-base font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
+                            <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Suggested workout</div>
+                            <div className="font-subheader text-[19px] text-white mt-1.5 truncate">{w.planTitle}</div>
                             {w.durationMinutes ? <div className="text-[11px] text-white/50 font-light">{w.durationMinutes} mins</div> : null}
                           </div>
                           <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: w.clientCompletedAt ? '#34d399' : '#ec2226', borderColor: w.clientCompletedAt ? '#34d39940' : '#ec222640' }}>
@@ -585,7 +585,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                 >
                   ←
                 </button>
-                <span className="text-sm font-semibold text-white">
+                <span className="font-subheader text-[17px] text-white">
                   {monthCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                 </span>
                 <button
