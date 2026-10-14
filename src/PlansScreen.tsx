@@ -16,6 +16,7 @@ import {
 } from './firebase';
 import { createPortal } from 'react-dom';
 import { TrainingScreen } from './TrainingScreen';
+import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
 import { PasswordInput } from './PasswordInput';
 
@@ -668,34 +669,15 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
               <span className="text-[11px] text-white/40 uppercase font-semibold block">Suggested workout</span>
             {todaysWorkouts.map((w) => {
               const done = !!w.clientCompletedAt;
-              const color = done ? '#34d399' : '#ec2226';
               return (
-                <button
+                <SuggestedWorkoutCard
                   key={w.id}
-                  type="button"
+                  title={w.planTitle}
+                  label="Do it yourself"
+                  hint={`Do it any time today${w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}`}
+                  done={done}
                   onClick={() => setSelectedWorkout(w)}
-                  className="w-full text-left bg-gradient-to-br from-[#ec2226]/20 to-[#6ccbde]/15 hover:from-[#ec2226]/25 hover:to-[#6ccbde]/20 border border-[#6ccbde]/20 rounded-2xl p-4 flex items-center gap-3 transition"
-                >
-                  <div className="w-12 h-12 shrink-0 rounded-full bg-[#0b0c10]/60 border border-white/10 flex items-center justify-center">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6ccbde" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Do it yourself</div>
-                    <div className="font-subheader text-[19px] text-white mt-1.5 truncate">{w.planTitle}</div>
-                    <div className="text-[11px] text-white/50 font-light truncate">
-                      Do it any time today
-                      {w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}
-                    </div>
-                  </div>
-                  <span
-                    className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
-                    style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
-                  >
-                    {done ? 'DONE' : 'ASSIGNED'}
-                  </span>
-                </button>
+                />
               );
             })}
 
