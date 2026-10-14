@@ -447,7 +447,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
       <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5" onClick={(e) => { e.stopPropagation(); setOpenId(null); }}>
         <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
           <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
+            <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide">{openItem.name}</h3>
             <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
           </div>
           <div className="p-4 space-y-4">
@@ -485,7 +485,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                       </div>
                       {d.note && (
                         <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
-                          <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+                          <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
                           <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{d.note}</p>
                         </div>
                       )}
@@ -506,7 +506,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                       </div>
                       {d.note && (
                         <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
-                          <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+                          <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
                           <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{d.note}</p>
                         </div>
                       )}
@@ -535,7 +535,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                         </div>
                         {h.note && (
                           <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
-                            <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+                            <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{h.note}</p>
                           </div>
                         )}
@@ -547,7 +547,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
             )}
             {openItem.note && !(openItem.rows || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !(openItem.sides || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !hist.some((h) => (h.note || '').trim() === openItem.note!.trim()) && (
               <div className="pt-3 border-t border-white/[0.06]">
-                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{openItem.note}</p>
               </div>
             )}
@@ -623,7 +623,7 @@ const SkillRouteMap: React.FC<{ items: RoadmapItem[]; onSelect?: (id: string) =>
           <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
               <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wide">{openItem.name}</h3>
+                <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide">{openItem.name}</h3>
                 <span className="text-[10px] text-white/40 font-mono">{openItem.date}{openItem.scoreText ? ` · ${openItem.scoreText}` : ''}</span>
               </div>
               <button type="button" onClick={() => setOpenId(null)} className="text-white/40 text-lg leading-none px-1">×</button>
@@ -694,7 +694,7 @@ const ActivityGraphModal: React.FC<{ item: RoadmapItem; tag: string; fit: boolea
     <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5 pb-24" onClick={(e) => { e.stopPropagation(); onClose(); }}>
       <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wide">{item.name}</h3>
+          <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide">{item.name}</h3>
           <button type="button" onClick={onClose} className="text-white/40 text-lg leading-none px-1">×</button>
         </div>
         <div className="p-4 space-y-4">
@@ -729,7 +729,7 @@ const ActivityGraphModal: React.FC<{ item: RoadmapItem; tag: string; fit: boolea
           )}
           {item.note && (
             <div className="bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
-              <span className="text-[9px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-0.5">Coach review</span>
+              <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
               <p className="text-xs text-white/90 leading-relaxed whitespace-pre-line">{item.note}</p>
             </div>
           )}
@@ -751,7 +751,7 @@ const AlreadyFitTiles: React.FC<{ items: RoadmapItem[] }> = ({ items }) => {
       <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
         <span className="w-9 h-9 rounded-full bg-amber-400/15 border border-amber-400/40 flex items-center justify-center text-amber-300 text-base font-bold shrink-0">✓</span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white truncate">{it.name}</p>
+          <p className="font-subheader text-[17px] text-white truncate">{it.name}</p>
           {(it.note || it.date) && <p className="text-[11px] text-white/40 truncate">{it.note || it.date}</p>}
         </div>
         <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300 shrink-0">Fit</span>
@@ -767,16 +767,16 @@ const AchievedTiles: React.FC<{ items: RoadmapItem[]; label: string }> = ({ item
   return (
   <div className="space-y-2.5">
     {sel && <ActivityGraphModal item={sel} tag={label} fit={false} onClose={() => setSel(null)} />}
-    <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">🏆 {label}</p>
+    <p className="font-subheader text-[12px] uppercase tracking-widest text-[#6ccbde]">🏆 {label}</p>
     {items.map((it) => (
       <button type="button" key={it.id} onClick={() => setSel(it)} className="w-full text-left flex items-center gap-3 bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3 active:scale-[0.99] transition">
         <span className="w-9 h-9 rounded-full bg-[#6ccbde]/15 border border-[#6ccbde]/40 flex items-center justify-center text-[#6ccbde] text-base font-bold shrink-0">✓</span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white truncate">{it.name}</p>
+          <p className="font-subheader text-[17px] text-white truncate">{it.name}</p>
           {(it.note || it.date) && <p className="text-[11px] text-white/40 truncate">{it.note || it.date}</p>}
         </div>
         <div className="text-right shrink-0">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#6ccbde] block">{label}</span>
+          <span className="font-subheader text-[12px] uppercase tracking-wider text-[#6ccbde] block">{label}</span>
           {(it.scoreText ?? (it.score !== undefined ? `${it.score}${it.unit ?? '/10'}` : '')) && (
             <span className="text-[10px] text-white/40 font-mono">{it.scoreText ?? `${it.score}${it.unit ?? '/10'}`}</span>
           )}
@@ -805,7 +805,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
           className={`text-left bg-[#252525] border border-white/[0.06] rounded-2xl p-4 transition active:scale-[0.98] ${items.length === 0 ? 'opacity-40' : 'hover:border-[#6ccbde]/40'}`}
         >
           <span className="text-xl block mb-1">🏆</span>
-          <span className="text-sm font-bold text-white block">{title} achievements</span>
+          <span className="font-subheader text-[17px] text-white block">{title} achievements</span>
           <span className="text-[11px] text-white/40">
             {items.length} activit{items.length === 1 ? 'y' : 'ies'}{fitCount > 0 ? ` · ${fitCount} already fit` : ''}
           </span>
@@ -816,7 +816,7 @@ const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?:
           <div className="border-b border-white/[0.06] px-4 py-3 flex items-center gap-3">
             <button type="button" onClick={() => setOpen(false)} className="text-[#6ccbde] text-xl font-bold leading-none px-1">‹</button>
             <div>
-              <h3 className="text-sm font-bold text-white">{title} achievements</h3>
+              <h3 className="font-subheader text-[17px] text-white">{title} achievements</h3>
               <span className="text-[10px] text-white/40">{items.length} done - your road to the top</span>
             </div>
           </div>
@@ -844,7 +844,7 @@ const AchievementsPage: React.FC<{ title: string; items: RoadmapItem[]; route?: 
           ? <div className="mx-auto w-14 h-14 mb-2 rounded-full flex items-center justify-center text-3xl border-2 border-amber-400/60" style={{ background: 'rgba(245,158,11,0.12)', boxShadow: '0 0 28px rgba(245,158,11,0.25)' }}>🎓</div>
           : <img src="/posture-achievement-icon.PNG" alt="Achievement" className="w-14 h-14 mx-auto mb-2 object-contain" />}
         <p className={`text-[10px] font-bold uppercase tracking-widest ${allFit ? 'text-amber-300' : 'text-[#6ccbde]'}`}>{allFit ? 'Already fit' : 'Level complete'}</p>
-        <h2 className="text-lg font-bold text-white mt-1">{allFit ? `You are already fit in ${title.replace(/\s+complete$/i, '')}` : title}</h2>
+        <h2 className="font-subheader text-xl text-white mt-1">{allFit ? `You are already fit in ${title.replace(/\s+complete$/i, '')}` : title}</h2>
         <p className="text-xs text-white/50 mt-1">{allFit ? `${items.length} ${items.length === 1 ? 'activity' : 'activities'} already fit` : `${items.length} of ${items.length} activities done`}</p>
         <div className="mt-3 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className={`h-full w-full rounded-full ${allFit ? 'bg-amber-400' : 'bg-[#6ccbde]'}`} /></div>
       </div>
@@ -1256,7 +1256,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               >
                 <div className="px-4 py-3.5 flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Where you stand</h3>
+                    <h3 className="font-subheader text-[17px] text-white">Where you stand</h3>
                     <p className="text-[11px] text-white/40 mt-0.5">Your current numbers against a healthy range and your goal.</p>
                   </div>
                   <span className="text-white/30 text-lg leading-none pl-3">›</span>
@@ -1268,7 +1268,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-6" onClick={() => setShowWhereYouStandPopup(false)}>
                 <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-xs max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                   <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
-                    <h3 className="text-sm font-bold text-white">Where you stand</h3>
+                    <h3 className="font-subheader text-[17px] text-white">Where you stand</h3>
                     <button type="button" onClick={() => setShowWhereYouStandPopup(false)} className="text-white/40 text-lg leading-none px-1">×</button>
                   </div>
                   <div className="divide-y divide-white/[0.05]">
@@ -1367,7 +1367,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
             return (
               <div className="space-y-3">
-                <h3 className="text-sm font-bold text-white">Circumferences</h3>
+                <h3 className="font-subheader text-[17px] text-white">Circumferences</h3>
                 <div className="relative bg-[#252525] border border-white/[0.06] rounded-2xl overflow-hidden" style={{ aspectRatio: '1027 / 1531' }}>
                   <img
                     src="/bca-body-outline.png"
@@ -1442,7 +1442,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="anim-overlay fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-5" onClick={() => setOpenBodyPartPopup(null)}>
                     <div className="bg-[#252525] border border-white/[0.1] rounded-2xl p-4 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-bold text-white">
+                        <h4 className="font-subheader text-[17px] text-white">
                           {openBodyPartPopup === 'waistToHipRatio' ? 'Waist : Hip Ratio' : bodyParts.find((p) => p.key === openBodyPartPopup)?.label}
                         </h4>
                         <button type="button" onClick={() => setOpenBodyPartPopup(null)} className="text-white/40 text-lg leading-none px-1">×</button>
@@ -1569,7 +1569,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             <AchievementFitRow route title="Skill" items={skillItems} />
             {[...activeRoadmaps].reverse().map(([skillName, steps]) => (
               <div key={skillName} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 space-y-3">
-                <span className="text-sm font-bold text-white">{skillName}</span>
+                <span className="font-subheader text-[17px] text-white">{skillName}</span>
                 <div className="space-y-2">
                   {steps.map((step, i) => {
                     const isDone = step.goal.status === 'Pass' || step.goal.status === 'AlreadyFit';
@@ -1620,52 +1620,52 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1`}>
                   <XRayBackground type="posture" />
-                  <h3 className="text-sm font-bold text-white">Posture</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Posture</h3>
                   <p className="text-[11px] text-white/40 font-light">Postural alignment.</p>
                 </button>
                 <button disabled={!catHasData.flexibility} onClick={() => setPerfCategory('flexibility')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.flexibility ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="flexibility" />
-                  <h3 className="text-sm font-bold text-white">Flexibility & Mobility</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Flexibility & Mobility</h3>
                   <p className="text-[11px] text-white/40 font-light">Thomas, SLR, shoulder tests.</p>
                 </button>
                 <button disabled={!catHasData.balance} onClick={() => setPerfCategory('balance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.balance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="balance" />
-                  <h3 className="text-sm font-bold text-white">Balance</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Balance</h3>
                   <p className="text-[11px] text-white/40 font-light">Unipedal Stance Test.</p>
                 </button>
                 <button disabled={!catHasData.core_endurance} onClick={() => setPerfCategory('core_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.core_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="core_endurance" />
-                  <h3 className="text-sm font-bold text-white">Core Endurance & Stability</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Core Endurance & Stability</h3>
                   <p className="text-[11px] text-white/40 font-light">McGill's Core Endurance Test.</p>
                 </button>
                 <button disabled={!catHasData.movement} onClick={() => setPerfCategory('movement')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.movement ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="movement" />
-                  <h3 className="text-sm font-bold text-white">Movement</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Movement</h3>
                   <p className="text-[11px] text-white/40 font-light">Movement pattern screens.</p>
                 </button>
                 <button disabled={!catHasData.cardio} onClick={() => setPerfCategory('cardio')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.cardio ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="cardio" />
-                  <h3 className="text-sm font-bold text-white">Cardio</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Cardio</h3>
                   <p className="text-[11px] text-white/40 font-light">VO2 Max & aerobic tests.</p>
                 </button>
                 <button disabled={!catHasData.muscular_endurance} onClick={() => setPerfCategory('muscular_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="muscular_endurance" />
-                  <h3 className="text-sm font-bold text-white">Muscular Endurance</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Muscular Endurance</h3>
                   <p className="text-[11px] text-white/40 font-light">Push-ups, pull-ups, squats.</p>
                 </button>
                 <button disabled={!catHasData.muscular_strength} onClick={() => setPerfCategory('muscular_strength')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_strength ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="muscular_strength" />
-                  <h3 className="text-sm font-bold text-white">Muscular Strength</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Muscular Strength</h3>
                   <p className="text-[11px] text-white/40 font-light">1RM bench, squat, deadlift, OHP.</p>
                 </button>
                 <button disabled={!catHasData.saq} onClick={() => setPerfCategory('saq')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.saq ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="saq" />
-                  <h3 className="text-sm font-bold text-white">SAQ</h3>
+                  <h3 className="font-subheader text-[17px] text-white">SAQ</h3>
                   <p className="text-[11px] text-white/40 font-light">Speed, Agility & Quickness.</p>
                 </button>
                 <button disabled={!catHasData.power} onClick={() => setPerfCategory('power')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.power ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
                   <XRayBackground type="power" />
-                  <h3 className="text-sm font-bold text-white">Power</h3>
+                  <h3 className="font-subheader text-[17px] text-white">Power</h3>
                   <p className="text-[11px] text-white/40 font-light">Vertical Jump.</p>
                 </button>
               </div>
@@ -1692,8 +1692,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     <div className="relative overflow-hidden bg-[#252525] border border-[#6ccbde]/25 rounded-2xl p-6 text-center" style={{ background: 'linear-gradient(180deg, rgba(108,203,222,0.16), #252525 75%)' }}>
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde, transparent)' }} />
                       <img src="/posture-achievement-icon.PNG" alt="" className="w-16 h-16 mx-auto mb-3 object-contain" />
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-[#6ccbde]">Posture</p>
-                      <h2 className="text-xl font-black text-white mt-1 leading-tight">You are already fit in posture</h2>
+                      <p className="font-subheader text-[12px] uppercase tracking-widest text-[#6ccbde]">Posture</p>
+                      <h2 className="font-subheader text-2xl text-white mt-1 leading-tight">You are already fit in posture</h2>
                       <p className="text-xs text-white/60 mt-2 leading-relaxed">Your coach found nothing to correct. Stand tall, keep moving well, and keep this strong foundation going.</p>
                       <div className="mt-4 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-gradient-to-r from-[#ec2226] to-[#6ccbde] rounded-full" /></div>
                     </div>
@@ -1734,7 +1734,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <ScoreMeter data={historyFor(g.activityName)} color={cardColor} />
                             {reviewText && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewText}</p>
                               </div>
                             )}
@@ -1806,7 +1806,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           <ScoreMeter data={scoreData} color={t.color} />
                           {goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview && (
                             <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                              <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                              <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                               <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview}</p>
                             </div>
                           )}
@@ -1815,11 +1815,11 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     })}
                     {visibleCustom.map((g) => (
                       <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
-                        <span className="text-sm text-white font-semibold block mb-1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
+                        <span className="font-subheader text-[17px] text-white block mb-1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
                         {g.value && <span className="text-[11px] text-white/40 font-light">Score: <span className="font-mono">{g.value}/10</span></span>}
                         {g.coachReview && (
                           <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{g.coachReview}</p>
                           </div>
                         )}
@@ -1884,7 +1884,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         <SideComparison data={sideData} unit="s" />
                         {(stdGoal?.coachReview || stdGoal?.observation) && (
                           <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(stdGoal?.coachReview || stdGoal?.observation)}</p>
                           </div>
                         )}
@@ -1903,7 +1903,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                 <SideComparison data={customSides(g)} unit="s" />
                                 {(g.coachReview || g.observation) && (
                           <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(g.coachReview || g.observation)}</p>
                           </div>
                         )}
@@ -1917,7 +1917,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
                               {(g.coachReview || g.observation) && (
                           <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(g.coachReview || g.observation)}</p>
                           </div>
                         )}
@@ -1999,7 +1999,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <button onClick={() => setMcgillOpen(false)} className="text-xs font-bold text-[#6ccbde] hover:text-white flex items-center gap-1">
                         ← Back to Core Endurance &amp; Stability
                       </button>
-                      <div className="text-sm font-bold text-white">McGill's Core Endurance Test</div>
+                      <div className="font-subheader text-[17px] text-white">McGill's Core Endurance Test</div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                         <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #ec2226, transparent)' }} />
@@ -2041,7 +2041,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     )}
                       {mcgillReview && (
                         <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
-                          <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                          <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                           <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{mcgillReview}</p>
                         </div>
                       )}
@@ -2060,7 +2060,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <div>
-                          <span className="text-sm font-bold text-white block">McGill's Core Endurance Test</span>
+                          <span className="font-subheader text-[17px] text-white block">McGill's Core Endurance Test</span>
                           <span className="text-[10px] text-white/40 font-mono">{hasMcgill ? `Last tested ${lastDate}` : 'No results yet'}</span>
                         </div>
                         <span className="text-[#6ccbde] text-lg leading-none">›</span>
@@ -2096,7 +2096,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
                               {review && (
                                 <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                  <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                  <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                                   <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{review}</p>
                                 </div>
                               )}
@@ -2189,7 +2189,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <ScoreMeter data={historyFor(g.activityName)} color={cardColor} />
                             {reviewText && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewText}</p>
                               </div>
                             )}
@@ -2258,7 +2258,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           const review = g.coachReview || g.observation;
                           const reviewBlock = review ? (
                             <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                              <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                              <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                               <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{review}</p>
                             </div>
                           ) : null;
@@ -2326,7 +2326,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const ReviewBlock: React.FC<{ text?: string }> = ({ text }) =>
                   text ? (
                     <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                      <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                      <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                       <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{text}</p>
                     </div>
                   ) : null;
@@ -2400,7 +2400,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <MiniBarChart data={data} color={l.color} unit=" kg" />
                             {reviewFor(`Muscular Strength: ${l.label}`) && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewFor(`Muscular Strength: ${l.label}`)}</p>
                               </div>
                             )}
@@ -2417,7 +2417,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} kg</span></span>}
                             {(g.coachReview || g.observation) && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{g.coachReview || g.observation}</p>
                               </div>
                             )}
@@ -2505,7 +2505,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="space-y-2">
                     {passedGoals.map((goal) => (
                       <div key={goal.id} className="flex items-center justify-between bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
-                        <span className="text-sm text-white font-semibold">{goal.activityName}</span>
+                        <span className="font-subheader text-[17px] text-white">{goal.activityName}</span>
                         <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300">
                           ✓ Pass
                           <span className="text-white/40 font-normal">{goal.dateAchieved}</span>
@@ -2534,7 +2534,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   <div className="space-y-2">
                     {alreadyFitGoals.map((goal) => (
                       <div key={goal.id} className="flex items-center justify-between bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
-                        <span className="text-sm text-white font-semibold">{goal.activityName}</span>
+                        <span className="font-subheader text-[17px] text-white">{goal.activityName}</span>
                         <span className="text-[11px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 bg-amber-500/20 text-amber-300">
                           🎓 Already Fit
                           <span className="text-white/40 font-normal">{goal.dateAchieved}</span>
