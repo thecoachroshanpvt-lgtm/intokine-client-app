@@ -247,7 +247,7 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
             <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between sticky top-0 bg-[#1c1c1c]">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wide truncate">{openEx.name}</h3>
+                  <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide truncate">{openEx.name}</h3>
                   <span className="text-[10px] text-white/40">{label} progress - previous to current</span>
                 </div>
                 <button type="button" onClick={() => setOpenEx(null)} className="text-white/40 text-lg leading-none px-1">×</button>
