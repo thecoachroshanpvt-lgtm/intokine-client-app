@@ -38,7 +38,7 @@ const MEAL_PHOTOS: Record<string, string> = {
 };
 const mealCardBackground = (mealTime: string) => {
   const photo = MEAL_PHOTOS[mealTime];
-  const fade = 'linear-gradient(90deg, #252525 30%, rgba(37,37,37,0.66) 100%)';
+  const fade = 'linear-gradient(90deg, #252525 38%, rgba(37,37,37,0.86) 100%), linear-gradient(180deg, rgba(37,37,37,0) 40%, rgba(37,37,37,0.94) 72%)';
   return photo ? `${fade}, url(/${photo}.jpg), url(/meal-photos/${photo}.jpg)` : '#252525';
 };
 
