@@ -321,6 +321,64 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     return hasAnswer(it.type, valueOf(fu, it));
   };
 
+  // Weekly check-in: on Saturday and Sunday, if this week's items are not answered yet, a popup opens that cannot be closed until they are all filled in.
+  const [wDraft, setWDraft] = useState<Record<string, any>>({});
+  const [wSaving, setWSaving] = useState(false);
+  const [wError, setWError] = useState('');
+  const gateAnswered = (it: TrackItem, v: any) => (it.type === 'tick' ? typeof v === 'boolean' : hasAnswer(it.type, v));
+  const weeklyList = itemsFor('weekly');
+  const isWeekend = now.getDay() === 6 || now.getDay() === 0;
+  const weeklyMissing = weeklyList.filter(({ fu, it }) => !gateAnswered(it, savedValueOf(fu, it)));
+  const gateOpen = !loading && isWeekend && weeklyMissing.length > 0;
+  useEffect(() => {
+    if (!gateOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => {
+      document.body.style.overflow = prev;
+      document.body.removeAttribute('data-popup-open');
+    };
+  }, [gateOpen]);
+  const weeklyReady = weeklyMissing.every(({ fu, it }) => gateAnswered(it, wDraft[pkey(fu, it)]));
+  const saveWeekly = async () => {
+    setWSaving(true);
+    setWError('');
+    try {
+      const { db } = initializeClientFirebaseApp();
+      if (!db) throw new Error('offline');
+      const period = periodFor('weekly', new Date());
+      const byFu = new Map<string, { fu: FollowUp; changes: { it: TrackItem; value: any }[] }>();
+      weeklyMissing.forEach(({ fu, it }) => {
+        if (!byFu.has(fu.id)) byFu.set(fu.id, { fu, changes: [] });
+        byFu.get(fu.id)!.changes.push({ it, value: wDraft[pkey(fu, it)] });
+      });
+      const written: RoutineLog[] = [];
+      for (const g of Array.from(byFu.values())) {
+        const values: Record<string, any> = { ...(logFor(g.fu.id, 'weekly', period)?.values || {}) };
+        g.changes.forEach(({ it, value }) => { values[it.id] = value; });
+        await setDoc(doc(db, 'intokine_routine_logs', `${clientId}_${g.fu.id}_weekly_${period}`), {
+          clientId,
+          followUpId: g.fu.id,
+          freq: 'weekly',
+          period,
+          date: today,
+          values,
+          updatedAt: new Date().toISOString(),
+        });
+        written.push({ followUpId: g.fu.id, freq: 'weekly', period, values });
+      }
+      setLogs((all) => [...all.filter((l) => !written.some((w) => w.followUpId === l.followUpId && w.freq === l.freq && w.period === l.period)), ...written]);
+      setWDraft({});
+      setSavedMsg(true);
+      window.setTimeout(() => setSavedMsg(false), 2500);
+    } catch (e) {
+      console.warn('Could not save weekly check-in:', e);
+      setWError('Could not save. Please check your connection and try again.');
+    }
+    setWSaving(false);
+  };
+
   // Routine consistency: the share of daily items answered each day. Days before the first answer do not count against the client.
   const dailyItems = itemsFor('daily');
   const answeredOn = (key: string) =>
@@ -405,12 +463,12 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     );
   }
 
-  const control = (fu: FollowUp, it: TrackItem) => {
-    const v = valueOf(fu, it);
-    if (it.type === 'number') return <NumberControl item={it} value={typeof v === 'number' ? v : undefined} onChange={(n) => setValue(fu, it, n)} />;
+  const control = (fu: FollowUp, it: TrackItem) => controlFor(it, valueOf(fu, it), (val) => setValue(fu, it, val));
+  const controlFor = (it: TrackItem, v: any, set: (value: any) => void) => {
+    if (it.type === 'number') return <NumberControl item={it} value={typeof v === 'number' ? v : undefined} onChange={(n) => set(n)} />;
     if (it.type === 'tick')
       return (
-        <button type="button" onClick={() => setValue(fu, it, v === true ? false : true)} aria-pressed={v === true}
+        <button type="button" onClick={() => set(v === true ? false : true)} aria-pressed={v === true}
           className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition ${v === true ? 'bg-emerald-500/10 border-emerald-500/30' : 'border-white/15'}`}>
           <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs ${v === true ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent'}`}>✓</span>
           <span className="text-xs text-white/80">{v === true ? 'Done' : 'Tap when done'}</span>
@@ -418,10 +476,10 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       );
     if (it.type === 'choice' || it.type === 'level') {
       const opts = it.options && it.options.length ? it.options : LEVELS;
-      if (METER_LABELS.includes(it.label.trim().toLowerCase())) return <MeterControl item={it} options={opts} value={typeof v === 'string' ? v : undefined} onChange={(o) => setValue(fu, it, o)} />;
-      return <div className="flex flex-wrap gap-2">{opts.map((o) => <Chip key={o} on={v === o} onClick={() => setValue(fu, it, v === o ? undefined : o)}>{o}</Chip>)}</div>;
+      if (METER_LABELS.includes(it.label.trim().toLowerCase())) return <MeterControl item={it} options={opts} value={typeof v === 'string' ? v : undefined} onChange={(o) => set(o)} />;
+      return <div className="flex flex-wrap gap-2">{opts.map((o) => <Chip key={o} on={v === o} onClick={() => set(v === o ? undefined : o)}>{o}</Chip>)}</div>;
     }
-    return <TextControl value={typeof v === 'string' ? v : undefined} onChange={(t) => setValue(fu, it, t)} />;
+    return <TextControl value={typeof v === 'string' ? v : undefined} onChange={(t) => set(t)} />;
   };
 
   const section = (freq: Freq, title: string, sub: string) => {
@@ -533,6 +591,42 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div className="fixed left-0 right-0 bottom-28 z-40 flex justify-center pointer-events-none">
           <span className="px-4 py-2 rounded-full bg-emerald-500 text-black text-xs font-bold shadow-lg">Update saved</span>
         </div>
+      )}
+
+      {gateOpen && createPortal(
+        <div className="anim-overlay fixed inset-0 z-[130] bg-black/80 flex items-center justify-center p-5">
+          <div data-no-pull className="anim-card w-full max-w-sm max-h-[85vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" role="dialog" aria-modal="true">
+            <div className="p-4 border-b border-white/[0.08]">
+              <div className="font-subheader text-[17px] text-white">Weekly check-in</div>
+              <div className="text-[11px] text-white/40">Fill in all to continue</div>
+            </div>
+            <div className="overflow-y-auto p-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
+              {weeklyMissing.map(({ fu, it }) => {
+                const k = pkey(fu, it);
+                const v = wDraft[k];
+                const set = (val: any) => setWDraft((d) => ({ ...d, [k]: val }));
+                return (
+                  <div key={k}>
+                    <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}{it.detail ? <span className="normal-case font-normal text-white/50"> · {it.detail}</span> : null}</div>
+                    {it.type === 'tick' ? (
+                      <div className="flex gap-2">
+                        <Chip on={v === true} onClick={() => set(true)}>Yes</Chip>
+                        <Chip on={v === false} onClick={() => set(false)}>No</Chip>
+                      </div>
+                    ) : controlFor(it, v, set)}
+                  </div>
+                );
+              })}
+              {wError && <p className="text-xs text-[#ec2226]">{wError}</p>}
+            </div>
+            <div className="p-3 border-t border-white/[0.08]">
+              <button type="button" disabled={!weeklyReady || wSaving} onClick={saveWeekly} className="w-full py-3 rounded-xl bg-[#ec2226] disabled:bg-[#252525] disabled:text-white/40 text-white text-sm font-bold">
+                {wSaving ? 'Saving...' : weeklyReady ? 'Save' : `${weeklyMissing.filter(({ fu, it }) => !gateAnswered(it, wDraft[pkey(fu, it)])).length} left to fill`}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {confirmOpen && createPortal(
