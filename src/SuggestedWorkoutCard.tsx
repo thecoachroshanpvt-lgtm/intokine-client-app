@@ -1,16 +1,36 @@
 import React from 'react';
 
-// The "suggested workout" card shown on Home / Plans / Schedule. It has one motivating calisthenics photo on the right
-// (public/suggested-workout.jpg - no people, no weights). If the file is missing, the brand gradient shows instead.
-const IMAGE = '/suggested-workout.jpg';
+// Both cards (suggested workout and session with coach) carry a faint line sketch on the right instead of a photo,
+// so the pages keep one clean look. The sketches are drawn in code - no image files needed.
+const svgUrl = (inner: string) =>
+  `url("data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80" fill="none" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`
+  )}")`;
+
+const LINE = 'rgba(255,255,255,0.13)';
+const CYAN = 'rgba(108,203,222,0.34)';
+
+// Calisthenics: a pull-up bar with hanging rings.
+const BAR_SKETCH = svgUrl(
+  `<g stroke="${LINE}" stroke-width="2"><path d="M30 74V14M130 74V14M30 14H130M16 74H144"/></g>` +
+  `<g stroke="${CYAN}" stroke-width="2"><path d="M70 14V32M90 14V32"/><circle cx="70" cy="40" r="8"/><circle cx="90" cy="40" r="8"/></g>`
+);
+
+// Coach session: a stopwatch.
+const WATCH_SKETCH = svgUrl(
+  `<g stroke="${LINE}" stroke-width="2"><circle cx="100" cy="46" r="24"/><path d="M92 14h16M100 14v8M118 28l6-6"/><path d="M100 26v3M124 46h-3M100 70v-3M76 46h3"/></g>` +
+  `<g stroke="${CYAN}" stroke-width="2"><path d="M100 46V33M100 46l10 6"/></g>`
+);
+
 const BRAND = 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))';
 
-// The session-with-coach card uses the same faded photo look (public/session-scheduled.jpg).
-// If the file is missing the card just shows the plain dark background.
+// The session-with-coach card background (used on Home and Schedule).
 export const SESSION_CARD_STYLE: React.CSSProperties = {
-  background: 'linear-gradient(90deg, rgba(28,28,28,0.96) 30%, rgba(28,28,28,0.74) 100%), url(/session-scheduled.jpg), #252525',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
+  backgroundColor: '#252525',
+  backgroundImage: WATCH_SKETCH,
+  backgroundRepeat: 'no-repeat',
+  backgroundSize: 'auto 92%',
+  backgroundPosition: 'right 44px center',
 };
 
 interface Props {
@@ -29,9 +49,11 @@ export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done
       onClick={onClick}
       className="w-full text-left rounded-2xl p-4 flex items-center gap-3 transition active:scale-[0.99]"
       style={{
-        background: `linear-gradient(90deg, rgba(28,28,28,0.96) 30%, rgba(28,28,28,0.74) 100%), url(${IMAGE}), ${BRAND}, #252525`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
+        backgroundColor: '#252525',
+        backgroundImage: `${BAR_SKETCH}, ${BRAND}`,
+        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'auto 92%, cover',
+        backgroundPosition: 'right 56px center, center',
       }}
     >
       <div className="flex-1 min-w-0">
