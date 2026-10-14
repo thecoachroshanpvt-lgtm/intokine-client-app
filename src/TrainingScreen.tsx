@@ -425,7 +425,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                 onClick={handleMarkWorkoutComplete}
                 disabled={locked}
                 className={`w-full py-4 rounded-2xl font-subheader text-[16px] uppercase tracking-wide transition ${locked ? 'bg-[#252525] text-white/40 cursor-not-allowed' : 'text-white'}`}
-                style={locked ? undefined : { background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+                style={locked ? undefined : { background: '#ec2226' }}
               >
                 {markingComplete
                   ? 'Saving...'
