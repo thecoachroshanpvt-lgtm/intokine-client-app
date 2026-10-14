@@ -7,7 +7,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Raleway:wght@300;400;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Archivo+Narrow:wght@600;700&family=Raleway:wght@300;400;600;700&display=swap" rel="stylesheet" />
     <!-- Digits only: Raleway's default numerals are old-style (uneven heights), so numbers use Barlow while letters stay Raleway. -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;900&text=0123456789&display=swap" rel="stylesheet" />
 
@@ -35,9 +35,25 @@
         -moz-osx-font-smoothing: grayscale;
         overscroll-behavior-y: contain;
       }
+      /* Brand fonts: Swiss 721 BT Bold Condensed for headers and sub-headers, Raleway for everything else.
+         Swiss 721 BT is licensed, so it is used when its file is placed at public/fonts/Swiss721BT-BoldCondensed.woff2
+         (or installed on the device). Until then Oswald (headers) and Archivo Narrow (sub-headers) stand in, as in the main app. */
+      @font-face {
+        font-family: "Swiss 721 BT Bold Condensed";
+        src: local("Swiss 721 BT Bold Condensed"), local("Swiss721BT-BoldCondensed"), url("/fonts/Swiss721BT-BoldCondensed.woff2") format("woff2");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
       .font-header {
-        font-family: "Anton", "Arial Narrow", sans-serif;
+        font-family: "Swiss 721 BT Bold Condensed", "Oswald", "Arial Narrow", sans-serif;
+        font-weight: 700;
         letter-spacing: 0.01em;
+      }
+      .font-subheader {
+        font-family: "Swiss 721 BT Bold Condensed", "Archivo Narrow", "Arial Narrow", sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.02em;
       }
     </style>
   </head>
