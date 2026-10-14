@@ -314,7 +314,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       {/* Plan and today in one card: name, who made it, then how today is going */}
       <div className="rounded-2xl p-4 space-y-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
         <div>
-          <div className="text-lg font-bold text-white leading-snug">{plan.dietType}</div>
+          <div className="font-header text-2xl text-white leading-tight">{plan.dietType}</div>
           <div className="text-[11px] text-white/40 mt-0.5">Plan by <span className="text-white/70 font-medium">{plan.nutritionistName}</span> · Updated {niceDate(plan.lastUpdated)}</div>
         </div>
         <div>
@@ -349,7 +349,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
               <div>
-                <div className="text-sm font-semibold text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} meal consistency</div>
+                <div className="font-subheader text-[17px] text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} meal consistency</div>
                 <div className="text-[11px] text-white/40">{rangeTitle}</div>
               </div>
               <button type="button" onClick={() => setDetail(false)} className="text-white/50 text-xl leading-none px-1" aria-label="Close">×</button>
@@ -404,7 +404,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5">
           <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-white/[0.08]">
-              <div className="text-sm font-semibold text-white">Confirm today's update</div>
+              <div className="font-subheader text-[17px] text-white">Confirm today's update</div>
               <div className="text-[11px] text-white/40">{niceDate(today)} · check it and confirm to save</div>
             </div>
             <div className="overflow-y-auto p-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
@@ -447,7 +447,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       {meals.length > 0 && (
         <div className="space-y-2.5">
           <div className="flex items-baseline justify-between px-1">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Today's meals</div>
+            <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde]">Today's meals</div>
             <div className="text-[10px] text-white/40">Tap a meal when you have eaten it</div>
           </div>
           {meals.map((meal) => {
@@ -478,7 +478,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                 <button type="button" onClick={() => toggleMeal(meal.id)} aria-pressed={done} className="w-full text-left p-4 block">
                   <span className="flex items-center gap-3">
                     <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${done ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent ik-nudge'}`} aria-hidden>✓</span>
-                    <span className="text-sm font-semibold text-white flex-1">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'} {meal.mealTime}</span>
+                    <span className="font-subheader text-[17px] text-white flex-1">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'} {meal.mealTime}</span>
                   </span>
                   <span className="block mt-2.5 pl-9">
                     {shown ? (
@@ -516,7 +516,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
       {plan.notes && (
         <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] mb-2">Notes from your coach</div>
+          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] mb-2">Notes from your coach</div>
           <div className="text-xs text-white/60 font-light whitespace-pre-wrap leading-relaxed">{plan.notes}</div>
         </div>
       )}
