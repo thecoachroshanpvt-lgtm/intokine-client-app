@@ -9,6 +9,11 @@ import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc,
 function buildWhatsAppLink(contact: string): string {
   return `https://wa.me/${contact.replace(/\D/g, '')}`;
 }
+// A real number only: the "+971 50 000 0000" placeholder (used when a staff member was added without a number) and anything too short do not count.
+function isRealContact(contact?: string): boolean {
+  const d = (contact || '').replace(/\D/g, '');
+  return d.length >= 8 && d !== '971500000000' && !/^(\d)\1+$/.test(d);
+}
 
 const MEAL_TIME_ICONS: Record<string, string> = {
   'Early Morning': '🍋',
@@ -362,7 +367,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </div>
         {allDone && <p className="text-xs text-emerald-400 font-semibold text-center">All meals done today. Great work!</p>}
       </div>
-      {plan.nutritionistContact && <FloatingWhatsApp href={buildWhatsAppLink(plan.nutritionistContact)} />}
+      {isRealContact(plan.nutritionistContact) && <FloatingWhatsApp href={buildWhatsAppLink(plan.nutritionistContact)} />}
 
       {detail && createPortal(
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
