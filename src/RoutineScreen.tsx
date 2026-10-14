@@ -321,15 +321,36 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     return hasAnswer(it.type, valueOf(fu, it));
   };
 
-  // Weekly check-in: on Saturday and Sunday, if this week's items are not answered yet, a popup opens that cannot be closed until they are all filled in.
+  // Weekly check-in: from Saturday the popup asks for this week's items. If a week ends with them unanswered, the popup stays on any day until they are filled in.
+  // It cannot be closed until every item is answered.
   const [wDraft, setWDraft] = useState<Record<string, any>>({});
   const [wSaving, setWSaving] = useState(false);
   const [wError, setWError] = useState('');
   const gateAnswered = (it: TrackItem, v: any) => (it.type === 'tick' ? typeof v === 'boolean' : hasAnswer(it.type, v));
   const weeklyList = itemsFor('weekly');
   const isWeekend = now.getDay() === 6 || now.getDay() === 0;
-  const weeklyMissing = weeklyList.filter(({ fu, it }) => !gateAnswered(it, savedValueOf(fu, it)));
-  const gateOpen = !loading && isWeekend && weeklyMissing.length > 0;
+  const thisMonday = mondayKey(now);
+  const prevMondayDate = new Date(now);
+  prevMondayDate.setDate(prevMondayDate.getDate() - 7 - ((now.getDay() + 6) % 7));
+  const prevMonday = dateKey(prevMondayDate);
+  const prevSaturdayDate = new Date(prevMondayDate);
+  prevSaturdayDate.setDate(prevSaturdayDate.getDate() + 5);
+  const prevSaturday = dateKey(prevSaturdayDate);
+  const savedAt = (fu: FollowUp, it: TrackItem, period: string) => logFor(fu.id, 'weekly', period)?.values?.[it.id];
+  type GateItem = { fu: FollowUp; it: TrackItem; period: string; label: string; k: string };
+  const gateItems: GateItem[] = [
+    // Last week, still unanswered (only for follow-ups that existed by last weekend).
+    ...weeklyList
+      .filter(({ fu, it }) => (!fu.date || fu.date < prevSaturday) && !gateAnswered(it, savedAt(fu, it, prevMonday)))
+      .map(({ fu, it }) => ({ fu, it, period: prevMonday, label: 'Last week', k: `${prevMonday}|${pkey(fu, it)}` })),
+    // This week, from Saturday.
+    ...(isWeekend
+      ? weeklyList
+          .filter(({ fu, it }) => !gateAnswered(it, savedAt(fu, it, thisMonday)))
+          .map(({ fu, it }) => ({ fu, it, period: thisMonday, label: 'This week', k: `${thisMonday}|${pkey(fu, it)}` }))
+      : []),
+  ];
+  const gateOpen = !loading && gateItems.length > 0;
   useEffect(() => {
     if (!gateOpen) return;
     const prev = document.body.style.overflow;
@@ -340,33 +361,33 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       document.body.removeAttribute('data-popup-open');
     };
   }, [gateOpen]);
-  const weeklyReady = weeklyMissing.every(({ fu, it }) => gateAnswered(it, wDraft[pkey(fu, it)]));
+  const weeklyLeft = gateItems.filter((g) => !gateAnswered(g.it, wDraft[g.k])).length;
   const saveWeekly = async () => {
     setWSaving(true);
     setWError('');
     try {
       const { db } = initializeClientFirebaseApp();
       if (!db) throw new Error('offline');
-      const period = periodFor('weekly', new Date());
-      const byFu = new Map<string, { fu: FollowUp; changes: { it: TrackItem; value: any }[] }>();
-      weeklyMissing.forEach(({ fu, it }) => {
-        if (!byFu.has(fu.id)) byFu.set(fu.id, { fu, changes: [] });
-        byFu.get(fu.id)!.changes.push({ it, value: wDraft[pkey(fu, it)] });
+      const groups = new Map<string, { fu: FollowUp; period: string; changes: { it: TrackItem; value: any }[] }>();
+      gateItems.forEach((g) => {
+        const gk = `${g.fu.id}|${g.period}`;
+        if (!groups.has(gk)) groups.set(gk, { fu: g.fu, period: g.period, changes: [] });
+        groups.get(gk)!.changes.push({ it: g.it, value: wDraft[g.k] });
       });
       const written: RoutineLog[] = [];
-      for (const g of Array.from(byFu.values())) {
-        const values: Record<string, any> = { ...(logFor(g.fu.id, 'weekly', period)?.values || {}) };
+      for (const g of Array.from(groups.values())) {
+        const values: Record<string, any> = { ...(logFor(g.fu.id, 'weekly', g.period)?.values || {}) };
         g.changes.forEach(({ it, value }) => { values[it.id] = value; });
-        await setDoc(doc(db, 'intokine_routine_logs', `${clientId}_${g.fu.id}_weekly_${period}`), {
+        await setDoc(doc(db, 'intokine_routine_logs', `${clientId}_${g.fu.id}_weekly_${g.period}`), {
           clientId,
           followUpId: g.fu.id,
           freq: 'weekly',
-          period,
+          period: g.period,
           date: today,
           values,
           updatedAt: new Date().toISOString(),
         });
-        written.push({ followUpId: g.fu.id, freq: 'weekly', period, values });
+        written.push({ followUpId: g.fu.id, freq: 'weekly', period: g.period, values });
       }
       setLogs((all) => [...all.filter((l) => !written.some((w) => w.followUpId === l.followUpId && w.freq === l.freq && w.period === l.period)), ...written]);
       setWDraft({});
@@ -601,12 +622,16 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
               <div className="text-[11px] text-white/40">Fill in all to continue</div>
             </div>
             <div className="overflow-y-auto p-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
-              {weeklyMissing.map(({ fu, it }) => {
-                const k = pkey(fu, it);
+              {gateItems.map((g, i) => {
+                const { it, k } = g;
                 const v = wDraft[k];
                 const set = (val: any) => setWDraft((d) => ({ ...d, [k]: val }));
+                const heading = i === 0 || gateItems[i - 1].period !== g.period;
                 return (
                   <div key={k}>
+                    {heading && gateItems.some((x) => x.period !== g.period) && (
+                      <div className="font-subheader text-[13px] uppercase tracking-wide text-[#6ccbde] mb-3">{g.label}</div>
+                    )}
                     <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}{it.detail ? <span className="normal-case font-normal text-white/50"> · {it.detail}</span> : null}</div>
                     {it.type === 'tick' ? (
                       <div className="flex gap-2">
@@ -620,8 +645,8 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
               {wError && <p className="text-xs text-[#ec2226]">{wError}</p>}
             </div>
             <div className="p-3 border-t border-white/[0.08]">
-              <button type="button" disabled={!weeklyReady || wSaving} onClick={saveWeekly} className="w-full py-3 rounded-xl bg-[#ec2226] disabled:bg-[#252525] disabled:text-white/40 text-white text-sm font-bold">
-                {wSaving ? 'Saving...' : weeklyReady ? 'Save' : `${weeklyMissing.filter(({ fu, it }) => !gateAnswered(it, wDraft[pkey(fu, it)])).length} left to fill`}
+              <button type="button" disabled={weeklyLeft > 0 || wSaving} onClick={saveWeekly} className="w-full py-3 rounded-xl bg-[#ec2226] disabled:bg-[#252525] disabled:text-white/40 text-white text-sm font-bold">
+                {wSaving ? 'Saving...' : weeklyLeft === 0 ? 'Save' : `${weeklyLeft} left to fill`}
               </button>
             </div>
           </div>
