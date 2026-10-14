@@ -39,7 +39,7 @@ const MEAL_PHOTOS: Record<string, string> = {
 const mealCardBackground = (mealTime: string) => {
   const photo = MEAL_PHOTOS[mealTime];
   const fade = 'linear-gradient(90deg, #252525 30%, rgba(37,37,37,0.66) 100%)';
-  return photo ? `${fade}, url(/${photo}.jpg)` : '#252525';
+  return photo ? `${fade}, url(/${photo}.jpg), url(/meal-photos/${photo}.jpg)` : '#252525';
 };
 
 interface MealItem {
