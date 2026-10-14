@@ -1,64 +1,92 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>INTOKINE</title>
+@import "tailwindcss";
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Archivo+Narrow:wght@600;700&family=Raleway:wght@300;400;600;700&display=swap" rel="stylesheet" />
-    <!-- Digits only: Raleway's default numerals are old-style (uneven heights), so numbers use Barlow while letters stay Raleway. -->
-    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700;900&text=0123456789&display=swap" rel="stylesheet" />
+html, body {
+  margin: 0;
+  padding: 0;
+  overscroll-behavior-y: none;
+}
 
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1c1c1c" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="INTOKINE" />
+/* Hides the scrollbar on the PRQ date wheel picker columns, while
+   keeping the actual scroll/snap behavior fully intact - Firefox is
+   handled inline via scrollbarWidth, this covers Safari and Chrome. */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        overscroll-behavior-y: none;
-      }
-      body {
-        background-color: #1c1c1c;
-        color: #ffffff;
-        font-family: "Barlow", "Raleway", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        font-weight: 300;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        overscroll-behavior-y: contain;
-      }
-      /* Brand fonts: Swiss 721 BT Bold Condensed for headers and sub-headers, Raleway for everything else.
-         Swiss 721 BT is licensed, so it is used when its file is placed at public/fonts/Swiss721BT-BoldCondensed.woff2
-         (or installed on the device). Until then Oswald (headers) and Archivo Narrow (sub-headers) stand in, as in the main app. */
-      @font-face {
-        font-family: "Swiss 721 BT Bold Condensed";
-        src: local("Swiss 721 BT Bold Condensed"), local("Swiss721BT-BoldCondensed"), url("/fonts/Swiss721BT-BoldCondensed.woff2") format("woff2");
-        font-weight: 700;
-        font-style: normal;
-        font-display: swap;
-      }
-      .font-header {
-        font-family: "Swiss 721 BT Bold Condensed", "Oswald", "Arial Narrow", sans-serif;
-        font-weight: 700;
-        letter-spacing: 0.01em;
-      }
-      .font-subheader {
-        font-family: "Swiss 721 BT Bold Condensed", "Archivo Narrow", "Arial Narrow", sans-serif;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+/* Pulsing ring behind each BCA body-part tap target, inviting the
+   client to tap and see that measurement's graph. */
+@keyframes bcaPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  70% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Very mild pulsing red border on the Where You Stand card, inviting
+   a tap to see the full breakdown - kept subtle since it wraps an
+   entire card rather than a small point. */
+@keyframes cardBorderPulse {
+  0%, 100% {
+    border-color: rgba(236, 34, 38, 0.25);
+  }
+  50% {
+    border-color: rgba(236, 34, 38, 0.6);
+  }
+}
+
+
+/* Smooth popup / page transitions. */
+@keyframes popFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes popRise {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+.anim-overlay { animation: popFade 0.15s ease-out both; }
+.anim-card { animation: popRise 0.2s cubic-bezier(0.32, 0.72, 0, 1) both; }
+/* Lists whose height is measured right after opening fade in once measured, so there is no visible jump. */
+.anim-list { animation: popFade 0.12s ease-out 0.05s both; }
+.anim-page { animation: popFade 0.18s ease-out both; }
+button { -webkit-tap-highlight-color: transparent; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-overlay, .anim-card, .anim-list, .anim-page { animation: none; }
+}
+
+/* Bottom navigation stays above popup layers (z-50/60) while one is open. */
+body[data-popup-open] .bottom-nav { z-index: 70; }
+
+/* Numbers use Barlow digits (see index.html); keep the "mono" number style on the same font. */
+.font-mono {
+  font-family: "Barlow", "Raleway", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Gentle blink on the tick circle of meals / supplements not done yet, nudging the client to tap it. */
+@keyframes ikNudge {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.25); box-shadow: 0 0 0 0 rgba(108, 203, 222, 0); }
+  50% { border-color: #6ccbde; box-shadow: 0 0 0 5px rgba(108, 203, 222, 0.18); }
+}
+.ik-nudge { animation: ikNudge 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ik-nudge { animation: none; }
+}
+
+/* Same gentle blink around a whole tracker (water, sleep, mood...) that has no answer yet. */
+@keyframes ikNudgeBox {
+  0%, 100% { border-color: rgba(255, 255, 255, 0.06); box-shadow: 0 0 0 0 rgba(108, 203, 222, 0); }
+  50% { border-color: rgba(108, 203, 222, 0.55); box-shadow: 0 0 0 3px rgba(108, 203, 222, 0.1); }
+}
+.ik-nudge-box { animation: ikNudgeBox 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ik-nudge-box { animation: none; }
+}
