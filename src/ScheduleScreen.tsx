@@ -7,7 +7,7 @@ import {
   onSnapshot,
 } from './firebase';
 import { TrainingScreen } from './TrainingScreen';
-import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
+import { SuggestedWorkoutCard, SESSION_CARD_STYLE } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
 
 interface ScheduleScreenProps {
@@ -261,7 +261,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     const t = formatTime(s.time);
     const color = statusColor(s.status);
     return (
-      <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+      <div key={s.id} className="border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3" style={SESSION_CARD_STYLE}>
         <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
           <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
             {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
@@ -580,6 +580,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                   const key = toDateKey(d);
                   const inMonth = d.getMonth() === monthCursor.getMonth();
                   const hasSession = !!sessionsByDate[key]?.length;
+                  const hasWorkout = plans.some((p) => p.date === key);
                   const isToday = key === todayKey;
                   return (
                     <button
@@ -590,21 +591,42 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                       } ${activeMonthDay === key ? 'bg-white/[0.15]' : 'hover:bg-white/[0.06]'} ${isToday ? 'border border-[#6ccbde]/50' : ''}`}
                     >
                       {d.getDate()}
-                      {hasSession && <span className="absolute bottom-1 w-1 h-1 rounded-full bg-[#ec2226]" />}
+                      {(hasSession || hasWorkout) && (
+                        <span className="absolute bottom-1 flex gap-0.5">
+                          {hasSession && <span className="w-1 h-1 rounded-full bg-[#ec2226]" />}
+                          {hasWorkout && <span className="w-1 h-1 rounded-full bg-[#6ccbde]" />}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
 
-              {activeMonthDay && (
-                <div className="space-y-2 pt-2">
-                  {(sessionsByDate[activeMonthDay] || []).length === 0 ? (
-                    <div className="text-xs text-white/40 font-light text-center py-4">No session on this day.</div>
-                  ) : (
-                    (sessionsByDate[activeMonthDay] || []).map(renderSessionCard)
-                  )}
-                </div>
-              )}
+              {activeMonthDay && (() => {
+                const monthSessions = sessionsByDate[activeMonthDay] || [];
+                const monthWorkouts = plans.filter((p) => p.date === activeMonthDay);
+                return (
+                  <div className="space-y-2 pt-2">
+                    {monthSessions.length === 0 && monthWorkouts.length === 0 ? (
+                      <div className="text-xs text-white/40 font-light text-center py-4">No session or workout on this day.</div>
+                    ) : (
+                      <>
+                        {monthSessions.map(renderSessionCard)}
+                        {monthWorkouts.map((w) => (
+                          <SuggestedWorkoutCard
+                            key={w.id}
+                            title={w.planTitle}
+                            label="Suggested workout"
+                            hint={w.durationMinutes ? `${w.durationMinutes} mins` : undefined}
+                            done={!!w.clientCompletedAt}
+                            onClick={() => setSelectedWorkout(w)}
+                          />
+                        ))}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </>
