@@ -280,6 +280,7 @@ const questions: QuestionConfig[] = [
   { key: 'age', type: 'wheelNumber', label: 'How old are you?', section: 'Personal Details', min: 10, max: 100 },
   { key: 'maritalStatus', type: 'yesno', label: 'Are you married?', section: 'Personal Details' },
   { key: 'contactNumber', type: 'phone', label: "What's the best number to reach you?", section: 'Personal Details' },
+  { key: 'whatsappNumber', type: 'phone', label: "What's your WhatsApp number?", section: 'Personal Details' },
   { key: 'emergencyContactNumber', type: 'phone', label: "Who should we call in an emergency, and what's their number?", section: 'Personal Details' },
   { key: 'address', type: 'textarea', label: "What's your home address?", section: 'Personal Details' },
 
@@ -501,6 +502,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         email: form.email || clientEmail,
         address: form.address,
         contactNumber: form.contactNumber,
+        whatsappNumber: form.whatsappNumber,
         emergencyContactNumber: form.emergencyContactNumber,
         dateOfBirth: form.dateOfBirth,
         age: toNum(form.age) || 0,
