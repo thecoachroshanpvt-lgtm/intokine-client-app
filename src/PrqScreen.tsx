@@ -800,7 +800,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col justify-center px-6 py-8">
-        <h1 className="text-2xl font-black text-white leading-snug mb-6">{current.label}</h1>
+        <h1 className="font-subheader text-3xl text-white leading-snug mb-6">{current.label}</h1>
         {renderInput()}
         {error && <p className="text-sm text-red-200 mt-4 bg-red-900/30 rounded-xl px-3 py-2">{error}</p>}
       </div>
