@@ -12,7 +12,7 @@ function buildWhatsAppLink(contact: string): string {
 // A real number only: the "+971 50 000 0000" placeholder (used when a staff member was added without a number) and anything too short do not count.
 function isRealContact(contact?: string): boolean {
   const d = (contact || '').replace(/\D/g, '');
-  return d.length >= 8 && d !== '971500000000' && !/^(\d)\1+$/.test(d);
+  return !(contact || '').includes('@') && d.length >= 8 && d !== '971500000000' && !/^(\d)\1+$/.test(d);
 }
 
 const MEAL_TIME_ICONS: Record<string, string> = {
