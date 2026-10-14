@@ -77,7 +77,6 @@ const Chip: React.FC<{ on: boolean; onClick: () => void; children: React.ReactNo
 
 // Energy, stress and mood are updated on a slider: drag the handle or tap the line, and the answer is saved when you let go.
 const METER_LABELS = ['energy', 'stress', 'mood'];
-const meterColor = (q: number) => (q < 0.25 ? '#ec2226' : q < 0.75 ? '#fbbf24' : '#34d399');
 const MeterControl: React.FC<{ item: TrackItem; options: string[]; value?: string; onChange: (v: string | undefined) => void }> = ({ item, options, value, onChange }) => {
   const label = item.label.toLowerCase();
   // Left to right the slider always goes from "less" to "more" (mood lists Good first, so it is turned around).
@@ -86,22 +85,18 @@ const MeterControl: React.FC<{ item: TrackItem; options: string[]; value?: strin
   const sel = value === undefined ? -1 : opts.indexOf(value);
   const [drag, setDrag] = useState<number | null>(null);
   const trackRef = React.useRef<HTMLDivElement>(null);
-  // For stress, more is worse; for energy and mood, more is better.
-  const quality = (i: number) => (n > 1 ? (label === 'stress' ? 1 - i / (n - 1) : i / (n - 1)) : 1);
   const shown = drag !== null ? drag : sel;
-  const color = shown >= 0 ? meterColor(quality(shown)) : 'rgba(255,255,255,0.4)';
   const pct = (i: number) => (n > 1 ? (i / (n - 1)) * 100 : 50);
   const indexAt = (clientX: number) => {
     const r = trackRef.current?.getBoundingClientRect();
     if (!r || r.width === 0) return 0;
     return Math.round(Math.min(1, Math.max(0, (clientX - r.left) / r.width)) * (n - 1));
   };
-  const stops = Array.from({ length: 21 }, (_, k) => `${meterColor(label === 'stress' ? 1 - k / 20 : k / 20)} ${k * 5}%`).join(', ');
   return (
     <div data-no-pull className="max-w-[320px]">
       <div className="flex items-center justify-between mb-2 min-h-[20px]">
         <span className="text-[11px] text-white/35">{shown >= 0 ? 'Slide to change' : 'Slide or tap to set'}</span>
-        <span className="text-sm font-bold" style={{ color }}>{shown >= 0 ? opts[shown] : '—'}</span>
+        <span className="text-sm font-bold text-white">{shown >= 0 ? opts[shown] : '—'}</span>
       </div>
       <div className="px-3.5">
         <div
@@ -113,20 +108,22 @@ const MeterControl: React.FC<{ item: TrackItem; options: string[]; value?: strin
           onPointerUp={(e) => { const k = indexAt(e.clientX); setDrag(null); if (k !== sel) onChange(opts[k]); }}
           onPointerCancel={() => setDrag(null)}
         >
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-2.5 rounded-full" style={{ background: `linear-gradient(90deg, ${stops})`, opacity: shown >= 0 ? 1 : 0.45 }} />
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-2 rounded-full bg-white/[0.08]" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 rounded-full"
+            style={{ width: `${shown >= 0 ? pct(shown) : 0}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)', transition: drag !== null ? 'none' : 'width 0.15s ease-out' }} />
           {opts.map((o, i) => (
-            <span key={o} className="absolute top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-black/40" style={{ left: `${pct(i)}%`, marginLeft: -2 }} />
+            <span key={o} className="absolute top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white/25" style={{ left: `${pct(i)}%`, marginLeft: -2 }} />
           ))}
           <div
-            className="absolute top-1/2 w-7 h-7 rounded-full border-[3px] bg-[#1c1c1c] shadow-lg"
-            style={{ left: `${pct(shown >= 0 ? shown : 0)}%`, transform: 'translate(-50%, -50%)', borderColor: color, opacity: shown >= 0 ? 1 : 0.6, transition: drag !== null ? 'none' : 'left 0.15s ease-out' }}
+            className="absolute top-1/2 w-6 h-6 rounded-full bg-white shadow-lg"
+            style={{ left: `${pct(shown >= 0 ? shown : 0)}%`, transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 4px rgba(108,203,222,0.25)', opacity: shown >= 0 ? 1 : 0.5, transition: drag !== null ? 'none' : 'left 0.15s ease-out' }}
           />
         </div>
       </div>
       <div className="relative h-4 mx-3.5 mt-0.5">
         {opts.map((o, i) => (
-          <span key={o} className={`absolute text-[10px] whitespace-nowrap ${shown === i ? 'font-bold' : 'text-white/35'}`}
-            style={{ left: `${pct(i)}%`, transform: `translateX(${n > 1 ? (i === 0 ? '-14px' : i === n - 1 ? 'calc(-100% + 14px)' : '-50%') : '-50%'})`, color: shown === i ? color : undefined }}>{o}</span>
+          <span key={o} className={`absolute text-[10px] whitespace-nowrap ${shown === i ? 'font-bold text-white' : 'text-white/35'}`}
+            style={{ left: `${pct(i)}%`, transform: `translateX(${n > 1 ? (i === 0 ? '-14px' : i === n - 1 ? 'calc(-100% + 14px)' : '-50%') : '-50%'})` }}>{o}</span>
         ))}
       </div>
     </div>
