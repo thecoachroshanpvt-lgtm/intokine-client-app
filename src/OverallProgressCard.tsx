@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot } from './firebase';
-import { consistencyColor } from './ConsistencyChart';
 
 // Home: one overall consistency score for the last 30 days, made from four parts -
 // Diet (meals ticked), Routine (follow-up items answered), Sessions (coach sessions attended) and Workouts (suggested workouts done).
 // A part with nothing due yet is left out of the overall score. Today only counts once something is done today.
 
 const DAYS = 30;
+// App colours only: green when strong, cyan when building, red when low (no yellow).
+const consistencyColor = (f: number) => (f >= 0.8 ? '#34d399' : f >= 0.5 ? '#6ccbde' : '#ec2226');
 const pad = (n: number) => String(n).padStart(2, '0');
 const dateKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const mondayKey = (d: Date) => {
