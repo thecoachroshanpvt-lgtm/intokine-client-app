@@ -100,14 +100,14 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
 
       <div className="bg-gradient-to-br from-[#ec2226]/15 to-[#6ccbde]/10 border border-white/[0.08] rounded-2xl p-5 mb-4 space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[10px] font-bold text-[#6ccbde] uppercase tracking-wide">Suggested Workout</span>
+          <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide">Suggested Workout</span>
           {alreadyDone && (
             <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300">
               ✓ Completed
             </span>
           )}
         </div>
-        <h1 className="text-xl font-black text-white">{workout.planTitle}</h1>
+        <h1 className="font-subheader text-2xl text-white">{workout.planTitle}</h1>
         <div className="text-xs text-white/50 font-light flex items-center gap-2 flex-wrap">
           <span>{workout.category}</span>
           {workout.durationMinutes ? (
