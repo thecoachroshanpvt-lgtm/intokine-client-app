@@ -458,8 +458,10 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                   </button>
                 );
               }
+              // A tracker with no answer yet blinks gently, the same as the habit circles, to nudge the client.
+              const answered = hasAnswer(it.type, valueOf(fu, it));
               return (
-                <div key={fu.id + it.id}>
+                <div key={fu.id + it.id} className={`rounded-xl border -mx-2.5 px-2.5 py-2 ${answered ? 'border-transparent' : 'ik-nudge-box'}`}>
                   <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}{it.detail ? <span className="normal-case font-normal text-white/50"> · {it.detail}</span> : null}</div>
                   {control(fu, it)}
                 </div>
