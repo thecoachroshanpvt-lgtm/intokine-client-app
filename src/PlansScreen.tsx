@@ -16,17 +16,11 @@ import {
 } from './firebase';
 import { createPortal } from 'react-dom';
 import { TrainingScreen } from './TrainingScreen';
-import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
+import { SuggestedWorkoutCard, SESSION_CARD_STYLE } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
 import { PasswordInput } from './PasswordInput';
 
-// The session-with-coach card: a faded training-studio photo on the right (public/session-scheduled.jpg).
-// If the file is missing the card just shows the plain dark background.
-const SESSION_CARD_STYLE: React.CSSProperties = {
-  background: 'linear-gradient(90deg, rgba(28,28,28,0.94) 32%, rgba(28,28,28,0.3) 100%), url(/session-scheduled.jpg), #252525',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-};
+
 
 interface PlansScreenProps {
   clientId: string;
