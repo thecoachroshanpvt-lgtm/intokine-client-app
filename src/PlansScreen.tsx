@@ -661,12 +661,12 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
               <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#252525]/60 px-4 py-4 flex items-center gap-3">
                 <div className="w-10 h-10 shrink-0 rounded-full bg-white/[0.06] flex items-center justify-center">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6ccbde" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+                    <rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" />
                   </svg>
                 </div>
                 <div className="min-w-0">
-                  <div className="font-subheader text-[17px] text-white leading-tight">Rest day</div>
-                  <div className="text-[12px] text-white/45 font-light mt-0.5">No training with your coach today</div>
+                  <div className="font-subheader text-[17px] text-white leading-tight">No training with your coach today</div>
+                  
                 </div>
               </div>
             )}
