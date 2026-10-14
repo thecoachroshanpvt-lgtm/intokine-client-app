@@ -23,6 +23,24 @@ const MEAL_TIME_ICONS: Record<string, string> = {
   'Before Bed': '🌙',
 };
 const MEAL_ORDER = Object.keys(MEAL_TIME_ICONS);
+// A soft photo on the right of each meal card. Files live in public/meal-photos/ ; a meal without a photo file simply shows the plain card.
+const MEAL_PHOTOS: Record<string, string> = {
+  'Early Morning': 'breakfast',
+  'Breakfast': 'breakfast',
+  'Mid-Morning Snack': 'snack',
+  'Pre-Workout': 'workout',
+  'Lunch': 'lunch',
+  'Evening Snack': 'snack',
+  'Pre-Dinner': 'dinner',
+  'Dinner': 'dinner',
+  'Post-Workout': 'workout',
+  'Before Bed': 'night',
+};
+const mealCardBackground = (mealTime: string) => {
+  const photo = MEAL_PHOTOS[mealTime];
+  const fade = 'linear-gradient(90deg, #252525 30%, rgba(37,37,37,0.8) 100%)';
+  return photo ? `${fade}, url(/meal-photos/${photo}.jpg)` : '#252525';
+};
 
 interface MealItem {
   id: string;
@@ -461,7 +479,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             const carb = shown?.carbsGrams ?? meal.carbsGrams;
             const fat = shown?.fatGrams ?? meal.fatGrams;
             return (
-              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden bg-white/[0.04] ${done ? 'border-emerald-500/40' : 'border-white/[0.08]'}`}>
+              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden ${done ? 'border-emerald-500/40' : 'border-white/[0.08]'}`}
+                style={{ background: mealCardBackground(meal.mealTime), backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#252525' }}>
                 {multi && (
                   <div className="px-4 pt-3 text-[10px] text-white/40">Choose one option</div>
                 )}
