@@ -17,7 +17,7 @@ export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left rounded-2xl p-4 flex items-center gap-3 transition active:scale-[0.99]"
+      className={`w-full text-left rounded-2xl p-4 flex items-center gap-3 border border-transparent transition active:scale-[0.99] ${done ? '' : 'ik-nudge-box'}`}
       style={{ background: BRAND }}
     >
       <div className="flex-1 min-w-0">
