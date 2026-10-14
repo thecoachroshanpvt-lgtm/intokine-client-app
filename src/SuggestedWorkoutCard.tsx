@@ -26,7 +26,6 @@ export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done
         backgroundPosition: 'center',
       }}
     >
-      <div className="w-12 h-12 shrink-0 rounded-full bg-black/40 flex items-center justify-center text-[24px] leading-none">🏋️</div>
       <div className="flex-1 min-w-0">
         <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">{label}</div>
         <div className="font-subheader text-[19px] text-white mt-1.5 truncate">{title}</div>
