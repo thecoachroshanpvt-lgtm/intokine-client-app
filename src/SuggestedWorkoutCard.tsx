@@ -5,6 +5,14 @@ import React from 'react';
 const IMAGE = '/suggested-workout.jpg';
 const BRAND = 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))';
 
+// The session-with-coach card uses the same faded photo look (public/session-scheduled.jpg).
+// If the file is missing the card just shows the plain dark background.
+export const SESSION_CARD_STYLE: React.CSSProperties = {
+  background: 'linear-gradient(90deg, rgba(28,28,28,0.94) 32%, rgba(28,28,28,0.3) 100%), url(/session-scheduled.jpg), #252525',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+};
+
 interface Props {
   title: string;
   label: string;          // small line above the title, e.g. "Do it yourself"
