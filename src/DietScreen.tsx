@@ -25,21 +25,21 @@ const MEAL_TIME_ICONS: Record<string, string> = {
 const MEAL_ORDER = Object.keys(MEAL_TIME_ICONS);
 // A soft photo on the right of each meal card. Files live in public/meal-photos/ ; a meal without a photo file simply shows the plain card.
 const MEAL_PHOTOS: Record<string, string> = {
-  'Early Morning': 'breakfast',
+  'Early Morning': 'early-morning',
   'Breakfast': 'breakfast',
-  'Mid-Morning Snack': 'snack',
-  'Pre-Workout': 'workout',
+  'Mid-Morning Snack': 'mid-morning-snack',
+  'Pre-Workout': 'pre-workout',
   'Lunch': 'lunch',
-  'Evening Snack': 'snack',
-  'Pre-Dinner': 'dinner',
+  'Evening Snack': 'evening-snack',
+  'Pre-Dinner': 'pre-dinner',
   'Dinner': 'dinner',
-  'Post-Workout': 'workout',
-  'Before Bed': 'night',
+  'Post-Workout': 'post-workout',
+  'Before Bed': 'before-bed',
 };
 const mealCardBackground = (mealTime: string) => {
   const photo = MEAL_PHOTOS[mealTime];
-  const fade = 'linear-gradient(90deg, #252525 30%, rgba(37,37,37,0.8) 100%)';
-  return photo ? `${fade}, url(/meal-photos/${photo}.jpg)` : '#252525';
+  const fade = 'linear-gradient(90deg, #252525 30%, rgba(37,37,37,0.66) 100%)';
+  return photo ? `${fade}, url(/${photo}.jpg)` : '#252525';
 };
 
 interface MealItem {
