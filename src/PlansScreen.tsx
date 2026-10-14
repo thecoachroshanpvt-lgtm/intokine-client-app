@@ -196,7 +196,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5 pb-24" onClick={onClose}>
       <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wide">{mode === 'menu' ? 'Settings' : 'Change password'}</h3>
+          <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide">{mode === 'menu' ? 'Settings' : 'Change password'}</h3>
           <button type="button" onClick={onClose} className="text-white/40 text-lg leading-none px-1">×</button>
         </div>
         {mode === 'menu' ? (
@@ -442,7 +442,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           </div>
         </label>
         <div>
-          <p className="text-sm font-semibold text-white">{clientName}</p>
+          <p className="font-subheader text-[17px] text-white">{clientName}</p>
           <p className="text-[11px] text-white/40 font-light">
             {uploadingPhoto ? 'Uploading...' : 'Tap to add a profile photo'}
           </p>
@@ -467,7 +467,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         <div className="bg-[#ec2226]/10 border border-[#ec2226]/40 rounded-2xl p-4 flex items-start gap-3" role="alert">
           <span className="w-2 h-2 mt-1.5 rounded-full bg-[#ec2226] shrink-0" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
           <div>
-            <p className="text-sm font-bold text-white">Package expired</p>
+            <p className="font-subheader text-[17px] text-white">Package expired</p>
             <p className="text-[11px] text-white/60 font-light mt-0.5 leading-relaxed">
               {journey.mode === 'sessions' ? (
                 <>You completed all <span className="font-mono">{packageSessions}</span> sessions in your package. Please contact your coach to renew.</>
@@ -518,7 +518,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
             <button type="button" onClick={() => setPackageHistoryOpen((o) => !o)} className="w-full text-left p-4 space-y-2" aria-expanded={packageHistoryOpen}>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-white">
+                <span className="font-subheader text-[17px] text-white">
                   <span className="font-mono">{completedSessions}</span>
                   {journey.mode === 'sessions' ? <> of <span className="font-mono">{packageSessions}</span> sessions done</> : <> session{completedSessions === 1 ? '' : 's'} done</>}
                 </span>
@@ -589,7 +589,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
         const d = parseDateKey(todayKey);
         const dateTile = (
           <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+            <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
               {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
             </div>
             <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
@@ -616,7 +616,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
               return (
                 <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
                   <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">
+                    <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
                       {sd ? sd.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
                     </div>
                     <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{sd ? sd.getDate() : '—'}</div>
@@ -625,7 +625,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none mb-1.5">Session with coach</div>
+                    <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none mb-1.5">Session with coach</div>
                     {movedAway ? (
                       <div className="text-sm font-bold text-amber-400 leading-snug">
                         Moved to {movedTo ? movedTo.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : s.date}
@@ -682,8 +682,8 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
                     </svg>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] leading-none">Do it yourself</div>
-                    <div className="text-base font-bold text-white mt-1.5 truncate">{w.planTitle}</div>
+                    <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Do it yourself</div>
+                    <div className="font-subheader text-[19px] text-white mt-1.5 truncate">{w.planTitle}</div>
                     <div className="text-[11px] text-white/50 font-light truncate">
                       Do it any time today
                       {w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}
