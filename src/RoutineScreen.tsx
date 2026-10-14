@@ -190,12 +190,13 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       document.body.removeAttribute('data-popup-open');
     };
   }, [detail, confirmOpen]);
-  // The popup opens right after a change; numbers wait a moment so repeated + / - taps are not interrupted.
+  // Ticks, meters and choices open the popup right after the tap. Numbers (water, sleep, steps) and notes do not, so the client can tap + / - as many times as needed; a "Review & save" bar appears instead.
   const pendingKeys = Object.keys(pending);
-  const lastIsNumber = pendingKeys.length > 0 && pending[pendingKeys[pendingKeys.length - 1]].it.type === 'number';
+  const lastType = pendingKeys.length > 0 ? pending[pendingKeys[pendingKeys.length - 1]].it.type : '';
+  const quietChange = lastType === 'number' || lastType === 'text';
   useEffect(() => {
-    if (pendingKeys.length === 0 || confirmOpen) return;
-    const t = window.setTimeout(() => setConfirmOpen(true), lastIsNumber ? 700 : 80);
+    if (pendingKeys.length === 0 || confirmOpen || quietChange) return;
+    const t = window.setTimeout(() => setConfirmOpen(true), 80);
     return () => window.clearTimeout(t);
   }, [pending, confirmOpen]);
   // Re-check the date once a minute so "today" rolls over at midnight.
@@ -504,6 +505,16 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           </div>
           <div className="text-[11px] text-white/45 font-light">
             {todayDone === dailyItems.length ? 'Great work, today is complete.' : todayDone === 0 ? 'Start with the first item below.' : 'Keep going, you are on your way.'}
+          </div>
+        </div>
+      )}
+
+      {pendingKeys.length > 0 && !confirmOpen && (
+        <div className="fixed left-0 right-0 bottom-24 z-40 flex justify-center px-5 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-sm flex items-center gap-3 rounded-2xl bg-[#252525] border border-white/[0.12] shadow-lg pl-4 pr-2 py-2">
+            <span className="flex-1 text-xs text-white/70">{pendingKeys.length} unsaved {pendingKeys.length === 1 ? 'change' : 'changes'}</span>
+            <button type="button" onClick={undoChanges} className="px-3 py-2 text-xs font-bold text-white/50">Undo</button>
+            <button type="button" onClick={() => setConfirmOpen(true)} className="px-4 py-2 rounded-xl bg-[#ec2226] text-white text-xs font-bold">Review & save</button>
           </div>
         </div>
       )}
