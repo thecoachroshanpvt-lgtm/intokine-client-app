@@ -32,6 +32,7 @@ interface TrainerizeExercise {
   coachCues?: string;
   phase?: string;
   isStretchReminder?: boolean;
+  videoUrl?: string; // demonstration video - a direct video file link or a YouTube link, added later
   previousBestPerformance?: string;
   previousVolumeKg?: number;
 }
@@ -79,6 +80,33 @@ const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean):
   if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash });
   if (type === 'Weighted' || type === 'Bodyweight' || type === 'Isometric') cells.push({ label: 'RPE', value: rpe, accent: true });
   return cells;
+};
+
+// Demonstration video. Shows a ready space until a video link is added to the exercise.
+const DemoVideo: React.FC<{ url?: string; name: string; dim?: boolean }> = ({ url, name, dim }) => {
+  const yt = url ? url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/) : null;
+  return (
+    <div className={`mt-4 relative w-full overflow-hidden rounded-xl bg-black/30 ${dim ? 'opacity-50' : ''}`} style={{ aspectRatio: '16 / 9' }}>
+      {url && yt ? (
+        <iframe
+          src={`https://www.youtube.com/embed/${yt[1]}?rel=0&playsinline=1`}
+          title={`${name} demonstration`}
+          allow="encrypted-media; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 w-full h-full border-0"
+        />
+      ) : url ? (
+        <video src={url} controls playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover bg-black" />
+      ) : (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          <span className="w-12 h-12 rounded-full bg-white/[0.08] flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 ml-0.5 text-white/60" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">Demo video coming soon</span>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const PHASE_ORDER = ['Warmup', 'Main', 'Cooldown'] as const;
@@ -248,6 +276,8 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                                 {[TYPE_LABEL[ex.exerciseType || 'Weighted'], ex.targetMuscle, ex.equipment].filter(Boolean).join(' · ')}
                               </span>
                             </button>
+
+                            <DemoVideo url={ex.videoUrl} name={ex.name} dim={isDone} />
 
                             {/* Targets */}
                             {ex.sets.length > 0 && (
