@@ -8,7 +8,7 @@ const BRAND = 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.0
 // The session-with-coach card uses the same faded photo look (public/session-scheduled.jpg).
 // If the file is missing the card just shows the plain dark background.
 export const SESSION_CARD_STYLE: React.CSSProperties = {
-  background: 'linear-gradient(90deg, rgba(28,28,28,0.94) 32%, rgba(28,28,28,0.3) 100%), url(/session-scheduled.jpg), #252525',
+  background: 'linear-gradient(90deg, rgba(28,28,28,0.96) 30%, rgba(28,28,28,0.74) 100%), url(/session-scheduled.jpg), #252525',
   backgroundSize: 'cover',
   backgroundPosition: 'center',
 };
@@ -29,7 +29,7 @@ export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done
       onClick={onClick}
       className="w-full text-left rounded-2xl p-4 flex items-center gap-3 transition active:scale-[0.99]"
       style={{
-        background: `linear-gradient(90deg, rgba(28,28,28,0.94) 32%, rgba(28,28,28,0.3) 100%), url(${IMAGE}), ${BRAND}, #252525`,
+        background: `linear-gradient(90deg, rgba(28,28,28,0.96) 30%, rgba(28,28,28,0.74) 100%), url(${IMAGE}), ${BRAND}, #252525`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
       }}
