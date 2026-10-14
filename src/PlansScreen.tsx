@@ -658,8 +658,19 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
             })}
 
             {todaySessions.length === 0 && (
-              <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
-                <p className="text-sm text-white/50 font-light leading-relaxed">No training with your coach today.</p>
+              <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                {dateTile}
+                <div className="flex-1 min-w-0">
+                  <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none mb-1.5">Session with coach</div>
+                  <div className="text-sm font-semibold text-white/85 leading-snug">No training with your coach today</div>
+                  <div className="text-[11px] text-white/40 font-light">Rest, recover and stay consistent</div>
+                </div>
+                <span
+                  className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
+                  style={{ color: '#6ccbde', borderColor: '#6ccbde40', backgroundColor: '#6ccbde15' }}
+                >
+                  REST DAY
+                </span>
               </div>
             )}
           </div>
