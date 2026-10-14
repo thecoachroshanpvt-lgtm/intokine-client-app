@@ -50,6 +50,8 @@ const hasAnswer = (type: ItemType, v: any) => {
   return v !== undefined && v !== '';
 };
 
+interface PendingChange { fu: FollowUp; it: TrackItem; value: any }
+
 const LEVELS = ['None', 'Mild', 'Moderate', 'Severe'];
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -173,8 +175,13 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [detail, setDetail] = useState(false); // the day-by-day popup of the consistency card
   // Same as the other popups: the page behind stays still and pull-to-refresh is off while it is open.
+  // Updates are collected first and only saved after the client confirms them in a popup.
+  const [pending, setPending] = useState<Record<string, PendingChange>>({});
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedMsg, setSavedMsg] = useState(false);
   useEffect(() => {
-    if (!detail) return;
+    if (!detail && !confirmOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     document.body.setAttribute('data-popup-open', '1');
@@ -182,7 +189,15 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       document.body.style.overflow = prev;
       document.body.removeAttribute('data-popup-open');
     };
-  }, [detail]);
+  }, [detail, confirmOpen]);
+  // The popup opens right after a change; numbers wait a moment so repeated + / - taps are not interrupted.
+  const pendingKeys = Object.keys(pending);
+  const lastIsNumber = pendingKeys.length > 0 && pending[pendingKeys[pendingKeys.length - 1]].it.type === 'number';
+  useEffect(() => {
+    if (pendingKeys.length === 0 || confirmOpen) return;
+    const t = window.setTimeout(() => setConfirmOpen(true), lastIsNumber ? 700 : 80);
+    return () => window.clearTimeout(t);
+  }, [pending, confirmOpen]);
   // Re-check the date once a minute so "today" rolls over at midnight.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -227,33 +242,76 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
   const active = followUps.filter((f) => f.active).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   const logFor = (fuId: string, freq: Freq, period: string) => logs.find((l) => l.followUpId === fuId && l.freq === freq && l.period === period);
-  const valueOf = (fu: FollowUp, it: TrackItem, d = now) => logFor(fu.id, it.freq, periodFor(it.freq, d))?.values?.[it.id];
+  const pkey = (fu: FollowUp, it: TrackItem) => `${fu.id}|${it.id}`;
+  const savedValueOf = (fu: FollowUp, it: TrackItem, d = now) => logFor(fu.id, it.freq, periodFor(it.freq, d))?.values?.[it.id];
+  // What the screen shows: the change waiting for confirmation, or else what is saved.
+  const valueOf = (fu: FollowUp, it: TrackItem, d = now) => {
+    const p = pending[pkey(fu, it)];
+    return p ? p.value : savedValueOf(fu, it, d);
+  };
+  const norm = (type: ItemType, v: any) => (type === 'tick' ? v === true : type === 'number' ? (typeof v === 'number' && v > 0 ? v : undefined) : v === '' || v === null ? undefined : v);
 
-  const setValue = async (fu: FollowUp, it: TrackItem, value: any) => {
-    const period = periodFor(it.freq, new Date());
-    const prev = logFor(fu.id, it.freq, period)?.values || {};
-    const values: Record<string, any> = { ...prev };
-    if (value === undefined || value === '') delete values[it.id];
-    else values[it.id] = value;
-    // Show it straight away; the database listener confirms it.
-    setLogs((all) => [...all.filter((l) => !(l.followUpId === fu.id && l.freq === it.freq && l.period === period)), { followUpId: fu.id, freq: it.freq, period, values }]);
+  // A change is only collected here; nothing is saved until the client confirms it.
+  const setValue = (fu: FollowUp, it: TrackItem, value: any) => {
+    setError('');
+    const k = pkey(fu, it);
+    setPending((all) => {
+      const next = { ...all };
+      delete next[k];
+      if (norm(it.type, value) !== norm(it.type, savedValueOf(fu, it))) next[k] = { fu, it, value: value === '' ? undefined : value };
+      return next;
+    });
+  };
+  const undoChanges = () => { setPending({}); setConfirmOpen(false); setError(''); };
+  const confirmSave = async () => {
+    setSaving(true);
     setError('');
     try {
       const { db } = initializeClientFirebaseApp();
       if (!db) throw new Error('offline');
-      await setDoc(doc(db, 'intokine_routine_logs', `${clientId}_${fu.id}_${it.freq}_${period}`), {
-        clientId,
-        followUpId: fu.id,
-        freq: it.freq,
-        period,
-        date: today,
-        values,
-        updatedAt: new Date().toISOString(),
+      // One database document per follow-up and how often it is asked.
+      const groups = new Map<string, { fu: FollowUp; freq: Freq; period: string; changes: { it: TrackItem; value: any }[] }>();
+      (Object.values(pending) as PendingChange[]).forEach(({ fu, it, value }) => {
+        const period = periodFor(it.freq, new Date());
+        const gk = `${fu.id}|${it.freq}|${period}`;
+        if (!groups.has(gk)) groups.set(gk, { fu, freq: it.freq, period, changes: [] });
+        groups.get(gk)!.changes.push({ it, value });
       });
+      const written: RoutineLog[] = [];
+      for (const g of Array.from(groups.values())) {
+        const values: Record<string, any> = { ...(logFor(g.fu.id, g.freq, g.period)?.values || {}) };
+        g.changes.forEach(({ it, value }) => {
+          if (value === undefined || value === '') delete values[it.id];
+          else values[it.id] = value;
+        });
+        await setDoc(doc(db, 'intokine_routine_logs', `${clientId}_${g.fu.id}_${g.freq}_${g.period}`), {
+          clientId,
+          followUpId: g.fu.id,
+          freq: g.freq,
+          period: g.period,
+          date: today,
+          values,
+          updatedAt: new Date().toISOString(),
+        });
+        written.push({ followUpId: g.fu.id, freq: g.freq, period: g.period, values });
+      }
+      // Show it straight away; the database listener confirms it.
+      setLogs((all) => [...all.filter((l) => !written.some((w) => w.followUpId === l.followUpId && w.freq === l.freq && w.period === l.period)), ...written]);
+      setPending({});
+      setConfirmOpen(false);
+      setSavedMsg(true);
+      window.setTimeout(() => setSavedMsg(false), 2500);
     } catch (e) {
       console.warn('Could not save routine:', e);
       setError('Could not save. Please check your connection and try again.');
     }
+    setSaving(false);
+  };
+  const describe = (it: TrackItem, v: any) => {
+    if (it.type === 'tick') return v === true ? '✓ Done' : 'Not done';
+    if (v === undefined || v === '' || v === null) return 'Cleared';
+    if (it.type === 'number') return `${v}${it.unit ? ' ' + it.unit : ''}`;
+    return String(v);
   };
 
   // Supplements are ticked in the Diet tab, not here.
@@ -448,6 +506,37 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             {todayDone === dailyItems.length ? 'Great work, today is complete.' : todayDone === 0 ? 'Start with the first item below.' : 'Keep going, you are on your way.'}
           </div>
         </div>
+      )}
+
+      {savedMsg && (
+        <div className="fixed left-0 right-0 bottom-28 z-40 flex justify-center pointer-events-none">
+          <span className="px-4 py-2 rounded-full bg-emerald-500 text-black text-xs font-bold shadow-lg">Update saved</span>
+        </div>
+      )}
+
+      {confirmOpen && createPortal(
+        <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5">
+          <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-4 border-b border-white/[0.08]">
+              <div className="text-sm font-semibold text-white">Confirm your update</div>
+              <div className="text-[11px] text-white/40">Check it and confirm to save</div>
+            </div>
+            <div className="overflow-y-auto p-4 space-y-2" style={{ overscrollBehavior: 'contain' }}>
+              {(Object.values(pending) as PendingChange[]).map(({ fu, it, value }) => (
+                <div key={fu.id + it.id} className="flex items-start justify-between gap-3 text-xs">
+                  <span className="text-white/70 min-w-0">{it.label}</span>
+                  <span className={`font-bold text-right min-w-0 break-words ${it.type === 'tick' && value !== true ? 'text-white/40' : 'text-white'}`}>{describe(it, value)}</span>
+                </div>
+              ))}
+              {error && <p className="text-xs text-[#ec2226] pt-1">{error}</p>}
+            </div>
+            <div className="p-3 border-t border-white/[0.08] flex items-center gap-2">
+              <button type="button" disabled={saving} onClick={undoChanges} className="flex-1 py-2.5 rounded-xl border border-white/[0.12] text-xs font-bold text-white/70">Cancel</button>
+              <button type="button" disabled={saving} onClick={confirmSave} className="flex-[2] py-2.5 rounded-xl bg-[#ec2226] disabled:opacity-60 text-white text-xs font-bold">{saving ? 'Saving...' : 'Confirm & save'}</button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
 
       {detail && createPortal(
