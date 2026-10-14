@@ -85,29 +85,6 @@ const PHASE_ORDER = ['Warmup', 'Main', 'Cooldown'] as const;
 const phaseGroup = (ex: TrainerizeExercise): (typeof PHASE_ORDER)[number] => (ex.phase === 'Warmup' ? 'Warmup' : ex.phase === 'Cooldown' ? 'Cooldown' : 'Main');
 const PHASE_TITLE: Record<string, string> = { Warmup: 'Warm-up', Main: 'Exercises', Cooldown: 'Cool down' };
 
-const ProgressRing: React.FC<{ done: number; total: number }> = ({ done, total }) => {
-  const pct = total > 0 ? done / total : 0;
-  const r = 24;
-  const c = 2 * Math.PI * r;
-  const complete = total > 0 && done === total;
-  return (
-    <div className="relative w-[60px] h-[60px] shrink-0">
-      <svg viewBox="0 0 60 60" className="w-full h-full -rotate-90">
-        <circle cx="30" cy="30" r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="5" />
-        <circle
-          cx="30" cy="30" r={r} fill="none"
-          stroke={complete ? '#34d399' : '#6ccbde'} strokeWidth="5" strokeLinecap="round"
-          strokeDasharray={c} strokeDashoffset={c * (1 - pct)}
-          style={{ transition: 'stroke-dashoffset 400ms ease, stroke 300ms ease' }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="font-mono text-[15px] font-bold text-white">{done}<span className="text-white/40">/{total}</span></span>
-      </div>
-    </div>
-  );
-};
-
 export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack, onMarkedComplete }) => {
   const [completedExerciseIds, setCompletedExerciseIds] = useState<Set<string>>(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
@@ -124,8 +101,11 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
 
   const exercises = workout.structuredExercises || [];
   const allExercisesDone = exercises.length > 0 && exercises.every((ex) => completedExerciseIds.has(ex.id));
-  const doneCount = alreadyDone ? exercises.length : exercises.filter((ex) => completedExerciseIds.has(ex.id)).length;
+  const isDoneId = (id: string) => alreadyDone || completedExerciseIds.has(id);
+  const doneCount = exercises.filter((ex) => isDoneId(ex.id)).length;
   const realCount = exercises.filter((ex) => !ex.isStretchReminder).length;
+  // The first exercise not ticked yet is the one the client is on.
+  const upNextId = alreadyDone ? '' : exercises.find((ex) => !ex.isStretchReminder && !completedExerciseIds.has(ex.id))?.id || '';
 
   const handleMarkWorkoutComplete = async () => {
     setMarkingComplete(true);
@@ -148,6 +128,11 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
 
   const groups = PHASE_ORDER.map((p) => ({ phase: p, items: exercises.filter((ex) => phaseGroup(ex) === p) })).filter((g) => g.items.length > 0);
   const showPhaseTitles = groups.length > 1;
+  const meta = [
+    workout.durationMinutes ? `${workout.durationMinutes} min` : '',
+    realCount ? `${realCount} exercises` : '',
+    workout.rpeTarget ? `RPE ${workout.rpeTarget}` : '',
+  ].filter(Boolean);
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-2xl mx-auto">
@@ -157,171 +142,182 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
       </button>
 
       {/* Hero */}
-      <div className="rounded-3xl p-5 mb-5" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide">Suggested Workout</span>
-              {alreadyDone && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">✓ Completed</span>
-              )}
-            </div>
-            <h1 className="font-header text-[32px] leading-[1.05] text-white uppercase break-words">{workout.planTitle}</h1>
-            <div className="text-[12px] text-white/50 mt-2">From Coach <span className="text-white/80 font-semibold">{workout.coachName}</span></div>
+      <div className="rounded-3xl px-5 pt-5 pb-5 mb-7" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide">Suggested Workout</span>
+          {alreadyDone && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">✓ Completed</span>}
+        </div>
+        <h1 className="font-header text-[40px] leading-[1] text-white uppercase break-words">{workout.planTitle}</h1>
+        {meta.length > 0 && (
+          <div className="mt-3 flex items-center gap-2 flex-wrap font-subheader text-[14px] uppercase tracking-wide text-white/70">
+            {meta.map((m, i) => (
+              <React.Fragment key={m}>
+                {i > 0 && <span className="w-1 h-1 rounded-full bg-white/25" />}
+                <span>{m}</span>
+              </React.Fragment>
+            ))}
           </div>
-          {exercises.length > 0 && <ProgressRing done={doneCount} total={exercises.length} />}
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          {[
-            { label: 'Duration', value: workout.durationMinutes ? String(workout.durationMinutes) : '–', unit: workout.durationMinutes ? 'min' : '' },
-            { label: 'Exercises', value: String(realCount || exercises.length || '–'), unit: '' },
-            { label: 'Target RPE', value: workout.rpeTarget ? String(workout.rpeTarget) : '–', unit: workout.rpeTarget ? '/10' : '' },
-          ].map((t) => (
-            <div key={t.label} className="rounded-2xl bg-black/20 px-3 py-2.5 text-center">
-              <div className="font-mono text-[22px] font-bold text-white leading-none">{t.value}<span className="text-[11px] font-medium text-white/40 ml-0.5">{t.unit}</span></div>
-              <div className="text-[9px] font-bold uppercase tracking-wider text-white/40 mt-1.5">{t.label}</div>
-            </div>
-          ))}
-        </div>
-
+        )}
         {(workout.category || workout.targetFocus) && (
-          <div className="flex items-center gap-1.5 flex-wrap mt-3.5">
-            {workout.category && <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-white/[0.08] text-white/70">{workout.category}</span>}
-            {workout.targetFocus && <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-[#6ccbde]/15 text-[#6ccbde]">{workout.targetFocus}</span>}
+          <div className="mt-1.5 text-[12px] text-white/45">{[workout.category, workout.targetFocus].filter(Boolean).join(' · ')}</div>
+        )}
+
+        {exercises.length > 0 && (
+          <div className="mt-5">
+            <div className="flex gap-1">
+              {exercises.map((ex) => (
+                <span key={ex.id} className={`h-1 flex-1 rounded-full transition-colors duration-300 ${isDoneId(ex.id) ? (doneCount === exercises.length ? 'bg-emerald-400' : 'bg-[#6ccbde]') : 'bg-white/[0.12]'}`} />
+              ))}
+            </div>
+            <div className="flex items-center justify-between mt-2 text-[11px] text-white/45">
+              <span>From Coach <span className="text-white/75 font-semibold">{workout.coachName}</span></span>
+              <span><span className="font-mono text-white/80">{doneCount}</span> of <span className="font-mono">{exercises.length}</span> done</span>
+            </div>
           </div>
         )}
 
         {workout.coachSessionNotes && (
-          <div className="mt-3.5 rounded-2xl bg-black/20 p-3.5 flex gap-2.5">
+          <div className="mt-4 flex gap-2.5">
             <div className="w-[3px] rounded-full bg-[#6ccbde] shrink-0" />
-            <div className="min-w-0">
-              <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider block mb-1">Coach's note</span>
-              <p className="text-[12px] text-white/80 leading-relaxed">{workout.coachSessionNotes}</p>
-            </div>
+            <p className="text-[12px] text-white/75 leading-relaxed italic">"{workout.coachSessionNotes}"</p>
           </div>
         )}
       </div>
 
       {exercises.length === 0 ? (
-        <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-6 text-center">
+        <div className="bg-[#252525] rounded-2xl p-6 text-center">
           <p className="text-sm text-white/50 leading-relaxed">
             {workout.planDetails || 'Your coach hasn’t added exercise details yet - do the session as briefed.'}
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-7">
           {groups.map((g) => {
             const realInGroup = g.items.filter((e) => !e.isStretchReminder);
             return (
-              <section key={g.phase} className="space-y-2.5">
+              <section key={g.phase}>
                 {showPhaseTitles && (
-                  <h2 className="font-subheader text-[13px] uppercase tracking-[0.12em] text-[#6ccbde] px-1">{PHASE_TITLE[g.phase]}</h2>
+                  <div className="flex items-center gap-3 mb-3">
+                    <h2 className="font-subheader text-[13px] uppercase tracking-[0.14em] text-[#6ccbde]">{PHASE_TITLE[g.phase]}</h2>
+                    <div className="flex-1 h-px bg-white/[0.08]" />
+                  </div>
                 )}
-                {g.items.map((ex) => {
-                  const isDone = alreadyDone || completedExerciseIds.has(ex.id);
+                <div className="relative space-y-2.5">
+                  {/* the rail the exercises hang on */}
+                  <div className="absolute left-[17px] top-5 bottom-5 w-px bg-white/[0.1]" />
+                  {g.items.map((ex) => {
+                    const isDone = isDoneId(ex.id);
 
-                  if (ex.isStretchReminder) {
+                    if (ex.isStretchReminder) {
+                      return (
+                        <button key={ex.id} onClick={() => toggleExerciseDone(ex.id)} className="relative w-full pl-12 text-left block">
+                          <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold ${isDone ? 'bg-emerald-500 text-[#0b0c10]' : 'bg-[#252525] text-[#6ccbde]'}`}>{isDone ? '✓' : '✦'}</span>
+                          <span className={`block rounded-2xl px-4 py-3.5 bg-[#252525] font-subheader text-[16px] leading-tight ${isDone ? 'text-white/45' : 'text-white'}`}>{ex.name}</span>
+                        </button>
+                      );
+                    }
+
+                    const idx = realInGroup.findIndex((e) => e.id === ex.id) + 1;
+                    const first = ex.sets[0];
+                    const withTempo = ex.sets.some((s) => !!s.tempo);
+                    const multi = ex.sets.length > 1;
+                    const headCells = first ? setCells(ex, first, withTempo) : [];
+                    const cols = `${multi ? '2rem ' : ''}repeat(${Math.max(headCells.length, 1)}, minmax(0, 1fr))`;
+                    const isNext = ex.id === upNextId;
                     return (
-                      <button
-                        key={ex.id}
-                        onClick={() => toggleExerciseDone(ex.id)}
-                        className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left border transition ${isDone ? 'bg-emerald-500/10 border-emerald-500/25' : 'bg-[#252525] border-white/[0.06]'}`}
-                      >
-                        <span className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-[13px] font-bold ${isDone ? 'bg-emerald-500 text-[#0b0c10]' : 'bg-white/[0.08] text-[#6ccbde]'}`}>{isDone ? '✓' : '✦'}</span>
-                        <span className={`font-subheader text-[16px] leading-tight ${isDone ? 'text-white/50' : 'text-white'}`}>{ex.name}</span>
-                      </button>
-                    );
-                  }
-
-                  const idx = realInGroup.findIndex((e) => e.id === ex.id) + 1;
-                  const first = ex.sets[0];
-                  const withTempo = ex.sets.some((s) => !!s.tempo);
-                  const multi = ex.sets.length > 1;
-                  const colCount = (ex.sets[0] ? setCells(ex, ex.sets[0], withTempo).length : 0);
-                  const cols = `${multi ? '2.25rem ' : ''}repeat(${Math.max(colCount, 1)}, minmax(0, 1fr))`;
-                  const headCells = ex.sets[0] ? setCells(ex, ex.sets[0], withTempo) : [];
-                  return (
-                    <React.Fragment key={ex.id}>
-                      <div className={`rounded-2xl border overflow-hidden transition ${isDone ? 'bg-emerald-500/[0.07] border-emerald-500/25' : 'bg-[#252525] border-white/[0.06]'}`}>
-                        {/* Header - tap to tick the exercise off */}
-                        <button onClick={() => toggleExerciseDone(ex.id)} className="w-full text-left flex items-center gap-3 p-4">
-                          <span
-                            className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-mono font-bold text-[15px] transition ${
-                              isDone ? 'bg-emerald-500 text-[#0b0c10]' : 'bg-[#6ccbde] text-[#0b0c10]'
+                      <React.Fragment key={ex.id}>
+                        <div className="relative pl-12">
+                          <button
+                            onClick={() => toggleExerciseDone(ex.id)}
+                            aria-label={isDone ? 'Mark as not done' : 'Mark as done'}
+                            className={`absolute left-0 top-3 w-9 h-9 rounded-full flex items-center justify-center font-mono font-bold text-[15px] transition ${
+                              isDone ? 'bg-emerald-500 text-[#0b0c10]' : isNext ? 'bg-[#6ccbde] text-[#0b0c10] shadow-[0_0_0_5px_rgba(108,203,222,0.18)]' : 'bg-[#252525] text-white/70'
                             }`}
                           >
                             {isDone ? '✓' : idx}
-                          </span>
-                          <span className="flex-1 min-w-0">
-                            <span className="flex items-center gap-2 flex-wrap">
-                              {ex.supersetTag && <span className="text-[9px] font-bold text-[#6ccbde] bg-[#6ccbde]/10 px-1.5 py-0.5 rounded">{ex.supersetTag}</span>}
-                              <span className={`font-subheader text-[19px] leading-tight break-words ${isDone ? 'text-white/50' : 'text-white'}`}>{ex.name}</span>
-                            </span>
-                            {(ex.targetMuscle || ex.equipment) && (
-                              <span className="block text-[11px] text-white/40 mt-0.5">{[ex.targetMuscle, ex.equipment].filter(Boolean).join(' · ')}</span>
-                            )}
-                          </span>
-                          <span className="shrink-0 text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded-full bg-white/[0.06] text-white/45">{TYPE_LABEL[ex.exerciseType || 'Weighted']}</span>
-                        </button>
+                          </button>
 
-                        {/* Targets */}
-                        {ex.sets.length > 0 && (
-                          <div className="px-4 pb-4">
-                            <div className="rounded-xl bg-black/20 px-2 py-2.5 space-y-1.5">
-                              <div className="grid items-center text-center" style={{ gridTemplateColumns: cols }}>
-                                {multi && <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">Set</span>}
-                                {headCells.map((c) => (
-                                  <span key={c.label} className="text-[9px] font-bold uppercase tracking-wider text-white/40">{c.label}</span>
-                                ))}
+                          <div className={`rounded-2xl p-4 transition ${isDone ? 'bg-[#252525]/60' : 'bg-[#252525]'}`}>
+                            <button onClick={() => toggleExerciseDone(ex.id)} className="w-full text-left">
+                              {isNext && <span className="block font-subheader text-[11px] uppercase tracking-[0.14em] text-[#6ccbde] mb-0.5">Up next</span>}
+                              <span className="flex items-start gap-2 flex-wrap">
+                                {ex.supersetTag && <span className="text-[9px] font-bold text-[#6ccbde] bg-[#6ccbde]/10 px-1.5 py-0.5 rounded mt-1.5">{ex.supersetTag}</span>}
+                                <span className={`font-subheader text-[22px] leading-[1.1] break-words ${isDone ? 'text-white/45 line-through decoration-white/30' : 'text-white'}`}>{ex.name}</span>
+                              </span>
+                              <span className="block text-[11px] text-white/40 mt-1">
+                                {[TYPE_LABEL[ex.exerciseType || 'Weighted'], ex.targetMuscle, ex.equipment].filter(Boolean).join(' · ')}
+                              </span>
+                            </button>
+
+                            {/* Targets */}
+                            {ex.sets.length > 0 && (
+                              <div className={`mt-4 ${isDone ? 'opacity-50' : ''}`}>
+                                {!multi ? (
+                                  <div className="flex items-stretch">
+                                    {headCells.map((c, i) => (
+                                      <div key={c.label} className={`flex-1 min-w-0 ${i > 0 ? 'pl-4 ml-4 border-l border-white/[0.1]' : ''}`}>
+                                        <div className={`font-mono text-[30px] font-bold leading-none truncate ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
+                                          {c.value}
+                                          {c.unit && c.value !== '–' && <span className="text-[12px] font-medium text-white/40 ml-1">{c.unit}</span>}
+                                        </div>
+                                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40 mt-1.5">{c.label}</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    <div className="grid items-center text-center" style={{ gridTemplateColumns: cols }}>
+                                      <span className="text-[9px] font-bold uppercase tracking-wider text-white/30">Set</span>
+                                      {headCells.map((c) => (
+                                        <span key={c.label} className="text-[9px] font-bold uppercase tracking-wider text-white/40">{c.label}</span>
+                                      ))}
+                                    </div>
+                                    {ex.sets.map((s, sIdx) => (
+                                      <div key={s.id || sIdx} className="grid items-center text-center rounded-xl bg-white/[0.04] py-2" style={{ gridTemplateColumns: cols }}>
+                                        <span className="font-mono text-[12px] text-white/40">{s.setType !== 'Working' ? s.setType[0] : s.setNumber || sIdx + 1}</span>
+                                        {setCells(ex, s, withTempo).map((c) => (
+                                          <span key={c.label} className={`font-mono text-[18px] font-semibold leading-tight truncate px-1 ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
+                                            {c.value}
+                                            {c.unit && c.value !== '–' && <span className="text-[10px] font-medium text-white/40 ml-0.5">{c.unit}</span>}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              {ex.sets.map((s, sIdx) => (
-                                <div key={s.id || sIdx} className="grid items-center text-center" style={{ gridTemplateColumns: cols }}>
-                                  {multi && (
-                                    <span className="font-mono text-[12px] text-white/35">{s.setType !== 'Working' ? s.setType[0] : s.setNumber || sIdx + 1}</span>
-                                  )}
-                                  {setCells(ex, s, withTempo).map((c) => (
-                                    <span key={c.label} className={`font-mono text-[19px] font-semibold leading-tight truncate px-1 ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
-                                      {c.value}
-                                      {c.unit && c.value !== '–' && <span className="text-[10px] font-medium text-white/40 ml-0.5">{c.unit}</span>}
-                                    </span>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                            )}
 
-                        {ex.coachCues && (
-                          <div className="px-4 pb-4 -mt-1">
-                            <div className="flex gap-2.5">
-                              <div className="w-[3px] rounded-full bg-[#ec2226]/70 shrink-0" />
-                              <p className="text-[12px] text-white/60 leading-relaxed">{ex.coachCues}</p>
-                            </div>
+                            {ex.coachCues && (
+                              <div className="mt-4 flex gap-2.5">
+                                <div className="w-[3px] rounded-full bg-[#ec2226]/70 shrink-0" />
+                                <p className="text-[12px] text-white/60 leading-relaxed">{ex.coachCues}</p>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
 
-                      {/* Rest (left) and Sets (right) sit between this exercise and the next */}
-                      {(first?.setsCount || first?.restSeconds) ? (
-                        <div className="flex items-center justify-between gap-2 px-1">
-                          <span className="min-w-0">
-                            {first?.restSeconds ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">
-                                Rest <span className="font-mono">{first.restSeconds}</span>s
+                        {/* Rest (left) and Sets (right) sit between this exercise and the next */}
+                        {(first?.setsCount || first?.restSeconds) ? (
+                          <div className="relative pl-12 flex items-center justify-between gap-2">
+                            <span className="min-w-0">
+                              {first?.restSeconds ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">
+                                  Rest <span className="font-mono">{first.restSeconds}</span>s
+                                </span>
+                              ) : null}
+                            </span>
+                            {first?.setsCount ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold shrink-0">
+                                <span className="font-mono">{first.setsCount}</span> Sets
                               </span>
                             ) : null}
-                          </span>
-                          {first?.setsCount ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold shrink-0">
-                              <span className="font-mono">{first.setsCount}</span> Sets
-                            </span>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </React.Fragment>
-                  );
-                })}
+                          </div>
+                        ) : null}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
               </section>
             );
           })}
@@ -329,11 +325,10 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
       )}
 
       {!alreadyDone && (
-        <div className="mt-6">
+        <div className="mt-7">
           {exercises.length > 0 && (
-            <div className="flex items-center justify-between text-[11px] text-white/45 mb-2 px-1">
-              <span>{allExercisesDone ? 'All done - nice work' : 'Tap each exercise as you finish it'}</span>
-              <span className="font-mono">{doneCount}/{exercises.length}</span>
+            <div className="text-[11px] text-white/45 mb-2 px-1 text-center">
+              {allExercisesDone ? 'All done - nice work' : 'Tap the number beside each exercise when you finish it'}
             </div>
           )}
           <button
