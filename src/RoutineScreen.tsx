@@ -383,12 +383,29 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </button>
         {open === freq && (
           <div className="px-4 pb-4 space-y-4 border-t border-white/[0.06] pt-4">
-            {list.map(({ fu, it }) => (
-              <div key={fu.id + it.id}>
-                <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}{it.detail ? <span className="normal-case font-normal text-white/50"> · {it.detail}</span> : null}</div>
-                {control(fu, it)}
-              </div>
-            ))}
+            {list.map(({ fu, it }) => {
+              // Habits are one tappable row: the tick circle, then the habit and its note.
+              if (it.type === 'tick') {
+                const on = valueOf(fu, it) === true;
+                return (
+                  <button key={fu.id + it.id} type="button" onClick={() => setValue(fu, it, on ? false : true)} aria-pressed={on}
+                    className={`w-full flex items-center gap-3 text-left rounded-xl border px-3.5 py-3 transition ${on ? 'border-emerald-500/40 bg-emerald-500/[0.06]' : 'border-white/[0.08] bg-white/[0.03]'}`}>
+                    <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${on ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent ik-nudge'}`} aria-hidden>✓</span>
+                    <span className="min-w-0 flex-1">
+                      <span className={`block text-sm font-semibold ${on ? 'text-white/50' : 'text-white'}`}>{it.label}</span>
+                      {it.detail ? <span className="block text-[11px] text-white/45 font-light">{it.detail}</span> : null}
+                    </span>
+                    <span className={`text-[10px] font-semibold shrink-0 ${on ? 'text-emerald-400' : 'text-white/35'}`}>{on ? 'Done' : 'Tap when done'}</span>
+                  </button>
+                );
+              }
+              return (
+                <div key={fu.id + it.id}>
+                  <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}{it.detail ? <span className="normal-case font-normal text-white/50"> · {it.detail}</span> : null}</div>
+                  {control(fu, it)}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
