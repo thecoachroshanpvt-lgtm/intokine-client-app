@@ -106,7 +106,7 @@ export const CurriculumScreen: React.FC<CurriculumScreenProps> = ({ clientId, pr
                     >
                       EPISODE {ep.episodeNumber}
                     </span>
-                    <div className="text-sm font-semibold text-white mt-1.5">{ep.episodeTitle}</div>
+                    <div className="font-subheader text-[17px] text-white mt-1.5">{ep.episodeTitle}</div>
                     <div className="text-xs text-white/50 font-light mt-0.5">
                       {ep.goal && <span>{ep.goal} · </span>}
                       {ep.skillGoal && <span>{ep.skillGoal} · </span>}
