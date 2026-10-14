@@ -16,7 +16,7 @@ import {
 } from './firebase';
 import { createPortal } from 'react-dom';
 import { TrainingScreen } from './TrainingScreen';
-import { SuggestedWorkoutCard, SESSION_CARD_STYLE } from './SuggestedWorkoutCard';
+import { SuggestedWorkoutCard, CardSketch } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
 import { PasswordInput } from './PasswordInput';
 
@@ -617,7 +617,8 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
               const movedTo = movedAway ? parseDateKey(s.date) : null;
               const movedTime = movedAway ? formatTime(s.time) : null;
               return (
-                <div key={s.id} className="border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3" style={SESSION_CARD_STYLE}>
+                <div key={s.id} className="relative overflow-hidden bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                  <CardSketch kind="session" />
                   <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
                     <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
                       {sd ? sd.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
