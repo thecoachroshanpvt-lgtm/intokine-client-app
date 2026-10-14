@@ -143,8 +143,10 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     const unsub = onSnapshot(
       query(collection(db, 'intokine_nutrition_plans'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
       (snap) => {
-        const first = snap.docs[0];
-        setPlan(first ? (first.data() as DietPlan) : null);
+        // If an older copy of the plan is still stored, show the newest one (plan ids carry their creation time).
+        const stamp = (d: any) => Number(String(d.id || '').split('-')[1]) || 0;
+        const newest = [...snap.docs].sort((a, b) => stamp(b) - stamp(a) || String(b.data().lastUpdated || '').localeCompare(String(a.data().lastUpdated || '')))[0];
+        setPlan(newest ? (newest.data() as DietPlan) : null);
         setLoading(false);
       },
       (err) => {
