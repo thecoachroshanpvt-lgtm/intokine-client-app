@@ -509,14 +509,22 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </div>
       )}
 
-      {pendingKeys.length > 0 && !confirmOpen && (
-        <div className="fixed left-0 right-0 bottom-24 z-40 flex justify-center px-5 pointer-events-none">
-          <div className="pointer-events-auto w-full max-w-sm flex items-center gap-3 rounded-2xl bg-[#252525] border border-white/[0.12] shadow-lg pl-4 pr-2 py-2">
-            <span className="flex-1 text-xs text-white/70">{pendingKeys.length} unsaved {pendingKeys.length === 1 ? 'change' : 'changes'}</span>
-            <button type="button" onClick={undoChanges} className="px-3 py-2 text-xs font-bold text-white/50">Undo</button>
-            <button type="button" onClick={() => setConfirmOpen(true)} className="px-4 py-2 rounded-xl bg-[#ec2226] text-white text-xs font-bold">Review & save</button>
+      {pendingKeys.length > 0 && !confirmOpen && createPortal(
+        <div className="fixed left-0 right-0 z-[100] flex justify-center px-4 pointer-events-none" style={{ bottom: 'calc(84px + env(safe-area-inset-bottom))' }}>
+          <div className="anim-card pointer-events-auto w-full max-w-md rounded-2xl bg-[#1c1c1c] border border-[#ec2226]/50 shadow-2xl p-3">
+            <div className="flex items-center justify-between gap-3 mb-2.5 px-1">
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-white">{pendingKeys.length} unsaved {pendingKeys.length === 1 ? 'change' : 'changes'}</div>
+                <div className="text-[11px] text-white/45 truncate">{(Object.values(pending) as PendingChange[]).map((c) => c.it.label).join(', ')}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={undoChanges} className="flex-1 py-2.5 rounded-xl border border-white/[0.12] text-xs font-bold text-white/70">Undo</button>
+              <button type="button" onClick={() => setConfirmOpen(true)} className="flex-[2] py-2.5 rounded-xl bg-[#ec2226] text-white text-xs font-bold">Review & save</button>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {savedMsg && (
