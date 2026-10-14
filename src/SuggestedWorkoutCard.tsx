@@ -1,8 +1,7 @@
 import React from 'react';
 
-// The suggested workout card shown on Home / Plans / Schedule - the brand gradient card, no background picture.
-const BRAND = 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))';
-
+// The suggested workout card shown on Home / Plans / Schedule: a dark card with a coloured accent bar on its left edge
+// (cyan while to do, green once done). No gradient and no picture.
 interface Props {
   title: string;
   label: string;          // small line above the title, e.g. "Do it yourself"
@@ -17,9 +16,9 @@ export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done
     <button
       type="button"
       onClick={onClick}
-      className={`w-full text-left rounded-2xl p-4 flex items-center gap-3 border border-transparent transition active:scale-[0.99] ${done ? '' : 'ik-nudge-box'}`}
-      style={{ background: BRAND }}
+      className={`relative overflow-hidden w-full text-left rounded-2xl py-4 pl-5 pr-4 flex items-center gap-3 bg-[#252525] border border-white/[0.06] transition active:scale-[0.99] ${done ? '' : 'ik-nudge-box'}`}
     >
+      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ backgroundColor: done ? '#34d399' : '#6ccbde' }} />
       <div className="flex-1 min-w-0">
         <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">{label}</div>
         <div className="font-subheader text-[19px] text-white mt-1.5 truncate">{title}</div>
