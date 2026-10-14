@@ -17,6 +17,7 @@ import {
 import { createPortal } from 'react-dom';
 import { TrainingScreen } from './TrainingScreen';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
+import { OverallProgressCard } from './OverallProgressCard';
 import { InlineLoader } from './InlineLoader';
 import { PasswordInput } from './PasswordInput';
 
@@ -696,6 +697,9 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
           </>
         );
       })()}
+
+      {/* Overall consistency: diet, routine, session attendance and suggested workouts */}
+      <OverallProgressCard clientId={clientId} startDate={startDate} plans={plans} sessions={allSessionsList} />
 
       {/* Testimonials - auto-scrolling approved client feedback + a form to share your own */}
       <Testimonials clientId={clientId} clientName={clientName} />
