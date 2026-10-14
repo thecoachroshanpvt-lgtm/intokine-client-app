@@ -11,7 +11,7 @@ function buildWhatsAppLink(contact: string): string {
 }
 
 const MEAL_TIME_ICONS: Record<string, string> = {
-  'Early Morning': '🌅',
+  'Early Morning': '🍋',
   'Breakfast': '🍳',
   'Mid-Morning Snack': '🍎',
   'Pre-Workout': '⚡',
