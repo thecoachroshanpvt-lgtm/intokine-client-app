@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
 
 interface TrainerizeSet {
@@ -82,30 +83,84 @@ const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean):
   return cells;
 };
 
-// Demonstration video. Shows a ready space until a video link is added to the exercise.
-const DemoVideo: React.FC<{ url?: string; name: string; dim?: boolean }> = ({ url, name, dim }) => {
-  const yt = url ? url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/) : null;
+// Demonstration video. A small thumbnail on the exercise card; tapping it opens the video in a big popup.
+// Until a video link is added to the exercise, the thumbnail and popup show a "coming soon" space.
+const youtubeId = (url?: string) => {
+  const m = url ? url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/) : null;
+  return m ? m[1] : '';
+};
+
+const PlayBadge: React.FC<{ size?: string }> = ({ size = 'w-8 h-8' }) => (
+  <span className={`${size} rounded-full bg-black/55 flex items-center justify-center`}>
+    <svg viewBox="0 0 24 24" className="w-1/2 h-1/2 ml-0.5 text-white" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+  </span>
+);
+
+const VideoThumb: React.FC<{ url?: string; name: string; dim?: boolean; onOpen: () => void }> = ({ url, name, dim, onOpen }) => {
+  const yt = youtubeId(url);
   return (
-    <div className={`mt-4 relative w-full overflow-hidden rounded-xl bg-black/30 ${dim ? 'opacity-50' : ''}`} style={{ aspectRatio: '16 / 9' }}>
-      {url && yt ? (
-        <iframe
-          src={`https://www.youtube.com/embed/${yt[1]}?rel=0&playsinline=1`}
-          title={`${name} demonstration`}
-          allow="encrypted-media; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0 w-full h-full border-0"
-        />
+    <button
+      type="button"
+      onClick={onOpen}
+      aria-label={`Watch ${name} demonstration`}
+      className={`relative shrink-0 w-[88px] h-[66px] rounded-xl overflow-hidden bg-black/30 flex items-center justify-center ${dim ? 'opacity-50' : ''}`}
+    >
+      {yt ? (
+        <img src={`https://img.youtube.com/vi/${yt}/hqdefault.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
       ) : url ? (
-        <video src={url} controls playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover bg-black" />
-      ) : (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <span className="w-12 h-12 rounded-full bg-white/[0.08] flex items-center justify-center">
-            <svg viewBox="0 0 24 24" className="w-5 h-5 ml-0.5 text-white/60" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
-          </span>
-          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/35">Demo video coming soon</span>
+        <video src={`${url}#t=0.5`} muted playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+      ) : null}
+      <span className="relative flex flex-col items-center gap-1">
+        <PlayBadge />
+        {!url && <span className="text-[8px] font-bold uppercase tracking-[0.14em] text-white/40">Demo</span>}
+      </span>
+    </button>
+  );
+};
+
+const VideoPopup: React.FC<{ url?: string; name: string; onClose: () => void }> = ({ url, name, onClose }) => {
+  const yt = youtubeId(url);
+  // Same as the other popups in the app: the page behind stays still and pull-to-refresh is off while it is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => {
+      document.body.style.overflow = prev;
+      document.body.removeAttribute('data-popup-open');
+    };
+  }, []);
+  return createPortal(
+    <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
+      <div data-no-pull className="anim-card w-full max-w-md bg-[#1c1c1c] border border-white/[0.1] rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="min-w-0">
+            <div className="font-subheader text-[18px] text-white leading-tight truncate">{name}</div>
+            <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#6ccbde] mt-0.5">Demonstration</div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="w-8 h-8 shrink-0 rounded-full bg-white/[0.08] text-white/70 hover:text-white flex items-center justify-center text-sm">✕</button>
         </div>
-      )}
-    </div>
+        <div className="relative w-full bg-black" style={{ aspectRatio: '16 / 9' }}>
+          {yt ? (
+            <iframe
+              src={`https://www.youtube.com/embed/${yt}?rel=0&playsinline=1&autoplay=1`}
+              title={`${name} demonstration`}
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 w-full h-full border-0"
+            />
+          ) : url ? (
+            <video src={url} controls autoPlay playsInline className="absolute inset-0 w-full h-full object-contain bg-black" />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#252525]">
+              <PlayBadge size="w-14 h-14" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-white/40">Demo video coming soon</span>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 };
 
@@ -117,6 +172,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
   const [completedExerciseIds, setCompletedExerciseIds] = useState<Set<string>>(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(!!workout.clientCompletedAt);
+  const [videoEx, setVideoEx] = useState<TrainerizeExercise | null>(null);
 
   const toggleExerciseDone = (id: string) => {
     setCompletedExerciseIds((prev) => {
@@ -266,7 +322,8 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                           </button>
 
                           <div className={`rounded-2xl p-4 transition ${isDone ? 'bg-[#252525]/60' : 'bg-[#252525]'}`}>
-                            <button onClick={() => toggleExerciseDone(ex.id)} className="w-full text-left">
+                            <div className="flex items-start gap-3">
+                            <button onClick={() => toggleExerciseDone(ex.id)} className="flex-1 min-w-0 text-left">
                               {isNext && <span className="block font-subheader text-[11px] uppercase tracking-[0.14em] text-[#6ccbde] mb-0.5">Up next</span>}
                               <span className="flex items-start gap-2 flex-wrap">
                                 {ex.supersetTag && <span className="text-[9px] font-bold text-[#6ccbde] bg-[#6ccbde]/10 px-1.5 py-0.5 rounded mt-1.5">{ex.supersetTag}</span>}
@@ -276,8 +333,8 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                                 {[TYPE_LABEL[ex.exerciseType || 'Weighted'], ex.targetMuscle, ex.equipment].filter(Boolean).join(' · ')}
                               </span>
                             </button>
-
-                            <DemoVideo url={ex.videoUrl} name={ex.name} dim={isDone} />
+                            <VideoThumb url={ex.videoUrl} name={ex.name} dim={isDone} onOpen={() => setVideoEx(ex)} />
+                            </div>
 
                             {/* Targets */}
                             {ex.sets.length > 0 && (
@@ -375,6 +432,8 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
           </button>
         </div>
       )}
+
+      {videoEx && <VideoPopup url={videoEx.videoUrl} name={videoEx.name} onClose={() => setVideoEx(null)} />}
     </div>
   );
 };
