@@ -108,15 +108,15 @@ const MeterControl: React.FC<{ item: TrackItem; options: string[]; value?: strin
           onPointerUp={(e) => { const k = indexAt(e.clientX); setDrag(null); if (k !== sel) onChange(opts[k]); }}
           onPointerCancel={() => setDrag(null)}
         >
-          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-2 rounded-full bg-white/[0.08]" />
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-2 rounded-full"
-            style={{ width: `${shown >= 0 ? pct(shown) : 0}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)', transition: drag !== null ? 'none' : 'width 0.15s ease-out' }} />
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-[3px] rounded-full bg-white/[0.14]" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] rounded-full"
+            style={{ width: `${shown >= 0 ? pct(shown) : 0}%`, background: '#6ccbde', transition: drag !== null ? 'none' : 'width 0.15s ease-out' }} />
           {opts.map((o, i) => (
-            <span key={o} className="absolute top-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white/25" style={{ left: `${pct(i)}%`, marginLeft: -2 }} />
+            <span key={o} className="absolute top-1/2 -translate-y-1/2 w-[5px] h-[5px] rounded-full bg-[#1c1c1c] border border-white/25" style={{ left: `${pct(i)}%`, marginLeft: -2.5 }} />
           ))}
           <div
-            className="absolute top-1/2 w-6 h-6 rounded-full bg-white shadow-lg"
-            style={{ left: `${pct(shown >= 0 ? shown : 0)}%`, transform: 'translate(-50%, -50%)', boxShadow: '0 0 0 4px rgba(108,203,222,0.25)', opacity: shown >= 0 ? 1 : 0.5, transition: drag !== null ? 'none' : 'left 0.15s ease-out' }}
+            className="absolute top-1/2 w-[18px] h-[18px] rounded-full bg-white"
+            style={{ left: `${pct(shown >= 0 ? shown : 0)}%`, transform: 'translate(-50%, -50%)', opacity: shown >= 0 ? 1 : 0.5, transition: drag !== null ? 'none' : 'left 0.15s ease-out' }}
           />
         </div>
       </div>
