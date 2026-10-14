@@ -20,6 +20,14 @@ import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
 import { PasswordInput } from './PasswordInput';
 
+// The session-with-coach card: a faded training-studio photo on the right (public/session-scheduled.jpg).
+// If the file is missing the card just shows the plain dark background.
+const SESSION_CARD_STYLE: React.CSSProperties = {
+  background: 'linear-gradient(90deg, rgba(37,37,37,0.96) 38%, rgba(37,37,37,0.55) 100%), url(/session-scheduled.jpg), #252525',
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+};
+
 interface PlansScreenProps {
   clientId: string;
   clientName: string;
@@ -615,7 +623,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
               const movedTo = movedAway ? parseDateKey(s.date) : null;
               const movedTime = movedAway ? formatTime(s.time) : null;
               return (
-                <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
+                <div key={s.id} className="border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3" style={SESSION_CARD_STYLE}>
                   <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
                     <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
                       {sd ? sd.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
