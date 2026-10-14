@@ -161,7 +161,7 @@ export const Testimonials: React.FC<TestimonialsProps> = ({ clientId, clientName
 
       {formOpen && (
         <div className="bg-white/[0.05] border border-white/[0.1] rounded-xl p-3 space-y-2.5">
-          <p className="text-sm font-semibold text-white">How is your training with Intokine?</p>
+          <p className="font-subheader text-[17px] text-white">How is your training with Intokine?</p>
           <div className="flex gap-1.5" role="radiogroup" aria-label="Rating">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
