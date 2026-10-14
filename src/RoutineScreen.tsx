@@ -339,9 +339,9 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const savedAt = (fu: FollowUp, it: TrackItem, period: string) => logFor(fu.id, 'weekly', period)?.values?.[it.id];
   type GateItem = { fu: FollowUp; it: TrackItem; period: string; label: string; k: string };
   const gateItems: GateItem[] = [
-    // Last week, still unanswered (only for follow-ups that existed by last weekend).
+    // Last week, still unanswered (only for follow-ups last changed before last weekend, so a newly added item waits for the next weekend).
     ...weeklyList
-      .filter(({ fu, it }) => (!fu.date || fu.date < prevSaturday) && !gateAnswered(it, savedAt(fu, it, prevMonday)))
+      .filter(({ fu, it }) => ((fu.updatedAt || fu.date || '').slice(0, 10) < prevSaturday) && !gateAnswered(it, savedAt(fu, it, prevMonday)))
       .map(({ fu, it }) => ({ fu, it, period: prevMonday, label: 'Last week', k: `${prevMonday}|${pkey(fu, it)}` })),
     // This week, from Saturday.
     ...(isWeekend
@@ -746,7 +746,6 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       {error && <p className="text-xs text-[#ec2226]">{error}</p>}
 
       {section('daily', 'Today', 'Saves as you tap.')}
-      {section('weekly', 'This week', 'Once a week.')}
       {section('monthly', 'This month', 'Once a month.')}
 
       {dailyItems.length > 0 && (
