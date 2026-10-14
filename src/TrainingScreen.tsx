@@ -68,17 +68,17 @@ const TYPE_LABEL: Record<string, string> = {
 };
 
 // The columns shown for one set, depending on the exercise type.
-const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean): { label: string; value: string; unit?: string; accent?: boolean }[] => {
+const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean): { label: string; value: string; unit?: string; accent?: boolean; text?: boolean }[] => {
   const type = ex.exerciseType || 'Weighted';
   const dash = '–';
   const rpe = s.rpe ? String(s.rpe) : dash;
-  const cells: { label: string; value: string; unit?: string; accent?: boolean }[] = [];
+  const cells: { label: string; value: string; unit?: string; accent?: boolean; text?: boolean }[] = [];
   if (type === 'Weighted') cells.push({ label: 'Weight', value: String(s.targetWeightKg || 0), unit: 'kg' }, { label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Bodyweight') cells.push({ label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Isometric') cells.push({ label: 'Hold', value: String(s.holdSeconds || 0), unit: 'sec' });
-  else if (type === 'DurationCardio') cells.push({ label: 'Time', value: String(s.durationMinutes || 0), unit: 'min' }, { label: 'Method', value: s.method || dash });
-  else if (type === 'DistanceCardio') cells.push({ label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }, { label: 'Method', value: s.method || dash });
-  if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash });
+  else if (type === 'DurationCardio') cells.push({ label: 'Time', value: String(s.durationMinutes || 0), unit: 'min' }, { label: 'Method', value: s.method || dash, text: true });
+  else if (type === 'DistanceCardio') cells.push({ label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }, { label: 'Method', value: s.method || dash, text: true });
+  if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash, text: true });
   if (type === 'Weighted' || type === 'Bodyweight' || type === 'Isometric') cells.push({ label: 'RPE', value: rpe, accent: true });
   return cells;
 };
@@ -327,7 +327,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                               {isNext && <span className="block font-subheader text-[11px] uppercase tracking-[0.14em] text-[#6ccbde] mb-0.5">Up next</span>}
                               <span className="flex items-start gap-2 flex-wrap">
                                 {ex.supersetTag && <span className="text-[9px] font-bold text-[#6ccbde] bg-[#6ccbde]/10 px-1.5 py-0.5 rounded mt-1.5">{ex.supersetTag}</span>}
-                                <span className={`font-subheader text-[22px] leading-[1.1] break-words ${isDone ? 'text-white/45 line-through decoration-white/30' : 'text-white'}`}>{ex.name}</span>
+                                <span className={`font-subheader text-[18px] leading-[1.15] break-words ${isDone ? 'text-white/45 line-through decoration-white/30' : 'text-white'}`}>{ex.name}</span>
                               </span>
                               <span className="block text-[11px] text-white/40 mt-1">
                                 {[TYPE_LABEL[ex.exerciseType || 'Weighted'], ex.targetMuscle, ex.equipment].filter(Boolean).join(' · ')}
@@ -342,12 +342,12 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                                 {!multi ? (
                                   <div className="flex items-stretch">
                                     {headCells.map((c, i) => (
-                                      <div key={c.label} className={`flex-1 min-w-0 ${i > 0 ? 'pl-4 ml-4 border-l border-white/[0.1]' : ''}`}>
-                                        <div className={`font-mono text-[30px] font-bold leading-none truncate ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
+                                      <div key={c.label} className={`flex-1 min-w-0 ${i > 0 ? 'pl-3 ml-3 border-l border-white/[0.1]' : ''}`}>
+                                        <div className={`${c.text ? 'text-[15px] font-semibold leading-tight' : 'font-mono text-[24px] font-bold leading-none'} truncate ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
                                           {c.value}
-                                          {c.unit && c.value !== '–' && <span className="text-[12px] font-medium text-white/40 ml-1">{c.unit}</span>}
+                                          {c.unit && c.value !== '–' && <span className="text-[11px] font-medium text-white/40 ml-1">{c.unit}</span>}
                                         </div>
-                                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40 mt-1.5">{c.label}</div>
+                                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40 mt-1">{c.label}</div>
                                       </div>
                                     ))}
                                   </div>
@@ -363,7 +363,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
                                       <div key={s.id || sIdx} className="grid items-center text-center rounded-xl bg-white/[0.04] py-2" style={{ gridTemplateColumns: cols }}>
                                         <span className="font-mono text-[12px] text-white/40">{s.setType !== 'Working' ? s.setType[0] : s.setNumber || sIdx + 1}</span>
                                         {setCells(ex, s, withTempo).map((c) => (
-                                          <span key={c.label} className={`font-mono text-[18px] font-semibold leading-tight truncate px-1 ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
+                                          <span key={c.label} className={`${c.text ? 'text-[14px]' : 'font-mono text-[16px]'} font-semibold leading-tight truncate px-1 ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
                                             {c.value}
                                             {c.unit && c.value !== '–' && <span className="text-[10px] font-medium text-white/40 ml-0.5">{c.unit}</span>}
                                           </span>
@@ -418,18 +418,23 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
               {allExercisesDone ? 'All done - nice work' : 'Tap the number beside each exercise when you finish it'}
             </div>
           )}
-          <button
-            onClick={handleMarkWorkoutComplete}
-            disabled={markingComplete || (exercises.length > 0 && !allExercisesDone)}
-            className="w-full py-4 rounded-2xl font-subheader text-[16px] uppercase tracking-wide transition disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)', color: 'white' }}
-          >
-            {markingComplete
-              ? 'Saving...'
-              : exercises.length > 0 && !allExercisesDone
-              ? 'Check off every exercise to finish'
-              : 'Mark Workout Complete'}
-          </button>
+          {(() => {
+            const locked = markingComplete || (exercises.length > 0 && !allExercisesDone);
+            return (
+              <button
+                onClick={handleMarkWorkoutComplete}
+                disabled={locked}
+                className={`w-full py-4 rounded-2xl font-subheader text-[16px] uppercase tracking-wide transition ${locked ? 'bg-[#252525] text-white/40 cursor-not-allowed' : 'text-white'}`}
+                style={locked ? undefined : { background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+              >
+                {markingComplete
+                  ? 'Saving...'
+                  : exercises.length > 0 && !allExercisesDone
+                  ? `${doneCount} of ${exercises.length} done`
+                  : 'Mark Workout Complete'}
+              </button>
+            );
+          })()}
         </div>
       )}
 
