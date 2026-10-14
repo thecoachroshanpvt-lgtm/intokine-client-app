@@ -658,19 +658,16 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
             })}
 
             {todaySessions.length === 0 && (
-              <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
-                {dateTile}
-                <div className="flex-1 min-w-0">
-                  <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none mb-1.5">Session with coach</div>
-                  <div className="text-sm font-semibold text-white/85 leading-snug">No training with your coach today</div>
-                  <div className="text-[11px] text-white/40 font-light">Rest, recover and stay consistent</div>
+              <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#252525]/60 px-4 py-4 flex items-center gap-3">
+                <div className="w-10 h-10 shrink-0 rounded-full bg-white/[0.06] flex items-center justify-center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6ccbde" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+                  </svg>
                 </div>
-                <span
-                  className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
-                  style={{ color: '#6ccbde', borderColor: '#6ccbde40', backgroundColor: '#6ccbde15' }}
-                >
-                  REST DAY
-                </span>
+                <div className="min-w-0">
+                  <div className="font-subheader text-[17px] text-white leading-tight">Rest day</div>
+                  <div className="text-[12px] text-white/45 font-light mt-0.5">No training with your coach today</div>
+                </div>
               </div>
             )}
           </div>
