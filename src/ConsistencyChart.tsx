@@ -27,7 +27,7 @@ export const ConsistencyChart: React.FC<{
   return (
     <div className="rounded-2xl p-4 space-y-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
       <div className="flex items-start justify-between gap-2">
-        <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] pt-1">{title}</div>
+        <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] pt-1">{title}</div>
         <div className="inline-flex rounded-full bg-white/[0.04] border border-white/[0.08] p-0.5 shrink-0">
           {([['week', 'Week'], ['month', 'Month'], ['year', 'Year']] as const).map(([k, l]) => (
             <button key={k} type="button" onClick={() => onRange(k)}
