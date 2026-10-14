@@ -1,36 +1,19 @@
 import React from 'react';
 
-// Both cards (suggested workout and session with coach) carry a faint line sketch on the right instead of a photo,
-// so the pages keep one clean look. The sketches are drawn in code - no image files needed.
-const svgUrl = (inner: string) =>
-  `url("data:image/svg+xml;utf8,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 80" fill="none" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`
-  )}")`;
-
-const LINE = 'rgba(255,255,255,0.13)';
-const CYAN = 'rgba(108,203,222,0.34)';
-
-// Calisthenics: a pull-up bar with hanging rings.
-const BAR_SKETCH = svgUrl(
-  `<g stroke="${LINE}" stroke-width="2"><path d="M30 74V14M130 74V14M30 14H130M16 74H144"/></g>` +
-  `<g stroke="${CYAN}" stroke-width="2"><path d="M70 14V32M90 14V32"/><circle cx="70" cy="40" r="8"/><circle cx="90" cy="40" r="8"/></g>`
-);
-
-// Coach session: a stopwatch.
-const WATCH_SKETCH = svgUrl(
-  `<g stroke="${LINE}" stroke-width="2"><circle cx="100" cy="46" r="24"/><path d="M92 14h16M100 14v8M118 28l6-6"/><path d="M100 26v3M124 46h-3M100 70v-3M76 46h3"/></g>` +
-  `<g stroke="${CYAN}" stroke-width="2"><path d="M100 46V33M100 46l10 6"/></g>`
-);
-
+// Both cards (suggested workout and session with coach) carry a faint line sketch on the right.
+// The sketches are image files in the public folder: sketch-workout.jpg and sketch-session.jpg (.jpeg also works).
+// They are line art on a pure BLACK background; "screen" blending makes the black disappear into the card,
+// so only the lines show. If a file is missing the card simply shows without a sketch.
 const BRAND = 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))';
 
 // The session-with-coach card background (used on Home and Schedule).
 export const SESSION_CARD_STYLE: React.CSSProperties = {
   backgroundColor: '#252525',
-  backgroundImage: WATCH_SKETCH,
+  backgroundImage: 'url(/sketch-session.jpg), url(/sketch-session.jpeg)',
   backgroundRepeat: 'no-repeat',
   backgroundSize: 'auto 92%',
-  backgroundPosition: 'right 44px center',
+  backgroundPosition: 'right 12px center',
+  backgroundBlendMode: 'screen',
 };
 
 interface Props {
@@ -50,10 +33,11 @@ export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done
       className="w-full text-left rounded-2xl p-4 flex items-center gap-3 transition active:scale-[0.99]"
       style={{
         backgroundColor: '#252525',
-        backgroundImage: `${BAR_SKETCH}, ${BRAND}`,
+        backgroundImage: `url(/sketch-workout.jpg), url(/sketch-workout.jpeg), ${BRAND}`,
         backgroundRepeat: 'no-repeat',
-        backgroundSize: 'auto 92%, cover',
-        backgroundPosition: 'right 56px center, center',
+        backgroundSize: 'auto 92%, auto 92%, cover',
+        backgroundPosition: 'right 12px center, right 12px center, center',
+        backgroundBlendMode: 'screen, screen, normal',
       }}
     >
       <div className="flex-1 min-w-0">
