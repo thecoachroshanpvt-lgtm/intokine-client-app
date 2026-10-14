@@ -433,7 +433,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       <div className="bg-[#252525] border border-white/[0.06] rounded-2xl overflow-hidden">
         <button type="button" onClick={() => setOpen(open === freq ? '' : freq)} className="w-full flex items-center justify-between gap-3 p-4 text-left">
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-white">{title}</div>
+            <div className="font-subheader text-[17px] text-white">{title}</div>
             <div className="text-[11px] text-white/40 font-light">{sub}</div>
           </div>
           <span className={`shrink-0 text-[10px] font-bold px-2.5 py-1 rounded-full ${all ? 'bg-emerald-500/15 text-emerald-400' : 'bg-[#ec2226]/15 text-[#ec2226]'}`}>
@@ -491,7 +491,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div className="rounded-2xl p-4 space-y-3" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde]">Today's routine</div>
+              <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde]">Today's routine</div>
               <div className="mt-1.5 flex items-baseline gap-1.5">
                 <span className="text-4xl font-header text-white leading-none">{todayDone}</span>
                 <span className="text-sm text-white/50 font-semibold">of {dailyItems.length} done</span>
@@ -539,7 +539,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5">
           <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-white/[0.08]">
-              <div className="text-sm font-semibold text-white">Confirm your update</div>
+              <div className="font-subheader text-[17px] text-white">Confirm your update</div>
               <div className="text-[11px] text-white/40">Check it and confirm to save</div>
             </div>
             <div className="overflow-y-auto p-4 space-y-2" style={{ overscrollBehavior: 'contain' }}>
@@ -565,7 +565,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
               <div>
-                <div className="text-sm font-semibold text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} routine consistency</div>
+                <div className="font-subheader text-[17px] text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} routine consistency</div>
                 <div className="text-[11px] text-white/40">{rangeTitle}</div>
               </div>
               <button type="button" onClick={() => setDetail(false)} className="text-white/50 text-xl leading-none px-1" aria-label="Close">×</button>
