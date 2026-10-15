@@ -14,6 +14,7 @@ export interface SessionCardData {
   attendanceStatus?: string;
   program?: string;
   meetLink?: string;
+  postponeReason?: string;
 }
 
 function parseDateKey(key: string): Date | null {
@@ -114,6 +115,10 @@ export const SessionCard: React.FC<Props> = ({ s, online, viewDate }) => {
           {label}
         </span>
       </div>
+
+      {(movedAway || s.status === 'Postponed') && s.postponeReason ? (
+        <p className="mt-2 text-[11px] text-amber-300/90 font-light">Reason: {s.postponeReason}</p>
+      ) : null}
 
       {live && (
         link ? (
