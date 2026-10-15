@@ -12,6 +12,7 @@ import {
 interface ClientDashboardProps {
   clientId: string;
   clientName: string;
+  online?: boolean;
 }
 
 interface ScheduledSession {
@@ -26,7 +27,7 @@ interface ScheduledSession {
 
 type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet' | 'routine';
 
-export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName }) => {
+export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName, online = false }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('plans');
   // Pull-down-to-refresh (like Instagram): pull from the top, release past the threshold (data on every screen is already live, so this just confirms it is up to date without reloading anything).
   const [pull, setPull] = useState(0);
@@ -125,12 +126,12 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
 
       {/* Plans tab */}
       <div className={activeTab === 'plans' ? '' : 'hidden'}>
-        <PlansScreen clientId={clientId} clientName={clientName} />
+        <PlansScreen clientId={clientId} clientName={clientName} online={online} />
       </div>
 
       {/* Schedule tab */}
       <div className={activeTab === 'schedule' ? '' : 'hidden'}>
-        <ScheduleScreen clientId={clientId} clientName={clientName} />
+        <ScheduleScreen clientId={clientId} clientName={clientName} online={online} />
       </div>
 
       {/* Progress tab */}
