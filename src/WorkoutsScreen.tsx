@@ -22,6 +22,9 @@ interface Plan {
   clientCompletedAt?: string;
 }
 
+// Shown at the bottom of this tab so it is easy to see which version of the app is running.
+const BUILD_TAG = 'build 15 Oct 16:10';
+
 const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const pretty = (k: string) => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k);
@@ -243,6 +246,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
           )}
         </>
       )}
+      <p className="text-[9px] text-white/20 text-center pt-2">{BUILD_TAG}</p>
     </div>
   );
 };
