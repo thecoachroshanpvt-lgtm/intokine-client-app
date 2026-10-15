@@ -99,7 +99,7 @@ export const OverallProgressCard: React.FC<{
     const seenItems = new Set<string>(); // an item added twice (dietitian and coach) counts once, the newest copy
     followUps.filter((f) => f.active !== false).sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach((f) => {
       (f.items || []).forEach((it) => {
-        const dupKey = `${(it.label || '').trim().toLowerCase()}|${it.freq}`;
+        const dupKey = (it.label || '').trim().toLowerCase();
         if (seenItems.has(dupKey)) return;
         seenItems.add(dupKey);
         const periods = new Set<string>();
