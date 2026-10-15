@@ -30,6 +30,21 @@ function formatTime(t: string): { clock: string; period: string } | null {
   if (h > 23) return null;
   return { clock: `${h % 12 === 0 ? 12 : h % 12}:${m[2]}`, period: h >= 12 ? 'PM' : 'AM' };
 }
+// Minutes since midnight for "19:00" or "07:00 PM"; null if it cannot be read.
+function minutesOf(t: string): number | null {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
+  if (!m) return null;
+  let h = Number(m[1]);
+  const suffix = m[3] ? m[3].toUpperCase() : '';
+  if (suffix) {
+    if (suffix === 'PM' && h < 12) h += 12;
+    if (suffix === 'AM' && h === 12) h = 0;
+  }
+  return h > 23 ? null : h * 60 + Number(m[2]);
+}
+// The Join button is available from the meeting time until this many minutes after it starts.
+const JOIN_WINDOW_MIN = 180;
+
 function safeLink(raw?: string): string | null {
   const v = (raw || '').trim();
   if (!v) return null;
@@ -59,15 +74,27 @@ export function useZakiMeetings(clientId: string): ZakiMeeting[] {
 }
 
 export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
-  const today = dateKey(new Date());
+  // Re-check the time every 30 seconds so the Join button appears on its own at the meeting time.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const now = new Date();
+  const today = dateKey(now);
   const d = parseDateKey(m.date);
   const t = formatTime(m.time);
   const link = safeLink(m.meetLink);
   const isToday = m.date === today;
+  const startMin = minutesOf(m.time);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  // Join is only available at the assigned time (and for a few hours after it starts), on the meeting day.
+  const joinOpen = isToday && startMin !== null && nowMin >= startMin && nowMin <= startMin + JOIN_WINDOW_MIN;
+  const ended = isToday && startMin !== null && nowMin > startMin + JOIN_WINDOW_MIN;
   return (
-    <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3">
+    <div className="rounded-2xl p-3 border border-[#6ccbde]/30 bg-gradient-to-br from-[#6ccbde]/15 to-[#6ccbde]/[0.03]">
       <div className="flex items-center gap-3">
-        <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
+        <div className="w-14 shrink-0 rounded-xl bg-[#6ccbde]/10 border border-[#6ccbde]/25 py-2 text-center">
           <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">{d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}</div>
           <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">{d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}</div>
@@ -91,22 +118,28 @@ export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
         </span>
       </div>
       {m.notes ? <p className="mt-2 text-[11px] text-white/50 font-light">{m.notes}</p> : null}
-      {link ? (
-        <a
-          href={link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-[#6ccbde] text-[#0b0c10] text-sm font-bold py-2.5 active:scale-[0.99] transition"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
-            <path d="M15.5 10.5l6-3.5v10l-6-3.5" />
-          </svg>
-          Join Google Meet
-        </a>
+      {joinOpen ? (
+        link ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-[#6ccbde] text-[#0b0c10] text-sm font-bold py-2.5 active:scale-[0.99] transition"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
+              <path d="M15.5 10.5l6-3.5v10l-6-3.5" />
+            </svg>
+            Join Google Meet
+          </a>
+        ) : (
+          <div className="mt-3 w-full rounded-xl bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 text-center py-2.5">
+            Your coach will add the Google Meet link here
+          </div>
+        )
       ) : (
-        <div className="mt-3 w-full rounded-xl bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 text-center py-2.5">
-          Your coach will add the Google Meet link here
+        <div className="mt-3 w-full rounded-xl bg-[#6ccbde]/[0.06] border border-[#6ccbde]/15 text-[11px] text-white/55 text-center py-2.5">
+          {ended ? 'This meeting has ended.' : `The Join Google Meet button appears at ${t ? `${t.clock} ${t.period}` : 'the meeting time'}${isToday ? '' : ` on ${d ? d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : m.date}`}.`}
         </div>
       )}
     </div>
