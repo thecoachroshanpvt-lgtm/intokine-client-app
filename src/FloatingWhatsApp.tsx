@@ -112,7 +112,8 @@ export const FloatingWhatsApp: React.FC<{ href: string }> = ({ href }) => {
         top: pos.y,
         width: SIZE,
         height: SIZE,
-        background: '#6ccbde',
+        background: '#2b2b2b',
+        border: '1px solid rgba(255,255,255,0.12)',
         boxShadow: dragPos ? '0 10px 24px rgba(0,0,0,0.55)' : '0 6px 18px rgba(0,0,0,0.45)',
         transform: dragPos ? 'scale(1.08)' : 'scale(1)',
         transition: dragPos ? 'none' : 'left 0.32s cubic-bezier(0.2,0.9,0.3,1), top 0.32s cubic-bezier(0.2,0.9,0.3,1), transform 0.2s, box-shadow 0.2s',
@@ -122,9 +123,9 @@ export const FloatingWhatsApp: React.FC<{ href: string }> = ({ href }) => {
         cursor: dragPos ? 'grabbing' : 'grab',
       }}
     >
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ pointerEvents: 'none' }}>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ pointerEvents: 'none' }}>
         <path d="M3 21l1.6-4.7A8.5 8.5 0 1 1 8 19.5L3 21z" />
-        <path d="M9 9.5c.3 2 2.5 4.2 4.5 4.5l1.3-1.2-1.8-1-.8.7c-.8-.4-1.5-1.1-1.9-1.9l.7-.8-1-1.8L9 9.5z" fill="#1c1c1c" stroke="none" />
+        <path d="M9 9.5c.3 2 2.5 4.2 4.5 4.5l1.3-1.2-1.8-1-.8.7c-.8-.4-1.5-1.1-1.9-1.9l.7-.8-1-1.8L9 9.5z" fill="rgba(255,255,255,0.7)" stroke="none" />
       </svg>
     </div>
   );
