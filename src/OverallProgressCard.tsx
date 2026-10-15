@@ -18,7 +18,7 @@ const mondayKey = (d: Date) => {
 const monthKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
 
 type Freq = 'daily' | 'weekly' | 'monthly';
-interface FuItem { id: string; type: string; freq: Freq }
+interface FuItem { id: string; label?: string; type: string; freq: Freq }
 interface FollowUp { id: string; date?: string; active?: boolean; items?: FuItem[] }
 interface RoutineLog { followUpId: string; freq: Freq; period: string; values?: Record<string, any> }
 interface MealLog { date: string; eaten?: string[] }
@@ -96,8 +96,12 @@ export const OverallProgressCard: React.FC<{
 
     // Routine: every item of every active follow-up, once per day / week / month.
     let rDone = 0, rTotal = 0;
-    followUps.filter((f) => f.active !== false).forEach((f) => {
+    const seenItems = new Set<string>(); // an item added twice (dietitian and coach) counts once, the newest copy
+    followUps.filter((f) => f.active !== false).sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach((f) => {
       (f.items || []).forEach((it) => {
+        const dupKey = `${(it.label || '').trim().toLowerCase()}|${it.freq}`;
+        if (seenItems.has(dupKey)) return;
+        seenItems.add(dupKey);
         const periods = new Set<string>();
         days.forEach((k) => {
           if (f.date && k < f.date) return;
