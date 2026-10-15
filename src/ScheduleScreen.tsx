@@ -7,12 +7,14 @@ import {
   onSnapshot,
 } from './firebase';
 import { TrainingScreen } from './TrainingScreen';
+import { SessionCard } from './SessionCard';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
 
 interface ScheduleScreenProps {
   clientId: string;
   clientName: string;
+  online?: boolean;
 }
 
 interface ScheduledSession {
@@ -25,6 +27,8 @@ interface ScheduledSession {
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
   attendanceStatus?: string;
   postponedFromDates?: string[];
+  program?: string;
+  meetLink?: string;
 }
 
 interface SuggestedPlan {
@@ -112,7 +116,7 @@ function startOfWeek(d: Date): Date {
   return copy;
 }
 
-export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, clientName }) => {
+export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, clientName, online = false }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('today');
   const [sessions, setSessions] = useState<ScheduledSession[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
@@ -256,44 +260,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     return map;
   }, [sessions]);
 
-  const renderSessionCard = (s: ScheduledSession) => {
-    const d = parseDateKey(s.date);
-    const t = formatTime(s.time);
-    const color = statusColor(s.status);
-    return (
-      <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
-        <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
-          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
-            {d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
-          </div>
-          <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
-          <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
-            {d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}
-          </div>
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-1">
-            {t ? (
-              <>
-                <span className="text-base font-semibold font-mono text-white leading-none">{t.clock}</span>
-                <span className="text-[10px] font-bold text-white/50">{t.period}</span>
-              </>
-            ) : (
-              <span className="text-sm font-bold text-white">{s.time || 'Time TBC'}</span>
-            )}
-          </div>
-          <div className="text-xs font-semibold text-white/80 mt-1 truncate">{s.sessionType}</div>
-          <div className="text-[11px] text-white/40 font-light truncate">{s.location} · Coach {s.coachName}</div>
-        </div>
-        <span
-          className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
-          style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
-        >
-          {s.status.toUpperCase()}
-        </span>
-      </div>
-    );
-  };
+  const renderSessionCard = (s: ScheduledSession) => <SessionCard key={s.id} s={s} online={online} />;
 
   if (selectedWorkout) {
     return (
