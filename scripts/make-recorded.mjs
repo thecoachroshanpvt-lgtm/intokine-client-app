@@ -10,7 +10,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const APP_NAME = process.env.RECORDED_APP_NAME || 'INTOKINE RECORDED';
+const APP_NAME = process.env.RECORDED_APP_NAME || 'ZAKI';
 const root = process.cwd();
 const src = path.join(root, 'src');
 
