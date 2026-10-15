@@ -102,6 +102,7 @@ export const OverallProgressCard: React.FC<{
       (f.items || []).forEach((it) => {
         const dupKey = (it.label || '').trim().toLowerCase();
         if (seenItems.has(dupKey)) return;
+        if (dupKey === 'any change in my health or medicines' || dupKey === 'questions for my dietitian') return; // retired items
         seenItems.add(dupKey);
         const periods = new Set<string>();
         days.forEach((k) => {
