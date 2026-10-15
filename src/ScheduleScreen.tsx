@@ -531,7 +531,8 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
               <div className="flex items-center justify-between">
                 <button
                   onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() - 1, 1))}
-                  className="text-white/50 hover:text-white px-2"
+                  className="px-3 py-1.5 rounded-lg border border-white/[0.12] text-white/50 hover:text-white"
+                  aria-label="Previous month"
                 >
                   ←
                 </button>
@@ -540,41 +541,43 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                 </span>
                 <button
                   onClick={() => setMonthCursor(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1))}
-                  className="text-white/50 hover:text-white px-2"
+                  className="px-3 py-1.5 rounded-lg border border-white/[0.12] text-white/50 hover:text-white"
+                  aria-label="Next month"
                 >
                   →
                 </button>
               </div>
 
-              <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-white/40 font-semibold uppercase">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i}>{d}</div>)}
-              </div>
-
-              <div className="grid grid-cols-7 gap-1">
-                {monthGrid.map((d) => {
-                  const key = toDateKey(d);
-                  const inMonth = d.getMonth() === monthCursor.getMonth();
-                  const hasSession = !!sessionsByDate[key]?.length;
-                  const hasWorkout = plans.some((p) => p.date === key);
-                  const isToday = key === todayKey;
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => setSelectedMonthDay(key)}
-                      className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs relative ${
-                        inMonth ? 'text-white' : 'text-white/20'
-                      } ${activeMonthDay === key ? 'bg-white/[0.15]' : 'hover:bg-white/[0.06]'} ${isToday ? 'border border-[#6ccbde]/50' : ''}`}
-                    >
-                      {d.getDate()}
-                      {(hasSession || hasWorkout) && (
-                        <span className="absolute bottom-1 flex gap-0.5">
+              <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3">
+                <div className="grid grid-cols-7 gap-1 text-center">
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i} className="text-[10px] text-white/40 font-semibold uppercase">{d}</div>)}
+                  {monthGrid.map((d) => {
+                    const key = toDateKey(d);
+                    const inMonth = d.getMonth() === monthCursor.getMonth();
+                    const hasSession = !!sessionsByDate[key]?.length;
+                    const hasWorkout = plans.some((p) => p.date === key);
+                    const isToday = key === todayKey;
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setSelectedMonthDay(key)}
+                        className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs ${
+                          inMonth ? 'text-white' : 'text-white/20'
+                        } ${activeMonthDay === key ? 'bg-white/[0.15]' : 'hover:bg-white/[0.06]'} ${isToday ? 'border border-[#6ccbde]/50' : ''}`}
+                      >
+                        {d.getDate()}
+                        <span className="flex gap-0.5 h-1 mt-0.5">
                           {hasSession && <span className="w-1 h-1 rounded-full bg-[#ec2226]" />}
                           {hasWorkout && <span className="w-1 h-1 rounded-full bg-[#6ccbde]" />}
                         </span>
-                      )}
-                    </button>
-                  );
-                })}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center justify-center gap-3 text-[9px] text-white/40 mt-2">
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#ec2226]" />Coach session</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />Suggested workout</span>
+                </div>
               </div>
 
               {activeMonthDay && (() => {
