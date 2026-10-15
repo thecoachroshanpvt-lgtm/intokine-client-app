@@ -4,6 +4,8 @@ import { PlansScreen } from './PlansScreen';
 import { ProgressScreen } from './ProgressScreen';
 import { DietScreen } from './DietScreen';
 import { RoutineScreen } from './RoutineScreen';
+import { WorkoutsScreen } from './WorkoutsScreen';
+import { IS_RECORDED } from './variant';
 import {
   initializeClientFirebaseApp,
   signOut,
@@ -25,7 +27,7 @@ interface ScheduledSession {
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
 }
 
-type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet' | 'routine';
+type DashboardTab = 'plans' | 'schedule' | 'progress' | 'diet' | 'routine' | 'workouts';
 
 export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clientName, online = false }) => {
   const [activeTab, setActiveTab] = useState<DashboardTab>('plans');
@@ -129,10 +131,16 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
         <PlansScreen clientId={clientId} clientName={clientName} online={online} />
       </div>
 
-      {/* Schedule tab */}
-      <div className={activeTab === 'schedule' ? '' : 'hidden'}>
-        <ScheduleScreen clientId={clientId} clientName={clientName} online={online} />
-      </div>
+      {/* Schedule tab (standard app) / Workouts tab (recorded-sessions app: no coach sessions, only suggested workouts) */}
+      {IS_RECORDED ? (
+        <div className={activeTab === 'workouts' ? '' : 'hidden'}>
+          <WorkoutsScreen clientId={clientId} />
+        </div>
+      ) : (
+        <div className={activeTab === 'schedule' ? '' : 'hidden'}>
+          <ScheduleScreen clientId={clientId} clientName={clientName} online={online} />
+        </div>
+      )}
 
       {/* Progress tab */}
       <div className={activeTab === 'progress' ? '' : 'hidden'}>
@@ -179,16 +187,26 @@ export const ClientDashboard: React.FC<ClientDashboardProps> = ({ clientId, clie
                 </svg>
               ),
             },
-            {
-              key: 'schedule' as DashboardTab,
-              label: 'Schedule',
-              icon: (active: boolean) => (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
-                  <rect x="3" y="4" width="18" height="17" rx="2" />
-                  <path d="M3 9h18M8 2v4M16 2v4" />
-                </svg>
-              ),
-            },
+            IS_RECORDED
+              ? {
+                  key: 'workouts' as DashboardTab,
+                  label: 'Workouts',
+                  icon: (active: boolean) => (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" />
+                    </svg>
+                  ),
+                }
+              : {
+                  key: 'schedule' as DashboardTab,
+                  label: 'Schedule',
+                  icon: (active: boolean) => (
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? '#ec2226' : 'currentColor'} strokeWidth="1.8">
+                      <rect x="3" y="4" width="18" height="17" rx="2" />
+                      <path d="M3 9h18M8 2v4M16 2v4" />
+                    </svg>
+                  ),
+                },
             {
               key: 'progress' as DashboardTab,
               label: 'Progress',

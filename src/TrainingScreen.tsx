@@ -1,3 +1,4 @@
+import { IS_RECORDED } from './variant';
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
@@ -227,7 +228,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
           <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
           Plans
         </button>
-        <ContactCoachPill clientId={clientId} coachName={workout.coachName} workoutTitle={workout.planTitle} />
+        {!IS_RECORDED && <ContactCoachPill clientId={clientId} coachName={workout.coachName} workoutTitle={workout.planTitle} />}
       </div>
 
       {/* Hero */}

@@ -10,9 +10,11 @@ import { WelcomeScreen } from './WelcomeScreen';
 import { ClientLoginScreen } from './ClientLoginScreen';
 import { ClientDashboard } from './ClientDashboard';
 import { PrqScreen } from './PrqScreen';
+import { IS_RECORDED, APP_NAME, RECORDED_SERVICE } from './variant';
+import { signOut } from './firebase';
 
 type ProgramType = 'Weight Training' | 'Calisthenics' | 'CrossFit' | 'Hyrox Training' | 'Boxing Training' | 'Kickboxing Training' | 'Karate Training';
-type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Couple Training' | 'Online Batch Training' | 'Offline Batch Training';
+type ServiceType = 'Offline Personal Training' | 'Online Personal Training' | 'Couple Training' | 'Online Batch Training' | 'Offline Batch Training' | 'Recorded Training';
 
 /** Full-screen loader: the brand icon softly blinks while the app loads. */
 const BrandLoader: React.FC = () => (
@@ -127,6 +129,24 @@ function App() {
   // 2. Not signed in - straight to login.
   if (!firebaseUser) {
     return <ClientLoginScreen />;
+  }
+
+  // Two apps share one login system. A recorded-training client belongs in the recorded app, everyone else in the standard app.
+  if (service && (service === RECORDED_SERVICE) !== IS_RECORDED) {
+    const { auth } = initializeClientFirebaseApp();
+    return (
+      <div className="min-h-screen bg-[#1c1c1c] flex items-center justify-center p-5">
+        <div className="max-w-sm text-center space-y-4">
+          <p className="font-subheader text-[20px] text-white">{IS_RECORDED ? 'This is the recorded-sessions app' : 'You are on the wrong app'}</p>
+          <p className="text-sm text-white/60 font-light leading-relaxed">
+            {IS_RECORDED
+              ? 'Your account uses the standard INTOKINE app. Please open that app instead.'
+              : 'Your account is a recorded-sessions account. Please open the recorded-sessions app instead (your coach can send you the link).'}
+          </p>
+          <button type="button" onClick={() => auth && signOut(auth)} className="px-5 py-2.5 rounded-xl bg-white/[0.08] text-white text-sm font-bold">Sign out</button>
+        </div>
+      </div>
+    );
   }
 
   if (lookupError) {

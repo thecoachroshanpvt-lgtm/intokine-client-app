@@ -1,3 +1,4 @@
+import { IS_RECORDED } from './variant';
 import React, { useEffect, useMemo, useState } from 'react';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot } from './firebase';
 
@@ -137,7 +138,9 @@ export const OverallProgressCard: React.FC<{
       if (ok) wDone += 1;
     });
 
-    return [make('diet', 'Diet', dDone, dTotal), make('routine', 'Routine', rDone, rTotal), make('sessions', 'Sessions', sDone, sTotal), make('workouts', 'Workouts', wDone, wTotal)];
+    const all = [make('diet', 'Diet', dDone, dTotal), make('routine', 'Routine', rDone, rTotal), make('sessions', 'Sessions', sDone, sTotal), make('workouts', 'Workouts', wDone, wTotal)];
+    // The recorded-sessions app has no coach sessions to attend.
+    return IS_RECORDED ? all.filter((x) => x.key !== 'sessions') : all;
   }, [meals, planFrom, mealLogs, followUps, routineLogs, sessions, plans, startDate]);
 
   const live = parts.filter((p) => p.frac !== null);

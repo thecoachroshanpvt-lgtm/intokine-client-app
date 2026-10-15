@@ -19,6 +19,7 @@ import { TrainingScreen } from './TrainingScreen';
 import { SessionCard } from './SessionCard';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { OverallProgressCard } from './OverallProgressCard';
+import { IS_RECORDED } from './variant';
 import { CoachWhatsappButton } from './CoachContact';
 import { InlineLoader } from './InlineLoader';
 import { PasswordInput } from './PasswordInput';
@@ -458,7 +459,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-        <CoachWhatsappButton clientId={clientId} />
+        {!IS_RECORDED && <CoachWhatsappButton clientId={clientId} />}
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
@@ -476,7 +477,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
       {photoError && <p className="text-xs text-[#ec2226] font-light">{photoError}</p>}
 
       {/* Package expired notification */}
-      {journey?.expired && (
+      {!IS_RECORDED && journey?.expired && (
         <div className="bg-[#ec2226]/10 border border-[#ec2226]/40 rounded-2xl p-4 flex items-start gap-3" role="alert">
           <span className="w-2 h-2 mt-1.5 rounded-full bg-[#ec2226] shrink-0" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
           <div>
@@ -493,7 +494,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
       )}
 
       {/* Journey roadmap - tap to see this package's attendance */}
-      {journey && (() => {
+      {!IS_RECORDED && journey && (() => {
         const todayK = toDateKey(new Date());
         // Renewal alert: running low on sessions / days, or already finished.
         const sessionsLeft = journey.mode === 'sessions' ? Math.max(0, (packageSessions || 0) - completedSessions) : null;
@@ -613,6 +614,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
         );
         return (
           <>
+          {!IS_RECORDED && (
           <div className="space-y-2">
             <span className="text-[11px] text-white/40 uppercase font-semibold block">Today</span>
 
@@ -633,6 +635,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
               </div>
             )}
           </div>
+          )}
 
           {todaysWorkouts.length > 0 && (
             <div className="space-y-2">
@@ -651,6 +654,12 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
               );
             })}
 
+            </div>
+          )}
+          {IS_RECORDED && todaysWorkouts.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#252525]/60 px-4 py-4">
+              <div className="font-subheader text-[17px] text-white leading-tight">No workout for today</div>
+              <div className="text-[11px] text-white/50 font-light mt-0.5">Open the Workouts tab to see everything your coach has sent.</div>
             </div>
           )}
           </>
