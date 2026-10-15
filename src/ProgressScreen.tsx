@@ -1934,7 +1934,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
           {perfCategory === 'core_endurance' && (
             <div>
-              <BackButton />
+              {/* Inside the McGill test page, its own back button (to Core Endurance & Stability) is the only one. */}
+              {!mcgillOpen && <BackButton />}
               {(() => {
                 const flexorData = chronological.filter((a) => a.mcgillFlexorSeconds != null).map((a) => ({ date: a.date, value: a.mcgillFlexorSeconds as number }));
                 const extensorData = chronological.filter((a) => a.mcgillExtensorSeconds != null).map((a) => ({ date: a.date, value: a.mcgillExtensorSeconds as number }));
