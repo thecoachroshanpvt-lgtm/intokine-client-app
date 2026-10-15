@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
-import { ContactCoachCard } from './CoachContact';
+import { ContactCoachPill } from './CoachContact';
 
 interface TrainerizeSet {
   id: string;
@@ -222,10 +222,13 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-2xl mx-auto">
-      <button onClick={onBack} className="text-[12px] font-semibold text-[#6ccbde] hover:text-white flex items-center gap-1 mb-4">
-        <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        Plans
-      </button>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <button onClick={onBack} className="text-[12px] font-semibold text-[#6ccbde] hover:text-white flex items-center gap-1">
+          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          Plans
+        </button>
+        <ContactCoachPill clientId={clientId} coachName={workout.coachName} workoutTitle={workout.planTitle} />
+      </div>
 
       {/* Hero */}
       <div className="rounded-3xl px-5 pt-5 pb-5 mb-7" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
@@ -439,8 +442,6 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
           })()}
         </div>
       )}
-
-      <ContactCoachCard clientId={clientId} coachName={workout.coachName} workoutTitle={workout.planTitle} />
 
       {videoEx && <VideoPopup url={videoEx.videoUrl} name={videoEx.name} onClose={() => setVideoEx(null)} />}
     </div>
