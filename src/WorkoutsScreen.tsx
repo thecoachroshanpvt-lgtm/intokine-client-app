@@ -106,7 +106,8 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
       hint={`${p.structuredExercises?.length || 0} exercises${p.durationMinutes ? ` · ${p.durationMinutes} mins` : ''}`}
       done={!!p.clientCompletedAt}
       onClick={() => setSelected(p)}
-    />
+ postpone={!p.clientCompletedAt && p.date >= today ? { clientId, coachName: p.coachName, date: p.date } : undefined} postponedFrom={(p as any).postponedFromDate} postponeReason={(p as any).postponeReason}
+/>
   );
   const grouped = (list: Plan[]) => {
     const dates = Array.from(new Set(list.map((p) => p.date)));
