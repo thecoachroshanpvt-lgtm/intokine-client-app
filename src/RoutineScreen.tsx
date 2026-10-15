@@ -331,8 +331,16 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     );
     return keep;
   })();
+  // Items from the dietitian and the coach are shown together, grouped by category and then by style, so the same kind of tracker sits side by side.
+  const CAT_ORDER = ['Lifestyle', 'Habits', 'Symptoms', 'Custom'];
+  const TYPE_ORDER = ['number', 'choice', 'level', 'tick', 'text'];
+  const rank = (list: string[], v: string) => { const i = list.indexOf(v); return i < 0 ? list.length : i; };
   const itemsFor = (freq: Freq) =>
-    active.flatMap((fu) => fu.items.filter((i) => i.freq === freq && i.category !== 'Supplements' && keptItems.has(`${fu.id}|${i.id}`)).map((it) => ({ fu, it })));
+    active
+      .flatMap((fu) => fu.items.filter((i) => i.freq === freq && i.category !== 'Supplements' && keptItems.has(`${fu.id}|${i.id}`)).map((it) => ({ fu, it })))
+      .map((x, idx) => ({ x, idx }))
+      .sort((a, b) => rank(CAT_ORDER, a.x.it.category) - rank(CAT_ORDER, b.x.it.category) || rank(TYPE_ORDER, a.x.it.type) - rank(TYPE_ORDER, b.x.it.type) || a.idx - b.idx)
+      .map(({ x }) => x);
   const isDone = (fu: FollowUp, it: TrackItem) => {
     return hasAnswer(it.type, valueOf(fu, it));
   };
@@ -537,12 +545,17 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </button>
         {open === freq && (
           <div className="px-4 pb-4 space-y-4 border-t border-white/[0.06] pt-4">
-            {list.map(({ fu, it }) => {
+            {list.map(({ fu, it }, li) => {
+              const catHead = li === 0 || list[li - 1].it.category !== it.category ? (
+                <div className={`text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] ${li === 0 ? '' : 'pt-2'}`}>{it.category}</div>
+              ) : null;
               // Habits are one tappable row: the tick circle, then the habit and its note.
               if (it.type === 'tick') {
                 const on = valueOf(fu, it) === true;
                 return (
-                  <button key={fu.id + it.id} type="button" onClick={() => setValue(fu, it, on ? false : true)} aria-pressed={on}
+                  <React.Fragment key={fu.id + it.id}>
+                  {catHead}
+                  <button type="button" onClick={() => setValue(fu, it, on ? false : true)} aria-pressed={on}
                     className={`w-full flex items-center gap-3 text-left rounded-xl border px-3.5 py-3 transition ${on ? 'border-emerald-500/40 bg-emerald-500/[0.06]' : 'border-white/[0.08] bg-white/[0.03]'}`}>
                     <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs shrink-0 ${on ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent ik-nudge'}`} aria-hidden>✓</span>
                     <span className="min-w-0 flex-1">
@@ -551,15 +564,19 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                     </span>
                     <span className={`text-[10px] font-semibold shrink-0 ${on ? 'text-emerald-400' : 'text-white/35'}`}>{on ? 'Done' : 'Tap when done'}</span>
                   </button>
+                  </React.Fragment>
                 );
               }
               // A tracker with no answer yet blinks gently, the same as the habit circles, to nudge the client.
               const answered = hasAnswer(it.type, valueOf(fu, it));
               return (
-                <div key={fu.id + it.id} className={`rounded-xl border -mx-2.5 px-2.5 py-2 ${answered ? 'border-transparent' : 'ik-nudge-box'}`}>
+                <React.Fragment key={fu.id + it.id}>
+                {catHead}
+                <div className={`rounded-xl border -mx-2.5 px-2.5 py-2 ${answered ? 'border-transparent' : 'ik-nudge-box'}`}>
                   <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">{it.label}{it.detail ? <span className="normal-case font-normal text-white/50"> · {it.detail}</span> : null}</div>
                   {control(fu, it)}
                 </div>
+                </React.Fragment>
               );
             })}
           </div>
