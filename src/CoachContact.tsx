@@ -54,9 +54,9 @@ export const CoachWhatsappButton: React.FC<{ clientId: string }> = ({ clientId }
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Message coach ${coach.name} on WhatsApp`}
-      className="w-10 h-10 rounded-full bg-[#25D366]/10 border border-[#25D366]/35 flex items-center justify-center active:scale-95 transition"
+      className="w-10 h-10 rounded-full bg-[#6ccbde]/10 border border-[#6ccbde]/35 flex items-center justify-center active:scale-95 transition"
     >
-      <WaIcon size={20} color="#25D366" />
+      <WaIcon size={20} color="#6ccbde" />
     </a>
   );
 };
@@ -72,14 +72,14 @@ export const ContactCoachCard: React.FC<{ clientId: string; coachName?: string; 
       rel="noopener noreferrer"
       className="mt-4 flex items-center gap-3 rounded-2xl bg-[#252525] border border-white/[0.06] p-3.5 active:scale-[0.99] transition"
     >
-      <span className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center shrink-0">
-        <WaIcon size={20} />
+      <span className="w-10 h-10 rounded-full bg-[#6ccbde] flex items-center justify-center shrink-0">
+        <WaIcon size={20} color="#1c1c1c" />
       </span>
       <span className="flex-1 min-w-0">
         <span className="block font-subheader text-[16px] text-white leading-tight">Contact your coach</span>
         <span className="block text-[11px] text-white/50 truncate">Message {coach.name} on WhatsApp</span>
       </span>
-      <span className="text-[11px] font-bold text-[#25D366] border border-[#25D366]/40 rounded-full px-3 py-1 shrink-0">Chat</span>
+      <span className="text-[11px] font-bold text-[#6ccbde] border border-[#6ccbde]/40 rounded-full px-3 py-1 shrink-0">Chat</span>
     </a>
   );
 };
