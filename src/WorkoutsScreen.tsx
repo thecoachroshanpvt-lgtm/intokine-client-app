@@ -34,6 +34,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
   const [selected, setSelected] = useState<Plan | null>(null);
   const [view, setView] = useState<'today' | 'week' | 'month' | 'history'>('today');
   const [anchor, setAnchor] = useState(dateKey(new Date()));
+  const [selDay, setSelDay] = useState<string | null>(null);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -150,12 +151,59 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
             </div>
           )}
 
-          {view === 'week' && (
-            <div className="space-y-4">
-              {nav}
-              {weekPlans.length === 0 ? empty('No workouts this week.') : grouped(weekPlans)}
-            </div>
-          )}
+          {view === 'week' && (() => {
+            const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+            const activeKey = selDay && weekDays.includes(selDay) ? selDay : weekDays.includes(today) ? today : weekStart;
+            const dayPlans = weekPlans.filter((p) => p.date === activeKey);
+            return (
+              <div className="space-y-4">
+                {nav}
+                <div className="grid grid-cols-7 gap-1.5">
+                  {weekDays.map((k) => {
+                    const d = new Date(k + 'T00:00:00');
+                    const isActive = k === activeKey;
+                    const isToday = k === today;
+                    const has = weekPlans.some((p) => p.date === k);
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        onClick={() => setSelDay(k)}
+                        className={`rounded-xl py-2.5 flex flex-col items-center gap-1 border transition ${
+                          isActive ? 'bg-gradient-to-b from-[#6ccbde]/25 to-[#6ccbde]/10 border-[#6ccbde]/50' : 'bg-[#252525] border-white/[0.06]'
+                        }`}
+                      >
+                        <span className={`text-[9px] font-bold uppercase tracking-wide ${isToday ? 'text-[#6ccbde]' : 'text-white/40'}`}>
+                          {d.toLocaleDateString(undefined, { weekday: 'short' })}
+                        </span>
+                        <span className={`text-base font-semibold font-mono leading-none ${isActive ? 'text-white' : 'text-white/80'}`}>{d.getDate()}</span>
+                        <span className="flex gap-1 h-1.5">{has && <span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-white/40"><span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />Workouts this week</div>
+                  <div className="text-2xl font-semibold font-mono text-white mt-1">{weekPlans.length}</div>
+                </div>
+
+                <div className="space-y-2">
+                  <span className={`text-[11px] font-semibold uppercase tracking-wide block ${activeKey === today ? 'text-[#6ccbde]' : 'text-white/40'}`}>
+                    {new Date(activeKey + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                    {activeKey === today && ' · Today'}
+                  </span>
+                  {dayPlans.length === 0 ? (
+                    <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
+                      <p className="text-sm text-white/50 font-light leading-relaxed">No workout on this day.</p>
+                    </div>
+                  ) : (
+                    dayPlans.map(card)
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {view === 'month' && (
             <div className="space-y-4">
