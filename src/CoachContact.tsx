@@ -61,8 +61,8 @@ export const CoachWhatsappButton: React.FC<{ clientId: string }> = ({ clientId }
   );
 };
 
-// Card for the bottom of the suggested workout page.
-export const ContactCoachCard: React.FC<{ clientId: string; coachName?: string; workoutTitle: string }> = ({ clientId, coachName, workoutTitle }) => {
+// Small pill at the top right of the suggested workout page, in line with the Back button.
+export const ContactCoachPill: React.FC<{ clientId: string; coachName?: string; workoutTitle: string }> = ({ clientId, coachName, workoutTitle }) => {
   const coach = useCoachWhatsapp(clientId, coachName);
   if (!coach) return null;
   return (
@@ -70,16 +70,13 @@ export const ContactCoachCard: React.FC<{ clientId: string; coachName?: string; 
       href={coach.link(`Hi Coach ${coach.name}, I have a question about my workout "${workoutTitle}". `)}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-4 flex items-center gap-3 rounded-2xl bg-[#252525] border border-white/[0.06] p-3.5 active:scale-[0.99] transition"
+      aria-label={`Contact coach ${coach.name} on WhatsApp`}
+      className="inline-flex items-center gap-2 pl-1.5 pr-3.5 py-1.5 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/70 hover:text-white active:scale-95 transition"
     >
-      <span className="w-10 h-10 rounded-full bg-white/[0.05] border border-white/[0.08] flex items-center justify-center shrink-0 text-white/70">
-        <WaIcon size={20} color="currentColor" />
+      <span className="w-7 h-7 rounded-full bg-white/[0.06] flex items-center justify-center">
+        <WaIcon size={16} color="currentColor" />
       </span>
-      <span className="flex-1 min-w-0">
-        <span className="block font-subheader text-[16px] text-white leading-tight">Contact your coach</span>
-        <span className="block text-[11px] text-white/50 truncate">Message {coach.name} on WhatsApp</span>
-      </span>
-      <span className="text-[11px] font-bold text-white/70 border border-white/[0.15] rounded-full px-3 py-1 shrink-0">Chat</span>
+      <span className="font-subheader text-[13px] tracking-wide leading-none">Contact coach</span>
     </a>
   );
 };
