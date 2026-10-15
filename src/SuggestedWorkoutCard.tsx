@@ -23,13 +23,23 @@ const prettyDate = (k: string) => {
 
 const AskPostpone: React.FC<{ clientId: string; coachName?: string; date: string; title: string }> = ({ clientId, coachName, date, title }) => {
   const coach = useCoachWhatsapp(clientId, coachName);
-  if (!coach) return null;
+  const [noNumber, setNoNumber] = React.useState(false);
+  const cls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.12] text-white/60 hover:text-white text-[11px] font-semibold active:scale-95 transition';
+  // The button always shows. If the coach has no WhatsApp number saved yet, tapping it says so instead of opening WhatsApp.
+  if (!coach) {
+    return (
+      <div className="space-y-1.5">
+        <button type="button" onClick={() => setNoNumber(true)} className={cls}>Ask coach to postpone</button>
+        {noNumber && <p className="text-[11px] text-white/50 font-light">Your coach's WhatsApp number is not added yet. Please ask your coach directly.</p>}
+      </div>
+    );
+  }
   return (
     <a
       href={coach.link(`Hi Coach ${coach.name}, can you please postpone my workout "${title}" scheduled for ${prettyDate(date)}? `)}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.12] text-white/60 hover:text-white text-[11px] font-semibold active:scale-95 transition"
+      className={cls}
     >
       Ask coach to postpone
     </a>
