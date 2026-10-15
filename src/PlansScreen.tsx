@@ -459,7 +459,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-        {!IS_RECORDED && <CoachWhatsappButton clientId={clientId} />}
+        <CoachWhatsappButton clientId={clientId} />
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
