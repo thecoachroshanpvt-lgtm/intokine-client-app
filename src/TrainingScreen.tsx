@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
+import { ContactCoachCard } from './CoachContact';
 
 interface TrainerizeSet {
   id: string;
@@ -54,6 +55,7 @@ interface SuggestedWorkout {
 }
 
 interface TrainingScreenProps {
+  clientId: string;
   workout: SuggestedWorkout;
   onBack: () => void;
   onMarkedComplete: () => void;
@@ -168,7 +170,7 @@ const PHASE_ORDER = ['Warmup', 'Main', 'Cooldown'] as const;
 const phaseGroup = (ex: TrainerizeExercise): (typeof PHASE_ORDER)[number] => (ex.phase === 'Warmup' ? 'Warmup' : ex.phase === 'Cooldown' ? 'Cooldown' : 'Main');
 const PHASE_TITLE: Record<string, string> = { Warmup: 'Warm-up', Main: 'Exercises', Cooldown: 'Cool down' };
 
-export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack, onMarkedComplete }) => {
+export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workout, onBack, onMarkedComplete }) => {
   const [completedExerciseIds, setCompletedExerciseIds] = useState<Set<string>>(new Set());
   const [markingComplete, setMarkingComplete] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(!!workout.clientCompletedAt);
@@ -437,6 +439,8 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ workout, onBack,
           })()}
         </div>
       )}
+
+      <ContactCoachCard clientId={clientId} coachName={workout.coachName} workoutTitle={workout.planTitle} />
 
       {videoEx && <VideoPopup url={videoEx.videoUrl} name={videoEx.name} onClose={() => setVideoEx(null)} />}
     </div>
