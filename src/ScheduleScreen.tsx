@@ -412,8 +412,15 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
           {viewMode === 'today' && (
             <div className="space-y-2">
               {todaySessions.length === 0 ? (
-                <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
-                  <p className="text-sm text-white/50 font-light leading-relaxed">Nothing scheduled for today.</p>
+                <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#252525]/60 px-4 py-4 flex items-center gap-3">
+                  <div className="w-10 h-10 shrink-0 rounded-full bg-white/[0.06] flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6ccbde" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-subheader text-[17px] text-white leading-tight">No training with your coach today</div>
+                  </div>
                 </div>
               ) : (
                 todaySessions.map(renderSessionCard)
