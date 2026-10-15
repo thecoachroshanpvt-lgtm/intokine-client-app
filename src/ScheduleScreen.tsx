@@ -298,6 +298,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
   if (selectedWorkout) {
     return (
       <TrainingScreen
+        clientId={clientId}
         workout={{
           id: selectedWorkout.id,
           date: selectedWorkout.date,
