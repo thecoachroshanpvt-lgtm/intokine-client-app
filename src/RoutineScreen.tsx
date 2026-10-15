@@ -11,6 +11,8 @@ import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc,
 //   period = the day (daily), the Monday of the week (weekly) or YYYY-MM (monthly)
 
 type Freq = 'daily' | 'weekly' | 'monthly';
+// Retired items: still stored on older follow-ups, but no longer shown to clients.
+const HIDDEN_LABELS = ['any change in my health or medicines', 'questions for my dietitian'];
 type ItemType = 'number' | 'tick' | 'choice' | 'level' | 'text';
 
 interface TrackItem {
@@ -223,7 +225,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           snap.docs.map((d) => {
             const f = { id: d.id, ...(d.data() as any) } as FollowUp;
             // Mood is always a daily item, even in a follow-up saved when it was weekly.
-            return { ...f, items: (f.items || []).map((i) => (i.label.toLowerCase() === 'mood' && i.type === 'choice' ? { ...i, freq: 'daily' as Freq } : i)) };
+            return { ...f, items: (f.items || []).filter((i) => !HIDDEN_LABELS.includes((i.label || '').trim().toLowerCase())).map((i) => (i.label.toLowerCase() === 'mood' && i.type === 'choice' ? { ...i, freq: 'daily' as Freq } : i)) };
           })
         );
         setLoading(false);
