@@ -316,7 +316,21 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   };
 
   // Supplements are ticked in the Diet tab, not here.
-  const itemsFor = (freq: Freq) => active.flatMap((fu) => fu.items.filter((i) => i.freq === freq && i.category !== 'Supplements').map((it) => ({ fu, it })));
+  // The same item added by both the dietitian and the coach (for example "Low energy") is asked once: the newest follow-up's copy is kept.
+  const itemsFor = (freq: Freq) => {
+    const seen = new Set<string>();
+    return active.flatMap((fu) =>
+      fu.items
+        .filter((i) => i.freq === freq && i.category !== 'Supplements')
+        .filter((i) => {
+          const k = i.label.trim().toLowerCase();
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        })
+        .map((it) => ({ fu, it }))
+    );
+  };
   const isDone = (fu: FollowUp, it: TrackItem) => {
     return hasAnswer(it.type, valueOf(fu, it));
   };
