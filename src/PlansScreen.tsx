@@ -493,6 +493,91 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
         </div>
       )}
 
+      {/* Zaki package: counted in days. Shows "Day X of N"; once the days are over it becomes a renew card. Tap for the package history at any time. */}
+      {IS_RECORDED && startDate && (renewalDate || packageSessions) && (() => {
+        const DAY = 1000 * 60 * 60 * 24;
+        const todayK = toDateKey(new Date());
+        const startMs = new Date(startDate + 'T00:00:00').getTime();
+        const totalDays = packageSessions || Math.max(1, Math.round((new Date((renewalDate as string) + 'T00:00:00').getTime() - startMs) / DAY));
+        const dayNum = Math.floor((new Date(todayK + 'T00:00:00').getTime() - startMs) / DAY) + 1;
+        const finished = dayNum > totalDays;
+        const shownDay = Math.max(1, Math.min(totalDays, dayNum));
+        const daysLeft = Math.max(0, totalDays - shownDay);
+        const percent = finished ? 1 : Math.min(1, Math.max(0, (shownDay - 1) / totalDays));
+        const endKey = toDateKey(new Date(startMs + (totalDays - 1) * DAY));
+        // Workouts the coach sent in this package, up to today (or the last day).
+        const inPkg = plans.filter((p) => p.date >= startDate && p.date <= (finished ? endKey : todayK)).sort((a, b) => b.date.localeCompare(a.date));
+        const doneCount = inPkg.filter((p) => p.clientCompletedAt).length;
+        let alertText: string | null = null;
+        if (!finished && daysLeft <= 7) alertText = `Renewal due soon - ${daysLeft === 0 ? 'last day today' : `${daysLeft} day${daysLeft === 1 ? '' : 's'} left`}.`;
+        return (
+          <div className="rounded-2xl overflow-hidden" style={finished ? { background: 'rgba(236,34,38,0.10)', border: '1px solid rgba(236,34,38,0.4)' } : { background: 'linear-gradient(160deg, rgba(108,203,222,0.12), rgba(108,203,222,0.04))' }}>
+            <button type="button" onClick={() => setPackageHistoryOpen((o) => !o)} className="w-full text-left p-4 space-y-2" aria-expanded={packageHistoryOpen}>
+              {finished ? (
+                <div className="flex items-start gap-3">
+                  <span className="w-2 h-2 mt-1.5 rounded-full bg-[#ec2226] shrink-0" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-subheader text-[17px] text-white">Renew your package</p>
+                    <p className="text-[11px] text-white/60 font-light mt-0.5 leading-relaxed">Your <span className="font-mono">{totalDays}</span>-day package has finished. Please renew to keep your workouts coming.</p>
+                  </div>
+                  <span className="text-[11px] text-white/40" style={{ display: 'inline-block', transform: packageHistoryOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="font-subheader text-[17px] text-white">Day <span className="font-mono">{shownDay}</span> of <span className="font-mono">{totalDays}</span></span>
+                    <span className="text-[11px] text-white/40 font-mono flex items-center gap-1.5">
+                      {daysLeft} day{daysLeft === 1 ? '' : 's'} left
+                      <span style={{ display: 'inline-block', transform: packageHistoryOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+                    </span>
+                  </div>
+                  <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-[#6ccbde]" style={{ width: `${percent * 100}%` }} />
+                  </div>
+                  {alertText && (
+                    <p className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: '#f59e0b' }}>
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#f59e0b' }} />
+                      {alertText}
+                    </p>
+                  )}
+                </>
+              )}
+              {!packageHistoryOpen && <p className="text-[10px] text-white/30 font-light">Tap to see your history for this package</p>}
+            </button>
+
+            {packageHistoryOpen && (
+              <div className="border-t border-white/[0.06] p-3 space-y-2">
+                <p className="text-[11px] text-white/50">
+                  This package: <span className="text-emerald-400 font-semibold">{doneCount} of {inPkg.length} workouts done</span>
+                  {' · '}{startDate} to {endKey}
+                </p>
+                {inPkg.length === 0 ? (
+                  <p className="text-xs text-white/40 font-light text-center py-3">No workouts in this package yet.</p>
+                ) : (
+                  inPkg.map((p) => {
+                    const rd = parseDateKey(p.date);
+                    const done = !!p.clientCompletedAt;
+                    const isToday = p.date === todayK;
+                    const label = done ? 'DONE' : isToday ? 'TODAY' : 'NOT DONE';
+                    const color = done ? '#34d399' : isToday ? '#6ccbde' : '#ec2226';
+                    return (
+                      <div key={p.id} className="flex items-center gap-3 bg-[#252525] border border-white/[0.06] rounded-xl px-3 py-2">
+                        <div className="w-16 shrink-0 text-xs font-semibold text-white">
+                          {rd ? rd.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : p.date}
+                          <div className="text-[10px] text-white/40 font-light">{rd ? rd.toLocaleDateString(undefined, { weekday: 'short' }) : ''}</div>
+                        </div>
+                        <div className="flex-1 min-w-0 text-[11px] text-white/50 truncate">{p.planTitle}</div>
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap" style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}>{label}</span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Journey roadmap - tap to see this package's attendance */}
       {!IS_RECORDED && journey && (() => {
         const todayK = toDateKey(new Date());
