@@ -20,6 +20,7 @@ import { SessionCard } from './SessionCard';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { OverallProgressCard } from './OverallProgressCard';
 import { IS_RECORDED } from './variant';
+import { useZakiMeetings, ZakiMeetingCard } from './ZakiMeetings';
 import { CoachWhatsappButton } from './CoachContact';
 import { InlineLoader } from './InlineLoader';
 import { PasswordInput } from './PasswordInput';
@@ -257,6 +258,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
   const [allSessionsList, setAllSessionsList] = useState<TodaySession[]>([]);
   const [selectedWorkout, setSelectedWorkout] = useState<VisiblePlan | null>(null);
   const [packageHistoryOpen, setPackageHistoryOpen] = useState(false);
+  const zakiMeetings = useZakiMeetings(clientId);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -493,6 +495,15 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
         </div>
       )}
 
+      {/* Zaki group meeting: the next one, with its Google Meet link. All of them are in the Workouts tab. */}
+      {IS_RECORDED && zakiMeetings.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-[11px] text-white/40 uppercase font-semibold block">Meeting</span>
+          <ZakiMeetingCard m={zakiMeetings[0]} />
+          {zakiMeetings.length > 1 && <p className="text-[11px] text-white/40 font-light">{zakiMeetings.length - 1} more scheduled. See the Workouts tab.</p>}
+        </div>
+      )}
+
       {/* Zaki package: counted in days. Shows "Day X of N"; once the days are over it becomes a renew card. Tap for the package history at any time. */}
       {IS_RECORDED && startDate && (renewalDate || packageSessions) && (() => {
         const DAY = 1000 * 60 * 60 * 24;
@@ -704,7 +715,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
             <span className="text-[11px] text-white/40 uppercase font-semibold block">Today</span>
 
             {todaySessions
-              .map((s) => <SessionCard key={s.id} s={s} online={online} viewDate={todayKey} />)}
+              .map((s) => <SessionCard key={s.id} s={s} online={online} viewDate={todayKey} clientId={clientId} />)}
 
             {todaySessions.length === 0 && (
               <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#252525]/60 px-4 py-4 flex items-center gap-3">
