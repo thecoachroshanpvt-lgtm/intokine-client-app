@@ -3,6 +3,7 @@ import { initializeClientFirebaseApp, collection, query, where, onSnapshot } fro
 import { TrainingScreen } from './TrainingScreen';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
+import { useZakiMeetings, ZakiMeetingCard } from './ZakiMeetings';
 
 // Workouts tab of the recorded-sessions app. There are no coach sessions to schedule, so this is simply
 // the workouts the coach has sent, viewed by Today, Week, Month and History.
@@ -38,6 +39,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
   const [view, setView] = useState<'today' | 'week' | 'month' | 'history'>('today');
   const [anchor, setAnchor] = useState(dateKey(new Date()));
   const [selDay, setSelDay] = useState<string | null>(null);
+  const meetings = useZakiMeetings(clientId);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -132,6 +134,12 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
 
   return (
     <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
+      {meetings.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-[11px] text-white/40 uppercase font-semibold block">Meetings</span>
+          {meetings.map((m) => <ZakiMeetingCard key={m.id} m={m} />)}
+        </div>
+      )}
       {loading ? (
         <InlineLoader />
       ) : plans.length === 0 ? (
