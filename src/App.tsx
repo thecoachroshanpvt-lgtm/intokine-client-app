@@ -159,7 +159,7 @@ function App() {
   }
 
   // 3. Straight to the app home - the welcome photo screen is the only photo screen.
-  return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} />;
+  return <ClientDashboard clientId={clientInfo.clientId} clientName={clientInfo.name} online={service === 'Online Personal Training'} />;
 }
 
 export default App;
