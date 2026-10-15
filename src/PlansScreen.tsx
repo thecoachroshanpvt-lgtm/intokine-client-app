@@ -16,6 +16,7 @@ import {
 } from './firebase';
 import { createPortal } from 'react-dom';
 import { TrainingScreen } from './TrainingScreen';
+import { SessionCard } from './SessionCard';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { OverallProgressCard } from './OverallProgressCard';
 import { CoachWhatsappButton } from './CoachContact';
@@ -27,6 +28,7 @@ import { PasswordInput } from './PasswordInput';
 interface PlansScreenProps {
   clientId: string;
   clientName: string;
+  online?: boolean;
 }
 
 interface TrainerizeSet {
@@ -81,6 +83,8 @@ interface TodaySession {
   status: 'Scheduled' | 'Completed' | 'Cancelled' | 'Postponed';
   attendanceStatus?: string;
   postponedFromDates?: string[];
+  program?: string;
+  meetLink?: string;
 }
 
 // Local calendar date (YYYY-MM-DD) - toISOString() is UTC and shifts the day
@@ -236,7 +240,7 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }) => {
+export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, online = false }) => {
   const [plans, setPlans] = useState<VisiblePlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [startDate, setStartDate] = useState<string | null>(null);
@@ -613,57 +617,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName }
             <span className="text-[11px] text-white/40 uppercase font-semibold block">Today</span>
 
             {todaySessions
-              .map((s) => {
-              const sd = parseDateKey(toDateKey(new Date()));
-              const t = formatTime(s.time);
-              const movedAway = s.date !== toDateKey(new Date());
-              const absent = !movedAway && (s.attendanceStatus === 'Absent' || s.attendanceStatus === 'No Show');
-              const color = movedAway ? '#f59e0b' : absent ? '#ec2226' : statusColor(s.status);
-              const label = movedAway ? 'POSTPONED' : absent ? 'ABSENT' : s.status.toUpperCase();
-              const movedTo = movedAway ? parseDateKey(s.date) : null;
-              const movedTime = movedAway ? formatTime(s.time) : null;
-              return (
-                <div key={s.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3 flex items-center gap-3">
-                  <div className="w-14 shrink-0 rounded-xl bg-white/[0.05] border border-white/[0.06] py-2 text-center">
-                    <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">
-                      {sd ? sd.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}
-                    </div>
-                    <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{sd ? sd.getDate() : '—'}</div>
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">
-                      {sd ? sd.toLocaleDateString(undefined, { month: 'short' }) : ''}
-                    </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none mb-1.5">Session with coach</div>
-                    {movedAway ? (
-                      <div className="text-sm font-bold text-amber-400 leading-snug">
-                        Moved to {movedTo ? movedTo.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : s.date}
-                        {movedTime ? ` · ${movedTime.clock} ${movedTime.period}` : ''}
-                      </div>
-                    ) : (
-                    <div className="flex items-baseline gap-1">
-                      {t ? (
-                        <>
-                          <span className="text-base font-semibold font-mono text-white leading-none">{t.clock}</span>
-                          <span className="text-[10px] font-bold text-white/50">{t.period}</span>
-                        </>
-                      ) : (
-                        <span className="text-sm font-bold text-white">{s.time || 'Time TBC'}</span>
-                      )}
-                    </div>
-                    )}
-                    <div className="text-xs font-semibold text-white/80 mt-1 truncate">{s.sessionType}</div>
-                    <div className="text-[11px] text-white/40 font-light truncate">{s.location} · Coach {s.coachName}</div>
-                  </div>
-                  <span
-                    className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start"
-                    style={{ color, borderColor: `${color}40`, backgroundColor: `${color}15` }}
-                  >
-                    {label}
-                  </span>
-                </div>
-              );
-            })}
+              .map((s) => <SessionCard key={s.id} s={s} online={online} viewDate={todayKey} />)}
 
             {todaySessions.length === 0 && (
               <div className="rounded-2xl border border-dashed border-white/[0.12] bg-[#252525]/60 px-4 py-4 flex items-center gap-3">
