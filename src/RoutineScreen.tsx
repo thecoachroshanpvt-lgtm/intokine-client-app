@@ -316,21 +316,23 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   };
 
   // Supplements are ticked in the Diet tab, not here.
-  // The same item added by both the dietitian and the coach (for example "Low energy") is asked once: the newest follow-up's copy is kept.
-  const itemsFor = (freq: Freq) => {
+  // The same item added by both the dietitian and the coach (for example "Low energy") is asked once, whatever its frequency:
+  // the newest follow-up's copy is kept.
+  const keptItems = (() => {
     const seen = new Set<string>();
-    return active.flatMap((fu) =>
-      fu.items
-        .filter((i) => i.freq === freq && i.category !== 'Supplements')
-        .filter((i) => {
-          const k = i.label.trim().toLowerCase();
-          if (seen.has(k)) return false;
-          seen.add(k);
-          return true;
-        })
-        .map((it) => ({ fu, it }))
+    const keep = new Set<string>();
+    active.forEach((fu) =>
+      fu.items.filter((i) => i.category !== 'Supplements').forEach((i) => {
+        const k = i.label.trim().toLowerCase();
+        if (seen.has(k)) return;
+        seen.add(k);
+        keep.add(`${fu.id}|${i.id}`);
+      })
     );
-  };
+    return keep;
+  })();
+  const itemsFor = (freq: Freq) =>
+    active.flatMap((fu) => fu.items.filter((i) => i.freq === freq && i.category !== 'Supplements' && keptItems.has(`${fu.id}|${i.id}`)).map((it) => ({ fu, it })));
   const isDone = (fu: FollowUp, it: TrackItem) => {
     return hasAnswer(it.type, valueOf(fu, it));
   };
