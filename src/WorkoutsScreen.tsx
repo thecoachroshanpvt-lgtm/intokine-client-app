@@ -111,7 +111,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
       hint={`${p.structuredExercises?.length || 0} exercises${p.durationMinutes ? ` · ${p.durationMinutes} mins` : ''}`}
       done={!!p.clientCompletedAt}
       onClick={() => setSelected(p)}
- postpone={!p.clientCompletedAt && p.date >= today ? { clientId, coachName: p.coachName, date: p.date } : undefined} postponedFrom={(p as any).postponedFromDate} postponeReason={(p as any).postponeReason}
+ missed={!p.clientCompletedAt && p.date < today} postpone={!p.clientCompletedAt && p.date >= today ? { clientId, coachName: p.coachName, date: p.date } : undefined} postponedFrom={(p as any).postponedFromDate} postponeReason={(p as any).postponeReason}
 />
   );
   const grouped = (list: Plan[]) => {
@@ -230,10 +230,10 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
                     const allDone = day.length > 0 && day.every((p) => p.clientCompletedAt);
                     const missed = day.length > 0 && !allDone && k < today;
                     return (
-                      <div key={k} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-mono ${k === today ? 'ring-1 ring-[#6ccbde]' : ''} ${day.length ? (allDone ? 'bg-emerald-400/20 text-emerald-300' : missed ? 'bg-white/[0.06] text-white/50' : 'bg-[#6ccbde]/20 text-[#6ccbde]') : 'text-white/30'}`}>
+                      <button type="button" key={k} onClick={() => setSelDay(selDay === k ? null : k)} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-mono ${k === today ? 'ring-1 ring-[#6ccbde]' : ''} ${selDay === k ? 'outline outline-2 outline-white/70' : ''} ${day.length ? (allDone ? 'bg-emerald-400/20 text-emerald-300' : missed ? 'bg-white/[0.06] text-white/50' : 'bg-[#6ccbde]/20 text-[#6ccbde]') : 'text-white/30'}`}>
                         <span className="font-bold">{i + 1}</span>
                         {day.length > 0 && <span className="w-1 h-1 rounded-full bg-current mt-0.5" />}
-                      </div>
+                      </button>
                     );
                   })}
                 </div>
@@ -243,7 +243,12 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
                   <span><i className="inline-block w-2 h-2 rounded-sm bg-white/20 mr-1" />Not done</span>
                 </div>
               </div>
-              {monthPlans.length === 0 ? empty('No workouts this month.') : grouped(monthPlans)}
+              {selDay && selDay.startsWith(monthPrefix) ? (
+                <div className="space-y-2">
+                  <span className="text-[11px] text-white/40 uppercase font-semibold block">{selDay === today ? 'Today' : pretty(selDay)} <button type="button" onClick={() => setSelDay(null)} className="ml-2 normal-case text-[#6ccbde]">Show whole month</button></span>
+                  {monthPlans.filter((p) => p.date === selDay).length === 0 ? empty('No workout on this day.') : monthPlans.filter((p) => p.date === selDay).map(card)}
+                </div>
+              ) : monthPlans.length === 0 ? empty('No workouts this month.') : grouped(monthPlans)}
             </div>
           )}
 
