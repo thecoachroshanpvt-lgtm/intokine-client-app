@@ -1,307 +1,103 @@
-import React, { useEffect, useState } from 'react';
-import { initializeClientFirebaseApp, collection, query, where, onSnapshot } from './firebase';
-import { TrainingScreen } from './TrainingScreen';
-import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
-import { InlineLoader } from './InlineLoader';
-import { useZakiMeetings, ZakiMeetingCard } from './ZakiMeetings';
+import React, { useState } from 'react';
 
-// Workouts tab of the recorded-sessions app. There are no coach sessions to schedule, so this is simply
-// the workouts the coach has sent, viewed by Today, Week, Month and History.
-
-interface Plan {
-  id: string;
-  planTitle: string;
-  date: string;
-  category: string;
-  coachName: string;
-  durationMinutes?: number;
-  targetFocus?: string;
-  planDetails?: string;
-  rpeTarget?: number;
-  coachSessionNotes?: string;
-  structuredExercises?: any[];
-  clientCompletedAt?: string;
+interface WelcomeScreenProps {
+  onContinue: () => void;
 }
 
-// A day the coach scheduled in Coach OS or Owner OS. Zaki has no attendance for it: done or not done comes from the workout.
-interface Sched { id: string; date: string; time?: string; coachName?: string; sessionType?: string; status?: string }
-
-// Shown at the bottom of this tab so it is easy to see which version of the app is running.
-const BUILD_TAG = 'build 15 Oct 16:10';
-
-const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const pretty = (k: string) => {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k);
-  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : k;
-};
-
-export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [scheduled, setScheduled] = useState<Sched[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Plan | null>(null);
-  const [view, setView] = useState<'today' | 'week' | 'month' | 'history'>('today');
-  const [anchor, setAnchor] = useState(dateKey(new Date()));
-  const [selDay, setSelDay] = useState<string | null>(null);
-  const meetings = useZakiMeetings(clientId);
-
-  useEffect(() => {
-    const { db } = initializeClientFirebaseApp();
-    if (!db) { setLoading(false); return; }
-    const unsub = onSnapshot(
-      query(collection(db, 'intokine_given_session_plans'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
-      (snap) => { setPlans(snap.docs.map((d) => d.data() as Plan)); setLoading(false); },
-      () => setLoading(false)
-    );
-    return () => unsub();
-  }, [clientId]);
-
-  useEffect(() => {
-    const { db } = initializeClientFirebaseApp();
-    if (!db) return;
-    const unsub = onSnapshot(
-      query(collection(db, 'intokine_sessions'), where('clientId', '==', clientId)),
-      (snap) => setScheduled(snap.docs.map((d) => d.data() as Sched).filter((x) => x.status !== 'Cancelled' && x.date)),
-      () => {}
-    );
-    return () => unsub();
-  }, [clientId]);
-
-  if (selected) {
-    return (
-      <TrainingScreen
-        clientId={clientId}
-        workout={{
-          id: selected.id,
-          date: selected.date,
-          planTitle: selected.planTitle,
-          category: selected.category,
-          planDetails: selected.planDetails || '',
-          targetFocus: selected.targetFocus || '',
-          durationMinutes: selected.durationMinutes || 0,
-          rpeTarget: selected.rpeTarget || 0,
-          coachName: selected.coachName,
-          coachSessionNotes: selected.coachSessionNotes,
-          structuredExercises: selected.structuredExercises,
-          clientCompletedAt: selected.clientCompletedAt,
-        }}
-        onBack={() => setSelected(null)}
-        onMarkedComplete={() => setPlans((prev) => prev.map((p) => (p.id === selected.id ? { ...p, clientCompletedAt: new Date().toISOString() } : p)))}
-      />
-    );
-  }
-
-  const today = dateKey(new Date());
-  const byDate = (a: Plan, b: Plan) => a.date.localeCompare(b.date);
-  const addDays = (k: string, n: number) => { const d = new Date(k + 'T00:00:00'); d.setDate(d.getDate() + n); return dateKey(d); };
-
-  // Week (Monday to Sunday) and month (calendar) around the date being looked at.
-  const base = new Date(anchor + 'T00:00:00');
-  const weekStart = addDays(anchor, -((base.getDay() + 6) % 7));
-  const weekEnd = addDays(weekStart, 6);
-  const monthPrefix = anchor.slice(0, 7);
-  const first = new Date(monthPrefix + '-01T00:00:00');
-  const daysInMonth = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
-  const lead = (first.getDay() + 6) % 7;
-
-  const step = (dir: -1 | 1) => {
-    if (view === 'week') setAnchor(addDays(anchor, dir * 7));
-    else setAnchor(dateKey(new Date(first.getFullYear(), first.getMonth() + dir, 1)));
-  };
-  const rangeLabel = view === 'week'
-    ? `${pretty(weekStart)} to ${pretty(weekEnd)}`
-    : first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-
-  const schedOn = (k: string) => scheduled.filter((x) => x.date === k);
-  // A day the coach scheduled but did not add a workout to yet.
-  const schedCard = (x: Sched) => (
-    <div key={x.id} className="rounded-2xl bg-[#252525] border border-[#6ccbde]/30 p-4 flex items-center gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Scheduled by your coach</div>
-        <div className="font-subheader text-[17px] text-white mt-1.5">Workout not logged yet</div>
-        <div className="text-[11px] text-white/50 truncate">{[x.time, x.coachName ? `Coach ${x.coachName}` : ''].filter(Boolean).join(' · ') || 'Your coach will add the workout here.'}</div>
-      </div>
-      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: '#6ccbde', borderColor: '#6ccbde40', backgroundColor: '#6ccbde26' }}>SCHEDULED</span>
-    </div>
-  );
-  // What to show for one day: the workouts if any were added, otherwise the scheduled-day card.
-  const dayCards = (k: string) => {
-    const w = plans.filter((p) => p.date === k).sort(byDate);
-    return w.length > 0 ? w.map(card) : schedOn(k).map(schedCard);
-  };
-  const todays = plans.filter((p) => p.date === today).sort(byDate);
-  const upcomingCount = plans.filter((p) => p.date > today && !p.clientCompletedAt).length;
-  const weekPlans = plans.filter((p) => p.date >= weekStart && p.date <= weekEnd).sort(byDate);
-  const monthPlans = plans.filter((p) => p.date.startsWith(monthPrefix)).sort(byDate);
-  const history = plans.filter((p) => p.clientCompletedAt || p.date < today).sort((a, b) => b.date.localeCompare(a.date));
-
-  const card = (p: Plan) => (
-    <SuggestedWorkoutCard
-      key={p.id}
-      title={p.planTitle}
-      label={p.date === today ? 'Today' : pretty(p.date)}
-      hint={`${p.structuredExercises?.length || 0} exercises${p.durationMinutes ? ` · ${p.durationMinutes} mins` : ''}`}
-      done={!!p.clientCompletedAt}
-      onClick={() => setSelected(p)}
- missed={!p.clientCompletedAt && p.date < today} postpone={!p.clientCompletedAt && p.date >= today ? { clientId, coachName: p.coachName, date: p.date } : undefined} postponedFrom={(p as any).postponedFromDate} postponeReason={(p as any).postponeReason}
-/>
-  );
-  const grouped = (list: Plan[]) => {
-    const dates = Array.from(new Set(list.map((p) => p.date)));
-    return dates.map((d) => (
-      <div key={d} className="space-y-2">
-        <span className="text-[11px] text-white/40 uppercase font-semibold block">{d === today ? 'Today' : pretty(d)}</span>
-        {list.filter((p) => p.date === d).map(card)}
-      </div>
-    ));
-  };
-  const empty = (msg: string) => <p className="text-xs text-white/40 font-light text-center py-6">{msg}</p>;
-  const nav = (
-    <div className="flex items-center justify-between">
-      <button type="button" onClick={() => step(-1)} className="px-3 py-1.5 rounded-lg border border-white/[0.12] text-white/70 text-sm" aria-label="Previous">‹</button>
-      <span className="text-xs font-bold text-white">{rangeLabel}</span>
-      <button type="button" onClick={() => step(1)} className="px-3 py-1.5 rounded-lg border border-white/[0.12] text-white/70 text-sm" aria-label="Next">›</button>
-    </div>
-  );
+export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const [wordmarkFailed, setWordmarkFailed] = useState(false);
 
   return (
-    <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
-      {meetings.length > 0 && (
-        <div className="space-y-2">
-          <span className="text-[11px] text-white/40 uppercase font-semibold block">Meetings</span>
-          {meetings.map((m) => <ZakiMeetingCard key={m.id} m={m} />)}
-        </div>
-      )}
-      {loading ? (
-        <InlineLoader />
-      ) : plans.length === 0 && scheduled.length === 0 ? (
-        <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-6 text-center">
-          <p className="font-subheader text-[17px] text-white">No workouts yet</p>
-          <p className="text-[11px] text-white/50 font-light mt-1">Your coach will send your workouts here. Do them any time and mark them done.</p>
-        </div>
+    <div className="min-h-screen relative overflow-hidden bg-[#1c1c1c] flex flex-col justify-between">
+      {/* Intro animation: the icon appears large, then glides up and the wordmark reveals beneath it. */}
+      <style>{`
+        @keyframes ikIcon {
+          0%   { opacity: 0; transform: translateY(96px) scale(0.92); }
+          22%  { opacity: 1; transform: translateY(96px) scale(1); }
+          55%  { opacity: 1; transform: translateY(96px) scale(1); }
+          100% { opacity: 1; transform: translateY(0) scale(var(--ik-end)); }
+        }
+        @keyframes ikWord {
+          0%   { opacity: 0; clip-path: inset(0 100% 0 0); transform: translateY(10px); }
+          100% { opacity: 1; clip-path: inset(0 0 0 0); transform: translateY(0); }
+        }
+        @keyframes ikLine { 0% { transform: scaleX(0); opacity: 0; } 100% { transform: scaleX(1); opacity: 1; } }
+        @keyframes ikUp { 0% { opacity: 0; transform: translateY(14px); } 100% { opacity: 1; transform: translateY(0); } }
+        .ik-icon { --ik-end: 0.375; height: 4rem; will-change: transform; backface-visibility: hidden; animation: ikIcon 2s cubic-bezier(0.65, 0, 0.2, 1) both; }
+        @media (min-width: 640px) { .ik-icon { --ik-end: 0.5; } }
+        .ik-word { animation: ikWord 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) 1.45s both; }
+        .ik-line { animation: ikLine 0.6s ease-out 2.2s both; transform-origin: center; }
+        .ik-tag  { animation: ikUp 0.7s ease-out 2.4s both; }
+        .ik-btn  { animation: ikUp 0.7s ease-out 2.7s both; }
+        @media (prefers-reduced-motion: reduce) {
+          .ik-icon, .ik-word, .ik-line, .ik-tag, .ik-btn { animation: none; }
+        }
+      `}</style>
+      {/* Background photo - falls back to the brand gradient if the
+          file isn't present yet, so the app never breaks waiting on it. */}
+      {!imageFailed ? (
+        <img
+          src="/welcome-photo.JPEG"
+          alt=""
+          onError={() => setImageFailed(true)}
+          className="absolute inset-0 w-full h-full object-cover"
+        />
       ) : (
-        <>
-          <div className="grid grid-cols-4 gap-1 p-1 rounded-xl bg-[#252525] border border-white/[0.06]">
-            {([['today', 'Today'], ['week', 'Week'], ['month', 'Month'], ['history', 'History']] as const).map(([k, l]) => (
-              <button key={k} type="button" onClick={() => { setView(k); setAnchor(today); }}
-                className={`py-2 rounded-lg text-[11px] font-bold ${view === k ? 'bg-[#6ccbde] text-[#1c1c1c]' : 'text-white/50'}`}>{l}</button>
-            ))}
-          </div>
-
-          {view === 'today' && (
-            <div className="space-y-2">
-              {todays.length === 0 && schedOn(today).length === 0 ? empty('No workout for today.') : dayCards(today)}
-              {upcomingCount > 0 && <p className="text-[11px] text-white/40 font-light text-center pt-2">{upcomingCount} more coming up. See Week or Month.</p>}
-            </div>
-          )}
-
-          {view === 'week' && (() => {
-            const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-            const activeKey = selDay && weekDays.includes(selDay) ? selDay : weekDays.includes(today) ? today : weekStart;
-            const dayPlans = weekPlans.filter((p) => p.date === activeKey);
-            return (
-              <div className="space-y-4">
-                {nav}
-                <div className="grid grid-cols-7 gap-1.5">
-                  {weekDays.map((k) => {
-                    const d = new Date(k + 'T00:00:00');
-                    const isActive = k === activeKey;
-                    const isToday = k === today;
-                    const has = weekPlans.some((p) => p.date === k) || schedOn(k).length > 0;
-                    return (
-                      <button
-                        key={k}
-                        type="button"
-                        onClick={() => setSelDay(k)}
-                        className={`rounded-xl py-2.5 flex flex-col items-center gap-1 border transition ${
-                          isActive ? 'bg-gradient-to-b from-[#6ccbde]/25 to-[#6ccbde]/10 border-[#6ccbde]/50' : 'bg-[#252525] border-white/[0.06]'
-                        }`}
-                      >
-                        <span className={`text-[9px] font-bold uppercase tracking-wide ${isToday ? 'text-[#6ccbde]' : 'text-white/40'}`}>
-                          {d.toLocaleDateString(undefined, { weekday: 'short' })}
-                        </span>
-                        <span className={`text-base font-semibold font-mono leading-none ${isActive ? 'text-white' : 'text-white/80'}`}>{d.getDate()}</span>
-                        <span className="flex gap-1 h-1.5">{has && <span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="bg-[#252525] border border-white/[0.06] rounded-2xl px-4 py-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-white/40"><span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />Workouts this week</div>
-                  <div className="text-2xl font-semibold font-mono text-white mt-1">{weekPlans.length}</div>
-                </div>
-
-                <div className="space-y-2">
-                  <span className={`text-[11px] font-semibold uppercase tracking-wide block ${activeKey === today ? 'text-[#6ccbde]' : 'text-white/40'}`}>
-                    {new Date(activeKey + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-                    {activeKey === today && ' · Today'}
-                  </span>
-                  {dayPlans.length === 0 && schedOn(activeKey).length === 0 ? (
-                    <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
-                      <p className="text-sm text-white/50 font-light leading-relaxed">No workout on this day.</p>
-                    </div>
-                  ) : (
-                    <>
-                      {dayCards(activeKey)}
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-
-          {view === 'month' && (
-            <div className="space-y-4">
-              {nav}
-              <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3">
-                <div className="grid grid-cols-7 gap-1 text-center">
-                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((l, i) => <div key={i} className="text-[9px] font-bold text-white/35">{l}</div>)}
-                  {Array.from({ length: lead }).map((_, i) => <div key={'b' + i} />)}
-                  {Array.from({ length: daysInMonth }, (_, i) => {
-                    const k = `${monthPrefix}-${String(i + 1).padStart(2, '0')}`;
-                    const day = monthPlans.filter((p) => p.date === k);
-                    const hasSched = schedOn(k).length > 0;
-                    const hasAny = day.length > 0 || hasSched;
-                    const allDone = day.length > 0 && day.every((p) => p.clientCompletedAt);
-                    const missed = hasAny && !allDone && k < today;
-                    return (
-                      <button type="button" key={k} onClick={() => setSelDay(selDay === k ? null : k)} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-mono ${k === today ? 'ring-1 ring-[#6ccbde]' : ''} ${selDay === k ? 'outline outline-2 outline-white/70' : ''} ${hasAny ? (allDone ? 'bg-emerald-400/20 text-emerald-300' : missed ? 'bg-white/[0.06] text-white/50' : 'bg-[#6ccbde]/20 text-[#6ccbde]') : 'text-white/30'}`}>
-                        <span className="font-bold">{i + 1}</span>
-                        {hasAny && <span className="w-1 h-1 rounded-full bg-current mt-0.5" />}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex items-center justify-center gap-3 text-[9px] text-white/40 mt-2">
-                  <span><i className="inline-block w-2 h-2 rounded-sm bg-[#6ccbde]/50 mr-1" />Scheduled</span>
-                  <span><i className="inline-block w-2 h-2 rounded-sm bg-emerald-400/50 mr-1" />Done</span>
-                  <span><i className="inline-block w-2 h-2 rounded-sm bg-white/20 mr-1" />Not done</span>
-                </div>
-              </div>
-              {(() => {
-                const shownDay = selDay && selDay.startsWith(monthPrefix) ? selDay : today.startsWith(monthPrefix) ? today : null;
-                if (!shownDay) return empty('Tap a day to see its workout.');
-                const dayItems = monthPlans.filter((p) => p.date === shownDay);
-                const sch = schedOn(shownDay);
-                return (
-                  <div className="space-y-2">
-                    <span className="text-[11px] text-white/40 uppercase font-semibold block">{shownDay === today ? 'Today' : pretty(shownDay)}</span>
-                    {dayItems.length === 0 && sch.length === 0 ? empty('No workout on this day.') : dayCards(shownDay)}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-
-          {view === 'history' && (
-            <div className="space-y-4">
-              {history.length === 0 ? empty('Nothing here yet. Finished and past workouts show here.') : grouped(history)}
-            </div>
-          )}
-        </>
+        <div
+          className="absolute inset-0"
+          style={{ background: 'linear-gradient(160deg, #1c1c1c 0%, #1c1c1c 50%, #ec2226 140%)' }}
+        />
       )}
-      <p className="text-[9px] text-white/20 text-center pt-2">{BUILD_TAG}</p>
+
+      {/* Dark overlay so text stays readable over any photo */}
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.75) 100%)' }}
+      />
+
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8 text-center">
+        {/* Slot keeps the final (small) size; the image is drawn large and scaled down so it stays sharp. */}
+        <div className="relative h-6 sm:h-8 w-full mb-11 sm:mb-14">
+          <img
+            src="/brand-icon.png"
+            alt=""
+            className="ik-icon absolute left-0 right-0 mx-auto w-auto object-contain top-1/2 -mt-8"
+          />
+        </div>
+        {!wordmarkFailed ? (
+          <img
+            src="/brand-wordmark.png"
+            alt="INTOKINE"
+            onError={() => setWordmarkFailed(true)}
+            className="ik-word h-[4.5rem] sm:h-24 w-auto max-w-[88%] object-contain drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
+          />
+        ) : (
+          <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95]">
+            INTOKINE
+          </h1>
+        )}
+        <div
+          className="ik-line mt-7 sm:mt-9 h-[2px] w-14 rounded-full"
+          style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+        />
+        <p className="ik-tag mt-6 sm:mt-7 text-[10px] sm:text-xs text-white/70 font-semibold uppercase tracking-[0.22em] leading-[2.2] whitespace-nowrap">
+          Your program. Your progress.
+          <br />
+          Built by your coach.
+        </p>
+      </div>
+
+      <div className="ik-btn relative z-10 px-8 pb-10 sm:pb-14">
+        <button
+          onClick={onContinue}
+          className="w-full sm:w-auto sm:mx-auto sm:block sm:px-16 py-4 rounded-2xl font-bold text-sm text-white shadow-xl active:scale-[0.98] transition"
+          style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+        >
+          CONTINUE
+        </button>
+      </div>
     </div>
   );
 };
