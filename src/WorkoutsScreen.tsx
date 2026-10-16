@@ -23,6 +23,9 @@ interface Plan {
   clientCompletedAt?: string;
 }
 
+// A day the coach scheduled in Coach OS or Owner OS. Zaki has no attendance for it: done or not done comes from the workout.
+interface Sched { id: string; date: string; time?: string; coachName?: string; sessionType?: string; status?: string }
+
 // Shown at the bottom of this tab so it is easy to see which version of the app is running.
 const BUILD_TAG = 'build 15 Oct 16:10';
 
@@ -34,6 +37,7 @@ const pretty = (k: string) => {
 
 export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [scheduled, setScheduled] = useState<Sched[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Plan | null>(null);
   const [view, setView] = useState<'today' | 'week' | 'month' | 'history'>('today');
@@ -48,6 +52,17 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
       query(collection(db, 'intokine_given_session_plans'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
       (snap) => { setPlans(snap.docs.map((d) => d.data() as Plan)); setLoading(false); },
       () => setLoading(false)
+    );
+    return () => unsub();
+  }, [clientId]);
+
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    const unsub = onSnapshot(
+      query(collection(db, 'intokine_sessions'), where('clientId', '==', clientId)),
+      (snap) => setScheduled(snap.docs.map((d) => d.data() as Sched).filter((x) => x.status !== 'Cancelled' && x.date)),
+      () => {}
     );
     return () => unsub();
   }, [clientId]);
@@ -97,6 +112,23 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
     ? `${pretty(weekStart)} to ${pretty(weekEnd)}`
     : first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
 
+  const schedOn = (k: string) => scheduled.filter((x) => x.date === k);
+  // A day the coach scheduled but did not add a workout to yet.
+  const schedCard = (x: Sched) => (
+    <div key={x.id} className="rounded-2xl bg-[#252525] border border-[#6ccbde]/30 p-4 flex items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Scheduled by your coach</div>
+        <div className="font-subheader text-[17px] text-white mt-1.5">Workout not logged yet</div>
+        <div className="text-[11px] text-white/50 truncate">{[x.time, x.coachName ? `Coach ${x.coachName}` : ''].filter(Boolean).join(' · ') || 'Your coach will add the workout here.'}</div>
+      </div>
+      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: '#6ccbde', borderColor: '#6ccbde40', backgroundColor: '#6ccbde26' }}>SCHEDULED</span>
+    </div>
+  );
+  // What to show for one day: the workouts if any were added, otherwise the scheduled-day card.
+  const dayCards = (k: string) => {
+    const w = plans.filter((p) => p.date === k).sort(byDate);
+    return w.length > 0 ? w.map(card) : schedOn(k).map(schedCard);
+  };
   const todays = plans.filter((p) => p.date === today).sort(byDate);
   const upcomingCount = plans.filter((p) => p.date > today && !p.clientCompletedAt).length;
   const weekPlans = plans.filter((p) => p.date >= weekStart && p.date <= weekEnd).sort(byDate);
@@ -142,7 +174,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
       )}
       {loading ? (
         <InlineLoader />
-      ) : plans.length === 0 ? (
+      ) : plans.length === 0 && scheduled.length === 0 ? (
         <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-6 text-center">
           <p className="font-subheader text-[17px] text-white">No workouts yet</p>
           <p className="text-[11px] text-white/50 font-light mt-1">Your coach will send your workouts here. Do them any time and mark them done.</p>
@@ -158,7 +190,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
 
           {view === 'today' && (
             <div className="space-y-2">
-              {todays.length === 0 ? empty('No workout for today.') : todays.map(card)}
+              {todays.length === 0 && schedOn(today).length === 0 ? empty('No workout for today.') : dayCards(today)}
               {upcomingCount > 0 && <p className="text-[11px] text-white/40 font-light text-center pt-2">{upcomingCount} more coming up. See Week or Month.</p>}
             </div>
           )}
@@ -175,7 +207,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
                     const d = new Date(k + 'T00:00:00');
                     const isActive = k === activeKey;
                     const isToday = k === today;
-                    const has = weekPlans.some((p) => p.date === k);
+                    const has = weekPlans.some((p) => p.date === k) || schedOn(k).length > 0;
                     return (
                       <button
                         key={k}
@@ -205,12 +237,14 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
                     {new Date(activeKey + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                     {activeKey === today && ' · Today'}
                   </span>
-                  {dayPlans.length === 0 ? (
+                  {dayPlans.length === 0 && schedOn(activeKey).length === 0 ? (
                     <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
                       <p className="text-sm text-white/50 font-light leading-relaxed">No workout on this day.</p>
                     </div>
                   ) : (
-                    dayPlans.map(card)
+                    <>
+                      {dayCards(activeKey)}
+                    </>
                   )}
                 </div>
               </div>
@@ -227,12 +261,14 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
                   {Array.from({ length: daysInMonth }, (_, i) => {
                     const k = `${monthPrefix}-${String(i + 1).padStart(2, '0')}`;
                     const day = monthPlans.filter((p) => p.date === k);
+                    const hasSched = schedOn(k).length > 0;
+                    const hasAny = day.length > 0 || hasSched;
                     const allDone = day.length > 0 && day.every((p) => p.clientCompletedAt);
-                    const missed = day.length > 0 && !allDone && k < today;
+                    const missed = hasAny && !allDone && k < today;
                     return (
-                      <button type="button" key={k} onClick={() => setSelDay(selDay === k ? null : k)} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-mono ${k === today ? 'ring-1 ring-[#6ccbde]' : ''} ${selDay === k ? 'outline outline-2 outline-white/70' : ''} ${day.length ? (allDone ? 'bg-emerald-400/20 text-emerald-300' : missed ? 'bg-white/[0.06] text-white/50' : 'bg-[#6ccbde]/20 text-[#6ccbde]') : 'text-white/30'}`}>
+                      <button type="button" key={k} onClick={() => setSelDay(selDay === k ? null : k)} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-mono ${k === today ? 'ring-1 ring-[#6ccbde]' : ''} ${selDay === k ? 'outline outline-2 outline-white/70' : ''} ${hasAny ? (allDone ? 'bg-emerald-400/20 text-emerald-300' : missed ? 'bg-white/[0.06] text-white/50' : 'bg-[#6ccbde]/20 text-[#6ccbde]') : 'text-white/30'}`}>
                         <span className="font-bold">{i + 1}</span>
-                        {day.length > 0 && <span className="w-1 h-1 rounded-full bg-current mt-0.5" />}
+                        {hasAny && <span className="w-1 h-1 rounded-full bg-current mt-0.5" />}
                       </button>
                     );
                   })}
@@ -243,12 +279,18 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
                   <span><i className="inline-block w-2 h-2 rounded-sm bg-white/20 mr-1" />Not done</span>
                 </div>
               </div>
-              {selDay && selDay.startsWith(monthPrefix) ? (
-                <div className="space-y-2">
-                  <span className="text-[11px] text-white/40 uppercase font-semibold block">{selDay === today ? 'Today' : pretty(selDay)} <button type="button" onClick={() => setSelDay(null)} className="ml-2 normal-case text-[#6ccbde]">Show whole month</button></span>
-                  {monthPlans.filter((p) => p.date === selDay).length === 0 ? empty('No workout on this day.') : monthPlans.filter((p) => p.date === selDay).map(card)}
-                </div>
-              ) : monthPlans.length === 0 ? empty('No workouts this month.') : grouped(monthPlans)}
+              {(() => {
+                const shownDay = selDay && selDay.startsWith(monthPrefix) ? selDay : today.startsWith(monthPrefix) ? today : null;
+                if (!shownDay) return empty('Tap a day to see its workout.');
+                const dayItems = monthPlans.filter((p) => p.date === shownDay);
+                const sch = schedOn(shownDay);
+                return (
+                  <div className="space-y-2">
+                    <span className="text-[11px] text-white/40 uppercase font-semibold block">{shownDay === today ? 'Today' : pretty(shownDay)}</span>
+                    {dayItems.length === 0 && sch.length === 0 ? empty('No workout on this day.') : dayCards(shownDay)}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
