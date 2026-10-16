@@ -495,15 +495,6 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
         </div>
       )}
 
-      {/* Zaki group meeting: the next one, with its Google Meet link. All of them are in the Workouts tab. */}
-      {IS_RECORDED && zakiMeetings.length > 0 && (
-        <div className="space-y-2">
-          <span className="text-[11px] text-white/40 uppercase font-semibold block">Meeting</span>
-          <ZakiMeetingCard m={zakiMeetings[0]} />
-          {zakiMeetings.length > 1 && <p className="text-[11px] text-white/40 font-light">{zakiMeetings.length - 1} more scheduled. See the Workouts tab.</p>}
-        </div>
-      )}
-
       {/* Zaki package: counted in days. Shows "Day X of N"; once the days are over it becomes a renew card. Tap for the package history at any time. */}
       {IS_RECORDED && startDate && (renewalDate || packageSessions) && (() => {
         const DAY = 1000 * 60 * 60 * 24;
@@ -588,6 +579,15 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
           </div>
         );
       })()}
+
+      {/* Zaki group meeting: the next one, with its Google Meet link. All of them are in the Workouts tab. */}
+      {IS_RECORDED && zakiMeetings.length > 0 && (
+        <div className="space-y-2">
+          <span className="text-[11px] text-white/40 uppercase font-semibold block">Meeting</span>
+          <ZakiMeetingCard m={zakiMeetings[0]} />
+          {zakiMeetings.length > 1 && <p className="text-[11px] text-white/40 font-light">{zakiMeetings.length - 1} more scheduled. See the Workouts tab.</p>}
+        </div>
+      )}
 
       {/* Journey roadmap - tap to see this package's attendance */}
       {!IS_RECORDED && journey && (() => {
