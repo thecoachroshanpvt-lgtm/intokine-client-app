@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ConsistencyChart } from './ConsistencyChart';
 import { ConsistencyDetail } from './ConsistencyDetail';
+import type { TrackerSeries } from './ConsistencyDetail';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
 // Routine: shows ONLY what the dietitian added for this client (a follow-up note and the things to track).
@@ -497,6 +498,73 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const totalDays = range === 'year' ? activeBars.reduce((t, x) => t + x.n, 0) : activeBars.length;
   const rangeTitle = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Last 12 months';
 
+  // One graph for each tracked item (water, sleep, energy, habits, symptoms...) over the chosen period.
+  const trackerList = [...itemsFor('daily'), ...itemsFor('weekly')].filter(({ it }) => it.type !== 'text');
+  const trackers: TrackerSeries[] = trackerList.map(({ fu, it }) => {
+    const isDaily = it.freq === 'daily';
+    const opts = it.type === 'choice' || it.type === 'level' ? ((it.options && it.options.length ? it.options : LEVELS) as string[]) : [];
+    const ordered = it.label.toLowerCase() === 'mood' ? [...opts].reverse() : opts;
+    const valueAt = (period: string, isToday: boolean): number | null => {
+      const v = logFor(fu.id, it.freq, period)?.values?.[it.id];
+      if (it.type === 'tick') return v === true ? 1 : isToday ? null : 0;
+      if (it.type === 'number') return typeof v === 'number' && v > 0 ? v : null;
+      const i = ordered.indexOf(v);
+      return i >= 0 ? i : null;
+    };
+    const agg = isDaily && range === 'year';
+    let points: { key: string; label: string; v: number | null }[] = [];
+    if (!isDaily) {
+      // Weekly items: the last 8 weeks.
+      points = Array.from({ length: 8 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (7 - i) * 7);
+        const k = mondayKey(d);
+        const wd = new Date(k + 'T00:00:00');
+        return { key: k, label: `${wd.getDate()}/${wd.getMonth() + 1}`, v: k < mondayKey(new Date(firstDay + 'T00:00:00')) && it.type === 'tick' ? null : valueAt(k, k === mondayKey(now)) };
+      });
+    } else if (!agg) {
+      const n = range === 'week' ? 7 : 30;
+      points = Array.from({ length: n }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (n - 1 - i));
+        const k = dateKey(d);
+        const label = range === 'week' ? d.toLocaleDateString(undefined, { weekday: 'narrow' }) : String(d.getDate());
+        return { key: k, label, v: k < firstDay && it.type === 'tick' ? null : valueAt(k, k === today) };
+      });
+    } else {
+      points = Array.from({ length: 12 }, (_, i) => {
+        const start = new Date();
+        start.setDate(1);
+        start.setMonth(start.getMonth() - (11 - i));
+        const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+        const vals: number[] = [];
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          const k = dateKey(d);
+          if (k > today) break;
+          if (k < firstDay && it.type === 'tick') continue;
+          const v = valueAt(k, k === today);
+          if (v !== null) vals.push(v);
+        }
+        return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'narrow' }), v: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null };
+      });
+    }
+    const lower = it.label.toLowerCase();
+    return {
+      id: fu.id + it.id,
+      label: it.label,
+      category: it.category,
+      type: it.type as TrackerSeries['type'],
+      unit: it.unit,
+      target: it.target,
+      options: ordered,
+      goodHigh: lower === 'energy' || lower === 'mood',
+      freq: isDaily ? 'daily' : 'weekly',
+      agg,
+      points,
+      note: !isDaily ? 'Weekly · last 8 weeks' : agg ? 'Monthly average' : undefined,
+    };
+  });
+
   if (loading) return <div className="text-center py-12 text-white/40 text-sm font-light">Loading your routine...</div>;
 
   if (detail) {
@@ -509,6 +577,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         rangeTitle={rangeTitle}
         bars={bars.map((b) => ({ key: b.key, label: b.label, full: b.full, frac: b.frac, active: b.active, isToday: b.isToday, doneIds: b.done.map((x) => x.fu.id + x.it.id), fullDays: b.fullDays, logged: b.logged, n: b.n }))}
         items={dailyItems.map(({ fu, it }) => ({ id: fu.id + it.id, label: it.label }))}
+        trackers={trackers}
         avgPct={avgPct}
         totalFull={totalFull}
         totalLogged={totalLogged}
