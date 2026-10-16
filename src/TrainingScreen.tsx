@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
+import { initializeClientFirebaseApp, doc, setDoc, collection, query, where, onSnapshot } from './firebase';
 import { ContactCoachPill } from './CoachContact';
+import { IS_RECORDED } from './variant';
+import { bestOfAllTime, type BestPlan, type BestPerf } from './BestOfAllTime';
 
 interface TrainerizeSet {
   id: string;
@@ -175,6 +177,28 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   const [markingComplete, setMarkingComplete] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(!!workout.clientCompletedAt);
   const [videoEx, setVideoEx] = useState<TrainerizeExercise | null>(null);
+  // Zaki only: what the client has really done before, to show the best of all time on each exercise.
+  const [bestPlans, setBestPlans] = useState<BestPlan[]>([]);
+  const [bestPerf, setBestPerf] = useState<BestPerf[]>([]);
+  useEffect(() => {
+    if (!IS_RECORDED) return;
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    const u1 = onSnapshot(
+      query(collection(db, 'intokine_given_session_plans'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
+      (snap) => setBestPlans(snap.docs.map((d) => d.data() as BestPlan)),
+      () => {}
+    );
+    const u2 = onSnapshot(
+      doc(db, 'intokine_clients', clientId),
+      (snap) => {
+        const d: any = snap.exists() ? snap.data() : {};
+        setBestPerf(Array.isArray(d.performanceScores) ? d.performanceScores : []);
+      },
+      () => {}
+    );
+    return () => { u1(); u2(); };
+  }, [clientId]);
   // A workout can only be marked done on its assigned day. After that day it counts as not done, unless the coach moved it.
   const now = new Date();
   const todayK = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -341,6 +365,14 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                               <span className="block text-[11px] text-white/40 mt-1">
                                 {[TYPE_LABEL[ex.exerciseType || 'Weighted'], ex.targetMuscle, ex.equipment].filter(Boolean).join(' · ')}
                               </span>
+                              {IS_RECORDED && (() => {
+                                const best = bestOfAllTime(ex.name, ex.exerciseType, bestPlans, bestPerf);
+                                return best ? (
+                                  <span className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">
+                                    Best <span className="font-mono">{best}</span>
+                                  </span>
+                                ) : null;
+                              })()}
                             </button>
                             <VideoThumb url={ex.videoUrl} name={ex.name} dim={isDone} onOpen={() => setVideoEx(ex)} />
                             </div>
