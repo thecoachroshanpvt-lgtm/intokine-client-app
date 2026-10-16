@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ConsistencyChart } from './ConsistencyChart';
+import { ConsistencyDetail } from './ConsistencyDetail';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
 // Routine: shows ONLY what the dietitian added for this client (a follow-up note and the things to track).
@@ -183,7 +184,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   useEffect(() => {
-    if (!detail && !confirmOpen) return;
+    if (!confirmOpen) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     document.body.setAttribute('data-popup-open', '1');
@@ -191,7 +192,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       document.body.style.overflow = prev;
       document.body.removeAttribute('data-popup-open');
     };
-  }, [detail, confirmOpen]);
+  }, [confirmOpen]);
   // Ticks, meters and choices open the popup right after the tap. Numbers (water, sleep, steps) and notes do not, so the client can tap + / - as many times as needed; a "Review & save" bar appears instead.
   const pendingKeys = Object.keys(pending);
   const lastType = pendingKeys.length > 0 ? pending[pendingKeys[pendingKeys.length - 1]].it.type : '';
@@ -498,6 +499,25 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
   if (loading) return <div className="text-center py-12 text-white/40 text-sm font-light">Loading your routine...</div>;
 
+  if (detail) {
+    return (
+      <ConsistencyDetail
+        title="Routine consistency"
+        backLabel="Routine"
+        range={range}
+        onRange={setRange}
+        rangeTitle={rangeTitle}
+        bars={bars.map((b) => ({ key: b.key, label: b.label, full: b.full, frac: b.frac, active: b.active, isToday: b.isToday, doneIds: b.done.map((x) => x.fu.id + x.it.id), fullDays: b.fullDays, logged: b.logged, n: b.n }))}
+        items={dailyItems.map(({ fu, it }) => ({ id: fu.id + it.id, label: it.label }))}
+        avgPct={avgPct}
+        totalFull={totalFull}
+        totalLogged={totalLogged}
+        totalDays={totalDays}
+        onBack={() => setDetail(false)}
+      />
+    );
+  }
+
   if (active.length === 0) {
     return (
       <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
@@ -708,59 +728,6 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             <div className="p-3 border-t border-white/[0.08] flex items-center gap-2">
               <button type="button" disabled={saving} onClick={undoChanges} className="flex-1 py-2.5 rounded-xl border border-white/[0.12] text-xs font-bold text-white/70">Cancel</button>
               <button type="button" disabled={saving} onClick={confirmSave} className="flex-[2] py-2.5 rounded-xl bg-[#ec2226] disabled:opacity-60 text-white text-xs font-bold">{saving ? 'Saving...' : 'Confirm & save'}</button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {detail && createPortal(
-        <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5" onClick={() => setDetail(false)}>
-          <div data-no-pull className="anim-card w-full max-w-md max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3 p-4 border-b border-white/[0.08]">
-              <div>
-                <div className="font-subheader text-[17px] text-white">{range === 'week' ? 'Weekly' : range === 'month' ? 'Monthly' : 'Yearly'} routine consistency</div>
-                <div className="text-[11px] text-white/40">{rangeTitle}</div>
-              </div>
-              <button type="button" onClick={() => setDetail(false)} className="text-white/50 text-xl leading-none px-1" aria-label="Close">×</button>
-            </div>
-            <div className="grid grid-cols-3 gap-2 p-4 pb-2">
-              {([['Average', `${avgPct}%`], ['Full days', String(totalFull)], ['Days logged', `${totalLogged}/${totalDays}`]] as const).map(([l, v]) => (
-                <div key={l} className="bg-black/30 rounded-xl py-2 text-center">
-                  <div className="text-sm font-bold text-white font-mono">{v}</div>
-                  <div className="text-[9px] text-white/40 uppercase mt-0.5">{l}</div>
-                </div>
-              ))}
-            </div>
-            <div className="overflow-y-auto px-4 pb-4 pt-2 space-y-2.5" style={{ overscrollBehavior: 'contain' }}>
-              {[...bars].reverse().map((d) => (
-                <div key={d.key}>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-24 shrink-0 text-xs ${d.isToday ? 'text-white font-bold' : 'text-white/70'}`}>{d.full}{d.isToday && range !== 'year' ? ' (today)' : ''}</div>
-                    <div className="flex-1 h-2 rounded-full bg-white/[0.08] overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${d.active ? Math.round(d.frac * 100) : 0}%`, background: barColor(d.frac) }} />
-                    </div>
-                    <div className="w-12 shrink-0 text-right text-xs font-mono font-bold" style={{ color: d.active ? barColor(d.frac) : 'rgba(255,255,255,0.3)' }}>{d.active ? `${Math.round(d.frac * 100)}%` : '—'}</div>
-                  </div>
-                  {range === 'year' ? (
-                    <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">{d.active ? `${d.fullDays} full days · ${d.logged} of ${d.n} days logged` : 'No data yet'}</div>
-                  ) : (
-                    <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">
-                      {!d.active ? 'Before you started' : `${d.done.length} of ${dailyItems.length} items`}
-                      {range === 'week' && d.active && (
-                        <span className="flex flex-wrap gap-1 mt-1">
-                          {dailyItems.map(({ fu, it }) => {
-                            const ok = d.done.some((x) => x.fu.id === fu.id && x.it.id === it.id);
-                            return (
-                              <span key={fu.id + it.id} className={`px-1.5 py-0.5 rounded-full text-[9px] ${ok ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/[0.05] text-white/30'}`}>{ok ? '✓ ' : ''}{it.label}</span>
-                            );
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
           </div>
         </div>,
