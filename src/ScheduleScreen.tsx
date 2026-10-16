@@ -260,7 +260,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
     return map;
   }, [sessions]);
 
-  const renderSessionCard = (s: ScheduledSession) => <SessionCard key={s.id} s={s} online={online} />;
+  const renderSessionCard = (s: ScheduledSession) => <SessionCard key={s.id} s={s} online={online} clientId={clientId} />;
 
   if (selectedWorkout) {
     return (
@@ -438,7 +438,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                         hint={`Do it any time today${w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}`}
                         done={done}
                         onClick={() => setSelectedWorkout(w)}
- postpone={!w.clientCompletedAt && w.date >= todayKey ? { clientId, coachName: w.coachName, date: w.date } : undefined} postponedFrom={(w as any).postponedFromDate} postponeReason={(w as any).postponeReason}
+ missed={!w.clientCompletedAt && w.date < todayKey} postpone={!w.clientCompletedAt && w.date >= todayKey ? { clientId, coachName: w.coachName, date: w.date } : undefined} postponedFrom={(w as any).postponedFromDate} postponeReason={(w as any).postponeReason}
 />
                     );
                   })}
@@ -518,7 +518,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                           hint={w.durationMinutes ? `${w.durationMinutes} mins` : undefined}
                           done={!!w.clientCompletedAt}
                           onClick={() => setSelectedWorkout(w)}
- postpone={!w.clientCompletedAt && w.date >= todayKey ? { clientId, coachName: w.coachName, date: w.date } : undefined} postponedFrom={(w as any).postponedFromDate} postponeReason={(w as any).postponeReason}
+ missed={!w.clientCompletedAt && w.date < todayKey} postpone={!w.clientCompletedAt && w.date >= todayKey ? { clientId, coachName: w.coachName, date: w.date } : undefined} postponedFrom={(w as any).postponedFromDate} postponeReason={(w as any).postponeReason}
 />
                       ))}
                     </>
@@ -600,7 +600,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                             hint={w.durationMinutes ? `${w.durationMinutes} mins` : undefined}
                             done={!!w.clientCompletedAt}
                             onClick={() => setSelectedWorkout(w)}
- postpone={!w.clientCompletedAt && w.date >= todayKey ? { clientId, coachName: w.coachName, date: w.date } : undefined} postponedFrom={(w as any).postponedFromDate} postponeReason={(w as any).postponeReason}
+ missed={!w.clientCompletedAt && w.date < todayKey} postpone={!w.clientCompletedAt && w.date >= todayKey ? { clientId, coachName: w.coachName, date: w.date } : undefined} postponedFrom={(w as any).postponedFromDate} postponeReason={(w as any).postponeReason}
 />
                         ))}
                       </>
