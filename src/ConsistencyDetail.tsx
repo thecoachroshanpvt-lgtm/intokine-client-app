@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { consistencyColor } from './ConsistencyChart';
 import type { ConsistencyRange } from './ConsistencyChart';
 
@@ -27,11 +27,12 @@ export interface TrackerSeries {
   target?: number;
   options: string[];     // choice / level: lowest to highest
   goodHigh: boolean;     // true when a higher level is better (energy, mood); false for stress and symptoms
-  freq: 'daily' | 'weekly';
-  agg: boolean;          // true when each point is a whole month (year view)
-  points: TrackerPoint[];
-  note?: string;
+  views: Partial<Record<TGrain, TrackerPoint[]>>; // the points for each view
+  grains: TGrain[];                                // the views this item can show (a weekly item has no daily view)
 }
+export type TGrain = 'day' | 'week' | 'month';
+// What the graph components work with: one view of one tracker.
+interface View extends Omit<TrackerSeries, 'views' | 'grains'> { points: TrackerPoint[]; agg: boolean; word: string; weekly: boolean }
 
 const CAT_TITLE: Record<string, string> = { Lifestyle: 'Lifestyle', Habits: 'Habits', Symptoms: 'Symptoms', Custom: 'Other' };
 const fmtNum = (n: number) => (Math.round(n * 100) / 100).toLocaleString();
@@ -39,7 +40,7 @@ const fmtNum = (n: number) => (Math.round(n * 100) / 100).toLocaleString();
 const sparse = (n: number, i: number, dense: boolean) => (!dense ? true : i === 0 || i === n - 1 || i % Math.ceil(n / 6) === 0);
 
 // Number (water, sleep, steps): a bar for each day, the dashed line is the target, bars that reached it turn green.
-const NumberGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
+const NumberGraph: React.FC<{ t: View }> = ({ t }) => {
   const W = 300, H = 96, L = 4, R = 4, T = 8, B = 16;
   const iw = W - L - R, ih = H - T - B;
   const vals = t.points.map((p) => p.v ?? 0);
@@ -68,7 +69,7 @@ const NumberGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
       </svg>
       <div className="text-[10px] text-white/45 mt-1">
         {t.target
-          ? `Target ${fmtNum(t.target)} ${t.unit || ''} · reached on ${reached} of ${logged.length} ${t.agg ? 'months' : 'logged days'}`
+          ? `Target ${fmtNum(t.target)} ${t.unit || ''} · reached on ${reached} of ${logged.length} ${t.word}`
           : `Average ${fmtNum(avg)} ${t.unit || ''}`}
         {t.target && logged.length > 0 ? ` · average ${fmtNum(avg)}` : ''}
       </div>
@@ -77,7 +78,7 @@ const NumberGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
 };
 
 // Habit: a circle for each day. Green tick = done, red cross = not done.
-const TickGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
+const TickGraph: React.FC<{ t: View }> = ({ t }) => {
   const known = t.points.filter((p) => p.v !== null);
   const doneN = t.agg ? 0 : known.filter((p) => p.v === 1).length;
   const avg = known.length ? Math.round((known.reduce((a, p) => a + (p.v as number), 0) / known.length) * 100) : 0;
@@ -91,19 +92,19 @@ const TickGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
           const tone = v === null ? 'border border-white/10 text-transparent' : t.agg ? (v >= 0.8 ? 'bg-emerald-400/25 text-emerald-300' : v >= 0.5 ? 'bg-amber-400/20 text-amber-300' : 'bg-red-400/20 text-red-300') : v === 1 ? 'bg-emerald-400/25 text-emerald-300' : 'bg-red-400/20 text-red-300';
           return (
             <div key={p.key} className="flex flex-col items-center gap-1">
-              <div className={`${size} rounded-full flex items-center justify-center font-bold ${tone}`}>{v === null ? '·' : t.agg ? '' : v === 1 ? '✓' : '✕'}</div>
+              <div className={`${size} rounded-full flex items-center justify-center font-bold ${tone}`}>{v === null ? '·' : t.agg ? (big ? Math.round(v * 100) : '') : v === 1 ? '✓' : '✕'}</div>
               {big && <span className="text-[8px] text-white/40">{p.label}</span>}
             </div>
           );
         })}
       </div>
-      <div className="text-[10px] text-white/45 mt-1.5">{t.agg ? `Done about ${avg}% of the time` : `Done ${doneN} of ${known.length} ${t.freq === 'weekly' ? 'weeks' : 'days'}`}</div>
+      <div className="text-[10px] text-white/45 mt-1.5">{t.agg ? `Done about ${avg}% of the time` : `Done ${doneN} of ${known.length} ${t.word}`}</div>
     </>
   );
 };
 
 // Level (energy, stress, mood, symptoms): the answer for each day on a scale from lowest to highest.
-const LevelGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
+const LevelGraph: React.FC<{ t: View }> = ({ t }) => {
   const opts = t.options;
   const k = Math.max(1, opts.length - 1);
   const W = 300, rowH = 17, T = 8, B = 16, L = 54, R = 8;
@@ -130,6 +131,30 @@ const LevelGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
   );
 };
 
+const GRAIN_LABEL: Record<TGrain, string> = { day: 'Daily', week: 'Weekly', month: 'Monthly' };
+const GRAIN_WORD: Record<TGrain, string> = { day: 'days', week: 'weeks', month: 'months' };
+
+// One tracker with its own Daily / Weekly / Monthly switch.
+const TrackerCard: React.FC<{ t: TrackerSeries }> = ({ t }) => {
+  const [g, setG] = useState<TGrain>(t.grains[0]);
+  const grain = t.grains.includes(g) ? g : t.grains[0];
+  const v: View = { ...t, points: t.views[grain] || [], agg: grain !== 'day', word: grain === 'day' ? (t.type === 'tick' ? 'days' : 'logged days') : GRAIN_WORD[grain], weekly: grain === 'week' };
+  return (
+    <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <span className="text-sm font-semibold text-white truncate">{t.label}</span>
+        <div className="inline-flex rounded-full bg-white/[0.04] border border-white/[0.08] p-0.5 shrink-0">
+          {t.grains.map((k) => (
+            <button key={k} type="button" onClick={() => setG(k)}
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${grain === k ? 'bg-[#6ccbde]/15 text-[#6ccbde]' : 'text-white/45'}`}>{GRAIN_LABEL[k]}</button>
+          ))}
+        </div>
+      </div>
+      {t.type === 'number' ? <NumberGraph t={v} /> : t.type === 'tick' ? <TickGraph t={v} /> : <LevelGraph t={v} />}
+    </div>
+  );
+};
+
 export const TrackerGraphs: React.FC<{ trackers: TrackerSeries[] }> = ({ trackers }) => {
   const cats = Object.keys(CAT_TITLE).filter((c) => trackers.some((t) => t.category === c));
   if (trackers.length === 0) return null;
@@ -138,15 +163,7 @@ export const TrackerGraphs: React.FC<{ trackers: TrackerSeries[] }> = ({ tracker
       {cats.map((c) => (
         <div key={c} className="space-y-2">
           <span className="text-[11px] text-white/40 uppercase font-semibold block">{CAT_TITLE[c]}</span>
-          {trackers.filter((t) => t.category === c).map((t) => (
-            <div key={t.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
-              <div className="flex items-baseline justify-between gap-2 mb-2">
-                <span className="text-sm font-semibold text-white truncate">{t.label}</span>
-                <span className="text-[10px] text-white/35 shrink-0">{t.note}</span>
-              </div>
-              {t.type === 'number' ? <NumberGraph t={t} /> : t.type === 'tick' ? <TickGraph t={t} /> : <LevelGraph t={t} />}
-            </div>
-          ))}
+          {trackers.filter((t) => t.category === c).map((t) => <TrackerCard key={t.id} t={t} />)}
         </div>
       ))}
     </div>
