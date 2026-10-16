@@ -92,10 +92,10 @@ export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
   const joinOpen = isToday && startMin !== null && nowMin >= startMin && nowMin <= startMin + JOIN_WINDOW_MIN;
   const ended = isToday && startMin !== null && nowMin > startMin + JOIN_WINDOW_MIN;
   return (
-    <div className="rounded-2xl p-3 border border-[#6ccbde]/30 bg-gradient-to-br from-[#6ccbde]/15 to-[#6ccbde]/[0.03]">
+    <div className="rounded-2xl p-3 border border-[#c084fc]/30 bg-gradient-to-br from-[#c084fc]/15 to-[#c084fc]/[0.03]">
       <div className="flex items-center gap-3">
-        <div className="w-14 shrink-0 rounded-xl bg-[#6ccbde]/10 border border-[#6ccbde]/25 py-2 text-center">
-          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">{d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}</div>
+        <div className="w-14 shrink-0 rounded-xl bg-[#c084fc]/10 border border-[#c084fc]/25 py-2 text-center">
+          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#c084fc] leading-none">{d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}</div>
           <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
           <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">{d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}</div>
         </div>
@@ -113,7 +113,7 @@ export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
           <div className="text-xs font-semibold text-white/80 mt-1 truncate">{m.title}</div>
           <div className="text-[11px] text-white/40 font-light truncate">Group meeting · Google Meet</div>
         </div>
-        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: '#6ccbde', borderColor: '#6ccbde40', backgroundColor: '#6ccbde15' }}>
+        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: '#c084fc', borderColor: '#c084fc40', backgroundColor: '#c084fc15' }}>
           {isToday ? 'TODAY' : 'MEETING'}
         </span>
       </div>
@@ -124,7 +124,7 @@ export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
             href={link}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-[#6ccbde] text-[#0b0c10] text-sm font-bold py-2.5 active:scale-[0.99] transition"
+            className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-[#c084fc] text-[#0b0c10] text-sm font-bold py-2.5 active:scale-[0.99] transition"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
@@ -138,7 +138,7 @@ export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
           </div>
         )
       ) : (
-        <div className="mt-3 w-full rounded-xl bg-[#6ccbde]/[0.06] border border-[#6ccbde]/15 text-[11px] text-white/55 text-center py-2.5">
+        <div className="mt-3 w-full rounded-xl bg-[#c084fc]/[0.07] border border-[#c084fc]/20 text-[11px] text-white/55 text-center py-2.5">
           {ended ? 'This meeting has ended.' : `The Join Google Meet button appears at ${t ? `${t.clock} ${t.period}` : 'the meeting time'}${isToday ? '' : ` on ${d ? d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : m.date}`}.`}
         </div>
       )}
