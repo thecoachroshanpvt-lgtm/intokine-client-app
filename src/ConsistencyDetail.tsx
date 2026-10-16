@@ -304,6 +304,10 @@ export const ConsistencyDetail: React.FC<{
   totalDays: number;
   onBack: () => void;
 }> = ({ title, backLabel, range, onRange, rangeTitle, bars, items, trackers, today, firstDay, dailySpan, avgPct, totalFull, totalLogged, totalDays, onBack }) => {
+  const [open, setOpen] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const allRows = [...bars].reverse();
+  const rows = showAll ? allRows : allRows.slice(0, 7);
   // Line chart of every day against the target (everything answered, 100%).
   const W = 300, H = 140, L = 26, R = 8, T = 14, B = 20;
   const iw = W - L - R, ih = H - T - B;
@@ -390,35 +394,48 @@ export const ConsistencyDetail: React.FC<{
 
       {trackers && trackers.length > 0 && today && firstDay && <TrackerGraphs trackers={trackers} today={today} firstDay={firstDay} dailySpan={dailySpan || 7} />}
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         <span className="text-[11px] text-white/40 uppercase font-semibold block">Log report</span>
-        <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 space-y-3">
-          {[...bars].reverse().map((d) => (
-            <div key={d.key}>
-              <div className="flex items-center gap-3">
-                <div className={`w-24 shrink-0 text-xs ${d.isToday ? 'text-white font-bold' : 'text-white/70'}`}>{d.full}{d.isToday && range !== 'year' ? ' (today)' : ''}</div>
-                <div className="flex-1 h-2 rounded-full bg-white/[0.08] overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${d.active ? Math.round(d.frac * 100) : 0}%`, background: consistencyColor(d.frac) }} />
-                </div>
-                <div className="w-12 shrink-0 text-right text-xs font-mono font-bold" style={{ color: d.active ? consistencyColor(d.frac) : 'rgba(255,255,255,0.3)' }}>{d.active ? `${Math.round(d.frac * 100)}%` : '—'}</div>
-              </div>
-              {range === 'year' ? (
-                <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">{d.active ? `${d.fullDays} full days · ${d.logged} of ${d.n} days logged` : 'No data yet'}</div>
-              ) : (
-                <div className="ml-24 pl-3 text-[10px] text-white/40 mt-0.5">
-                  {!d.active ? 'Before you started' : `${d.doneIds.length} of ${items.length} items`}
-                  {range === 'week' && d.active && (
-                    <span className="flex flex-wrap gap-1 mt-1">
-                      {items.map((it) => {
-                        const ok = d.doneIds.includes(it.id);
-                        return <span key={it.id} className={`px-1.5 py-0.5 rounded-full text-[9px] ${ok ? 'bg-emerald-500/15 text-emerald-400' : 'bg-white/[0.05] text-white/30'}`}>{ok ? '✓ ' : ''}{it.label}</span>;
-                      })}
+        <div className="bg-[#252525] border border-white/[0.06] rounded-2xl overflow-hidden">
+          {rows.map((d, idx) => {
+            const pct = Math.round(d.frac * 100);
+            const col = d.active ? consistencyColor(d.frac) : 'rgba(255,255,255,0.2)';
+            const canOpen = range !== 'year' && d.active;
+            const isOpen = open === d.key && canOpen;
+            return (
+              <div key={d.key} className={idx > 0 ? 'border-t border-white/[0.06]' : ''}>
+                <button type="button" disabled={!canOpen} onClick={() => setOpen(isOpen ? null : d.key)} className="w-full flex items-center gap-3 px-4 py-3 text-left">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: col }} />
+                  <span className="flex-1 min-w-0">
+                    <span className={`block text-[13px] ${d.isToday ? 'text-white font-bold' : 'text-white/85'}`}>{d.full}{d.isToday && range !== 'year' ? ' · Today' : ''}</span>
+                    <span className="block text-[10px] text-white/40 mt-0.5">
+                      {!d.active ? 'Before you started' : range === 'year' ? `${d.fullDays} full days · ${d.logged} of ${d.n} logged` : `${d.doneIds.length} of ${items.length} done`}
                     </span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+                  </span>
+                  <span className="text-[13px] font-mono font-bold shrink-0" style={{ color: col }}>{d.active ? `${pct}%` : '—'}</span>
+                  {canOpen && <svg viewBox="0 0 24 24" className={`w-3.5 h-3.5 shrink-0 text-white/30 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>}
+                </button>
+                {isOpen && (
+                  <div className="px-4 pb-3 -mt-1 space-y-1.5">
+                    {items.map((it) => {
+                      const ok = d.doneIds.includes(it.id);
+                      return (
+                        <div key={it.id} className="flex items-center gap-2 text-[12px]">
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${ok ? 'bg-emerald-400/20 text-emerald-300' : 'bg-white/[0.06] text-white/30'}`}>{ok ? '✓' : '·'}</span>
+                          <span className={ok ? 'text-white/80' : 'text-white/40'}>{it.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {allRows.length > 7 && (
+            <button type="button" onClick={() => setShowAll(!showAll)} className="w-full py-3 border-t border-white/[0.06] text-[11px] font-semibold text-[#6ccbde]">
+              {showAll ? 'Show fewer' : `Show all ${allRows.length}`}
+            </button>
+          )}
         </div>
       </div>
     </div>
