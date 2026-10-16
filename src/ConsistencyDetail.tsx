@@ -16,6 +16,143 @@ export interface DetailBar {
   n: number;
 }
 
+// One tracked item (water, sleep, energy, a habit, a symptom...) over the chosen period.
+export interface TrackerPoint { key: string; label: string; v: number | null }
+export interface TrackerSeries {
+  id: string;
+  label: string;
+  category: string;
+  type: 'number' | 'tick' | 'choice' | 'level';
+  unit?: string;
+  target?: number;
+  options: string[];     // choice / level: lowest to highest
+  goodHigh: boolean;     // true when a higher level is better (energy, mood); false for stress and symptoms
+  freq: 'daily' | 'weekly';
+  agg: boolean;          // true when each point is a whole month (year view)
+  points: TrackerPoint[];
+  note?: string;
+}
+
+const CAT_TITLE: Record<string, string> = { Lifestyle: 'Lifestyle', Habits: 'Habits', Symptoms: 'Symptoms', Custom: 'Other' };
+const fmtNum = (n: number) => (Math.round(n * 100) / 100).toLocaleString();
+
+const sparse = (n: number, i: number, dense: boolean) => (!dense ? true : i === 0 || i === n - 1 || i % Math.ceil(n / 6) === 0);
+
+// Number (water, sleep, steps): a bar for each day, the dashed line is the target, bars that reached it turn green.
+const NumberGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
+  const W = 300, H = 96, L = 4, R = 4, T = 8, B = 16;
+  const iw = W - L - R, ih = H - T - B;
+  const vals = t.points.map((p) => p.v ?? 0);
+  const top = Math.max(t.target || 0, ...vals, 1) * 1.1;
+  const n = t.points.length;
+  const slot = iw / n;
+  const bw = Math.min(16, slot * 0.62);
+  const logged = t.points.filter((p) => p.v !== null);
+  const reached = t.target ? logged.filter((p) => (p.v as number) >= t.target!).length : 0;
+  const avg = logged.length ? logged.reduce((a, p) => a + (p.v as number), 0) / logged.length : 0;
+  return (
+    <>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
+        {t.target ? <line x1={L} x2={W - R} y1={T + ih - (t.target / top) * ih} y2={T + ih - (t.target / top) * ih} stroke="#6ccbde" strokeWidth="1" strokeDasharray="4 3" /> : null}
+        <line x1={L} x2={W - R} y1={T + ih} y2={T + ih} stroke="rgba(255,255,255,0.1)" />
+        {t.points.map((p, i) => {
+          const h = p.v ? (p.v / top) * ih : 0;
+          const hit = t.target ? (p.v ?? 0) >= t.target : false;
+          return (
+            <g key={p.key}>
+              {p.v ? <rect x={L + i * slot + (slot - bw) / 2} y={T + ih - h} width={bw} height={h} rx="2.5" fill={hit ? '#34d399' : '#6ccbde'} opacity={hit ? 1 : 0.75} /> : null}
+              {sparse(n, i, n > 8) && <text x={L + i * slot + slot / 2} y={H - 3} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.4)">{p.label}</text>}
+            </g>
+          );
+        })}
+      </svg>
+      <div className="text-[10px] text-white/45 mt-1">
+        {t.target
+          ? `Target ${fmtNum(t.target)} ${t.unit || ''} · reached on ${reached} of ${logged.length} ${t.agg ? 'months' : 'logged days'}`
+          : `Average ${fmtNum(avg)} ${t.unit || ''}`}
+        {t.target && logged.length > 0 ? ` · average ${fmtNum(avg)}` : ''}
+      </div>
+    </>
+  );
+};
+
+// Habit: a circle for each day. Green tick = done, red cross = not done.
+const TickGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
+  const known = t.points.filter((p) => p.v !== null);
+  const doneN = t.agg ? 0 : known.filter((p) => p.v === 1).length;
+  const avg = known.length ? Math.round((known.reduce((a, p) => a + (p.v as number), 0) / known.length) * 100) : 0;
+  const big = t.points.length <= 8;
+  return (
+    <>
+      <div className={`flex flex-wrap ${big ? 'justify-between' : 'gap-1'}`}>
+        {t.points.map((p) => {
+          const v = p.v;
+          const size = big ? 'w-8 h-8 text-[13px]' : 'w-[18px] h-[18px] text-[9px]';
+          const tone = v === null ? 'border border-white/10 text-transparent' : t.agg ? (v >= 0.8 ? 'bg-emerald-400/25 text-emerald-300' : v >= 0.5 ? 'bg-amber-400/20 text-amber-300' : 'bg-red-400/20 text-red-300') : v === 1 ? 'bg-emerald-400/25 text-emerald-300' : 'bg-red-400/20 text-red-300';
+          return (
+            <div key={p.key} className="flex flex-col items-center gap-1">
+              <div className={`${size} rounded-full flex items-center justify-center font-bold ${tone}`}>{v === null ? '·' : t.agg ? '' : v === 1 ? '✓' : '✕'}</div>
+              {big && <span className="text-[8px] text-white/40">{p.label}</span>}
+            </div>
+          );
+        })}
+      </div>
+      <div className="text-[10px] text-white/45 mt-1.5">{t.agg ? `Done about ${avg}% of the time` : `Done ${doneN} of ${known.length} ${t.freq === 'weekly' ? 'weeks' : 'days'}`}</div>
+    </>
+  );
+};
+
+// Level (energy, stress, mood, symptoms): the answer for each day on a scale from lowest to highest.
+const LevelGraph: React.FC<{ t: TrackerSeries }> = ({ t }) => {
+  const opts = t.options;
+  const k = Math.max(1, opts.length - 1);
+  const W = 300, rowH = 17, T = 8, B = 16, L = 54, R = 8;
+  const H = T + B + k * rowH;
+  const iw = W - L - R;
+  const n = t.points.length;
+  const x = (i: number) => L + (n <= 1 ? iw / 2 : (i * iw) / (n - 1));
+  const y = (v: number) => T + (1 - v / k) * (H - T - B);
+  const pts = t.points.map((p, i) => ({ p, i })).filter((q) => q.p.v !== null);
+  const path = pts.map((q, j) => `${j === 0 ? 'M' : 'L'}${x(q.i).toFixed(1)},${y(q.p.v as number).toFixed(1)}`).join(' ');
+  const colorOf = (v: number) => { const r = v / k; const good = t.goodHigh ? r : 1 - r; return good >= 0.67 ? '#34d399' : good >= 0.34 ? '#fbbf24' : '#ec2226'; };
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
+      {opts.map((o, i) => (
+        <g key={o}>
+          <line x1={L} x2={W - R} y1={y(i)} y2={y(i)} stroke="rgba(255,255,255,0.07)" />
+          <text x={L - 6} y={y(i) + 3} textAnchor="end" fontSize="8" fill="rgba(255,255,255,0.45)">{o.length > 10 ? o.slice(0, 9) + '…' : o}</text>
+        </g>
+      ))}
+      {path && pts.length > 1 && <path d={path} fill="none" stroke="rgba(108,203,222,0.55)" strokeWidth="1.4" strokeLinejoin="round" />}
+      {pts.map((q) => <circle key={q.p.key} cx={x(q.i)} cy={y(q.p.v as number)} r={n > 12 ? 2.4 : 3.6} fill={colorOf(q.p.v as number)} stroke="#252525" strokeWidth="1" />)}
+      {t.points.map((p, i) => sparse(n, i, n > 8) && <text key={p.key} x={x(i)} y={H - 3} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.4)">{p.label}</text>)}
+    </svg>
+  );
+};
+
+export const TrackerGraphs: React.FC<{ trackers: TrackerSeries[] }> = ({ trackers }) => {
+  const cats = Object.keys(CAT_TITLE).filter((c) => trackers.some((t) => t.category === c));
+  if (trackers.length === 0) return null;
+  return (
+    <div className="space-y-4">
+      {cats.map((c) => (
+        <div key={c} className="space-y-2">
+          <span className="text-[11px] text-white/40 uppercase font-semibold block">{CAT_TITLE[c]}</span>
+          {trackers.filter((t) => t.category === c).map((t) => (
+            <div key={t.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
+              <div className="flex items-baseline justify-between gap-2 mb-2">
+                <span className="text-sm font-semibold text-white truncate">{t.label}</span>
+                <span className="text-[10px] text-white/35 shrink-0">{t.note}</span>
+              </div>
+              {t.type === 'number' ? <NumberGraph t={t} /> : t.type === 'tick' ? <TickGraph t={t} /> : <LevelGraph t={t} />}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const ConsistencyDetail: React.FC<{
   title: string;
   backLabel: string;
@@ -24,12 +161,13 @@ export const ConsistencyDetail: React.FC<{
   rangeTitle: string;
   bars: DetailBar[];
   items: { id: string; label: string }[];
+  trackers?: TrackerSeries[];
   avgPct: number;
   totalFull: number;
   totalLogged: number;
   totalDays: number;
   onBack: () => void;
-}> = ({ title, backLabel, range, onRange, rangeTitle, bars, items, avgPct, totalFull, totalLogged, totalDays, onBack }) => {
+}> = ({ title, backLabel, range, onRange, rangeTitle, bars, items, trackers, avgPct, totalFull, totalLogged, totalDays, onBack }) => {
   // Line chart of every day against the target (everything answered, 100%).
   const W = 300, H = 140, L = 26, R = 8, T = 14, B = 20;
   const iw = W - L - R, ih = H - T - B;
@@ -113,6 +251,8 @@ export const ConsistencyDetail: React.FC<{
         </div>
         <p className="text-[10px] text-white/30 text-center mt-1.5">The closer a dot is to the dashed line, the closer you were to doing everything.</p>
       </div>
+
+      {trackers && trackers.length > 0 && <TrackerGraphs trackers={trackers} />}
 
       <div className="space-y-2.5">
         <span className="text-[11px] text-white/40 uppercase font-semibold block">Log report</span>
