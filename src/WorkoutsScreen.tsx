@@ -84,7 +84,6 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
           coachSessionNotes: selected.coachSessionNotes,
           structuredExercises: selected.structuredExercises,
           clientCompletedAt: selected.clientCompletedAt,
-          clientExerciseResults: (selected as any).clientExerciseResults,
         }}
         onBack={() => setSelected(null)}
         onMarkedComplete={() => setPlans((prev) => prev.map((p) => (p.id === selected.id ? { ...p, clientCompletedAt: new Date().toISOString() } : p)))}
