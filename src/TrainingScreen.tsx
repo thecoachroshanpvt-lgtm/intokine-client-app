@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { initializeClientFirebaseApp, doc, setDoc } from './firebase';
 import { ContactCoachPill } from './CoachContact';
-import { IS_RECORDED } from './variant';
-import { ExerciseResultEditor, setText, type ResultMap, type ExerciseResult } from './ExerciseResultEditor';
 
 interface TrainerizeSet {
   id: string;
@@ -54,7 +52,6 @@ interface SuggestedWorkout {
   coachSessionNotes?: string;
   structuredExercises?: TrainerizeExercise[];
   clientCompletedAt?: string;
-  clientExerciseResults?: ResultMap; // what the client did on exercises they could not do exactly as the coach set
 }
 
 interface TrainingScreenProps {
@@ -178,44 +175,17 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   const [markingComplete, setMarkingComplete] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(!!workout.clientCompletedAt);
   const [videoEx, setVideoEx] = useState<TrainerizeExercise | null>(null);
-  const [results, setResults] = useState<ResultMap>(workout.clientExerciseResults || {});
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [doneAt, setDoneAt] = useState(workout.clientCompletedAt || '');
-  const [dirty, setDirty] = useState(false);
-  const [confirming, setConfirming] = useState(false);
-  const [savingFix, setSavingFix] = useState(false);
-  const [saveNote, setSaveNote] = useState('');
   // A workout can only be marked done on its assigned day. After that day it counts as not done, unless the coach moved it.
   const now = new Date();
   const todayK = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const missed = !alreadyDone && !!workout.date && workout.date < todayK;
-  // Zaki only: the client can say what they really did while the workout is open, and for 48 hours after finishing it. After that the result is locked.
-  const withinFix = alreadyDone && !!doneAt && Date.now() - Date.parse(doneAt) < 48 * 60 * 60 * 1000;
-  const canEdit = IS_RECORDED && ((!alreadyDone && !missed) || withinFix);
-
   const toggleExerciseDone = (id: string) => {
-    if (alreadyDone) return;
     setCompletedExerciseIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-    setResults((prev) => { if (!prev[id]) return prev; const n = { ...prev }; delete n[id]; return n; });
-    setEditingId(null);
-  };
-
-  // Saving what the client did also counts the exercise as done.
-  const saveResult = (id: string, r: ExerciseResult) => {
-    setResults((prev) => ({ ...prev, [id]: r }));
-    setCompletedExerciseIds((prev) => new Set(prev).add(id));
-    setEditingId(null);
-    setDirty(true);
-  };
-  const resetResult = (id: string) => {
-    setResults((prev) => { const n = { ...prev }; delete n[id]; return n; });
-    setEditingId(null);
-    setDirty(true);
   };
 
   const exercises = workout.structuredExercises || [];
@@ -235,49 +205,13 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
       // suggested workout - never touch anything else on the plan
       // record, matching the same narrow-write pattern used for the
       // profile photo elsewhere in this app.
-      const edits: ResultMap = {};
-      exercises.forEach((e) => { if (results[e.id]?.edited) edits[e.id] = results[e.id]; });
-      const stamp = new Date().toISOString();
-      let savedEdits = edits;
-      try {
-        await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: stamp, ...(Object.keys(edits).length > 0 ? { clientExerciseResults: edits } : {}) }, { merge: true });
-      } catch (err) {
-        // The workout must still count as done even if the edited numbers cannot be stored.
-        if (Object.keys(edits).length === 0) throw err;
-        await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: stamp }, { merge: true });
-        savedEdits = {};
-        setSaveNote('Your workout is saved, but the numbers you edited could not be saved. Please tell your coach.');
-      }
-      setResults(savedEdits);
-      setDoneAt(new Date().toISOString());
+      await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: new Date().toISOString() }, { merge: true });
       setAlreadyDone(true);
       onMarkedComplete();
     } catch (e) {
       console.warn('Could not mark workout complete:', e);
-      setSaveNote('Could not save. Check your internet and try again.');
     } finally {
       setMarkingComplete(false);
-    }
-  };
-
-  // Changing the numbers after finishing (within 48 hours). An edit that was taken back is written as edited:false so it replaces the old one.
-  const handleSaveFix = async () => {
-    setSavingFix(true);
-    try {
-      const { db } = initializeClientFirebaseApp();
-      if (!db) throw new Error('Could not connect.');
-      const out: ResultMap = {};
-      exercises.forEach((e) => {
-        if (results[e.id]?.edited) out[e.id] = results[e.id];
-        else if (workout.clientExerciseResults?.[e.id]?.edited) out[e.id] = { edited: false, sets: [] };
-      });
-      await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientExerciseResults: out }, { merge: true });
-      setDirty(false);
-    } catch (e) {
-      console.warn('Could not save changes:', e);
-      setSaveNote('Could not save your changes. Please try again.');
-    } finally {
-      setSavingFix(false);
     }
   };
 
@@ -393,7 +327,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                               isDone ? 'bg-emerald-500 text-[#0b0c10]' : isNext ? 'bg-[#6ccbde] text-[#0b0c10] shadow-[0_0_0_5px_rgba(108,203,222,0.18)]' : 'bg-[#252525] text-white/70'
                             }`}
                           >
-                            {isDone ? (results[ex.id]?.edited ? '✎' : '✓') : idx}
+                            {isDone ? '✓' : idx}
                           </button>
 
                           <div className={`rounded-2xl p-4 transition ${isDone ? 'bg-[#252525]/60' : 'bg-[#252525]'}`}>
@@ -450,36 +384,6 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                               </div>
                             )}
 
-                            {/* What the client did, when it was not exactly the coach's target */}
-                            {results[ex.id]?.edited && editingId !== ex.id && (
-                              <div className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-300">{results[ex.id]?.by === 'coach' ? 'Corrected by coach' : 'What I did'}</span>
-                                  {canEdit && results[ex.id]?.by !== 'coach' && <button type="button" onClick={() => setEditingId(ex.id)} className="text-[11px] font-semibold text-amber-300">Change</button>}
-                                </div>
-                                <div className="mt-1.5 space-y-0.5">
-                                  {results[ex.id].sets.map((r, i) => (
-                                    <div key={i} className="text-[13px] font-mono text-white/90">{results[ex.id].sets.length > 1 ? `${i + 1}.  ` : ''}{setText(ex.exerciseType, r)}</div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            {editingId === ex.id && (
-                              <ExerciseResultEditor
-                                kind={ex.exerciseType}
-                                sets={ex.sets}
-                                initial={results[ex.id]}
-                                onSave={(r) => saveResult(ex.id, r)}
-                                onCancel={() => setEditingId(null)}
-                                onReset={results[ex.id] ? () => resetResult(ex.id) : undefined}
-                              />
-                            )}
-                            {canEdit && !results[ex.id]?.edited && editingId !== ex.id && ex.sets.length > 0 && (
-                              <button type="button" onClick={() => setEditingId(ex.id)} className="mt-3 text-[11px] font-semibold text-white/55 underline decoration-white/20">
-                                Couldn't do this exactly? Edit what I did
-                              </button>
-                            )}
-
                             {ex.coachCues && (
                               <div className="mt-4 flex gap-2.5">
                                 <div className="w-[3px] rounded-full bg-[#ec2226]/70 shrink-0" />
@@ -526,14 +430,14 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
         <div className="mt-7">
           {exercises.length > 0 && (
             <div className="text-[11px] text-white/45 mb-2 px-1 text-center">
-              {allExercisesDone ? 'All done - nice work' : (IS_RECORDED ? 'Tap the number beside each exercise when you finish it. If you could not do it exactly, tap Edit what I did.' : 'Tap the number beside each exercise when you finish it')}
+              {allExercisesDone ? 'All done - nice work' : 'Tap the number beside each exercise when you finish it'}
             </div>
           )}
           {(() => {
             const locked = markingComplete || (exercises.length > 0 && !allExercisesDone);
             return (
               <button
-                onClick={() => { if (IS_RECORDED && exercises.length > 0 && Object.keys(results).length === 0) setConfirming(true); else handleMarkWorkoutComplete(); }}
+                onClick={handleMarkWorkoutComplete}
                 disabled={locked}
                 className={`w-full py-4 rounded-2xl font-subheader text-[16px] uppercase tracking-wide transition ${locked ? 'bg-[#252525] text-white/40 cursor-not-allowed' : 'text-white'}`}
                 style={locked ? undefined : { background: '#ec2226' }}
@@ -546,28 +450,6 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
               </button>
             );
           })()}
-          {saveNote && <p className="mt-3 text-center text-[12px] text-amber-300">{saveNote}</p>}
-          {confirming && (
-            <div className="mt-3 rounded-2xl bg-[#252525] border border-amber-300/25 p-4 text-center">
-              <p className="font-subheader text-[15px] text-white">Did you do everything exactly as set?</p>
-              <p className="text-[11px] text-white/50 mt-1">If you did less on any exercise, tell us what you did. It helps your coach plan your next workout.</p>
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={() => { setConfirming(false); handleMarkWorkoutComplete(); }} className="flex-1 py-3 rounded-xl text-white font-subheader text-[13px] uppercase tracking-wide" style={{ background: '#ec2226' }}>Yes, all as set</button>
-                <button type="button" onClick={() => setConfirming(false)} className="flex-1 py-3 rounded-xl bg-white/[0.08] text-white/80 font-subheader text-[13px] uppercase tracking-wide">No, let me edit</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-      {withinFix && IS_RECORDED && (
-        <div className="mt-7 text-center">
-          {saveNote && <p className="mb-2 text-[12px] text-amber-300">{saveNote}</p>}
-          <p className="text-[11px] text-white/45 mb-2">Forgot to add what you really did? You can still change it for 48 hours after finishing.</p>
-          {dirty && (
-            <button type="button" onClick={handleSaveFix} disabled={savingFix} className="w-full py-4 rounded-2xl font-subheader text-[16px] uppercase tracking-wide text-white" style={{ background: '#ec2226' }}>
-              {savingFix ? 'Saving...' : 'Save changes'}
-            </button>
-          )}
         </div>
       )}
 
