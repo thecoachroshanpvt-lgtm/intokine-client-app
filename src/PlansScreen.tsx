@@ -368,7 +368,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
   const completedSessions = allSessionsList.filter(
     (s: any) =>
       (s.status === 'Completed' || s.attendanceStatus === 'Present' || s.attendanceStatus === 'Late') &&
-      (packageBaselineIds ? !packageBaselineIds.includes(s.id) : !startDate || s.date >= startDate)
+      (packageBaselineIds ? !packageBaselineIds.includes(s.id) : true)
   ).length;
 
   const journey = (() => {
@@ -603,7 +603,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
         else if (daysLeft !== null && daysLeft <= 7) alertText = `Renewal due soon - package ends in ${Math.max(0, daysLeft)} day${daysLeft === 1 ? '' : 's'}.`;
 
         // Sessions that belong to the current package, up to today.
-        const inPackage = allSessionsList.filter((x: any) => (packageBaselineIds ? !packageBaselineIds.includes(x.id) : !startDate || x.date >= startDate));
+        const inPackage = allSessionsList.filter((x: any) => (packageBaselineIds ? !packageBaselineIds.includes(x.id) : true));
         type Row = { key: string; date: string; time: string; label: string; color: string; note?: string };
         const rows: Row[] = [];
         inPackage.forEach((x) => {
