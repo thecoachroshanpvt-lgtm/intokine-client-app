@@ -80,3 +80,24 @@ export const ContactCoachPill: React.FC<{ clientId: string; coachName?: string; 
     </a>
   );
 };
+
+// "Ask coach to postpone": opens WhatsApp to the assigned coach with the request typed in.
+// The button always shows; if the coach has no WhatsApp number saved yet, tapping it says so.
+export const AskPostponeButton: React.FC<{ clientId: string; coachName?: string; what: string }> = ({ clientId, coachName, what }) => {
+  const coach = useCoachWhatsapp(clientId, coachName);
+  const [noNumber, setNoNumber] = useState(false);
+  const cls = 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/[0.12] text-white/60 hover:text-white text-[11px] font-semibold active:scale-95 transition';
+  if (!coach) {
+    return (
+      <div className="space-y-1.5">
+        <button type="button" onClick={() => setNoNumber(true)} className={cls}>Ask coach to postpone</button>
+        {noNumber && <p className="text-[11px] text-white/50 font-light">Your coach's WhatsApp number is not added yet. Please ask your coach directly.</p>}
+      </div>
+    );
+  }
+  return (
+    <a href={coach.link(`Hi Coach ${coach.name}, can you please postpone ${what}? `)} target="_blank" rel="noopener noreferrer" className={cls}>
+      Ask coach to postpone
+    </a>
+  );
+};

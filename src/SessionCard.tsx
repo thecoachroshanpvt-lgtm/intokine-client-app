@@ -1,4 +1,5 @@
 import React from 'react';
+import { AskPostponeButton } from './CoachContact';
 
 // One session card for Home and Schedule. Online clients get a Google Meet
 // join button; everything else (date tile, time, status) is the same for all.
@@ -59,9 +60,11 @@ interface Props {
   online: boolean;
   /** Home only: the day being shown. A session moved off that day reads "Moved to ...". */
   viewDate?: string;
+  /** Needed for the "Ask coach to postpone" button. */
+  clientId?: string;
 }
 
-export const SessionCard: React.FC<Props> = ({ s, online, viewDate }) => {
+export const SessionCard: React.FC<Props> = ({ s, online, viewDate, clientId }) => {
   const isOnline = online || s.program === 'Online Personal Training';
   const movedAway = !!viewDate && s.date !== viewDate;
   const absent = !movedAway && (s.attendanceStatus === 'Absent' || s.attendanceStatus === 'No Show');
@@ -72,6 +75,9 @@ export const SessionCard: React.FC<Props> = ({ s, online, viewDate }) => {
   const t = formatTime(s.time);
   const link = safeLink(s.meetLink);
   const live = isOnline && !movedAway && !absent && s.status === 'Scheduled';
+  // Still to come: scheduled, not moved, not done, today or later.
+  const todayKey = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; })();
+  const canAsk = !movedAway && !absent && s.status === 'Scheduled' && s.attendanceStatus !== 'Present' && s.attendanceStatus !== 'Late' && s.date >= todayKey;
 
   return (
     <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-3">
@@ -119,6 +125,16 @@ export const SessionCard: React.FC<Props> = ({ s, online, viewDate }) => {
       {(movedAway || s.status === 'Postponed') && s.postponeReason ? (
         <p className="mt-2 text-[11px] text-amber-300/90 font-light">Reason: {s.postponeReason}</p>
       ) : null}
+
+      {canAsk && clientId && (
+        <div className="mt-3">
+          <AskPostponeButton
+            clientId={clientId}
+            coachName={s.coachName}
+            what={`my session on ${tileDate ? tileDate.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : s.date}${t ? ` at ${t.clock} ${t.period}` : ''}`}
+          />
+        </div>
+      )}
 
       {live && (
         link ? (
