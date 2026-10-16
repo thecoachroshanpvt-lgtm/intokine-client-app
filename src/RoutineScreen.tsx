@@ -498,68 +498,11 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const totalDays = range === 'year' ? activeBars.reduce((t, x) => t + x.n, 0) : activeBars.length;
   const rangeTitle = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Last 12 months';
 
-  // One graph for each tracked item (water, sleep, energy, habits, symptoms...). Each has a Daily, Weekly and Monthly view.
+  // One graph for each tracked item (water, sleep, energy, habits, symptoms...). The graphs read the logged answers for any period the client looks at.
   const trackerList = [...itemsFor('daily'), ...itemsFor('weekly')].filter(({ it }) => it.type !== 'text');
   const trackers: TrackerSeries[] = trackerList.map(({ fu, it }) => {
-    const isDaily = it.freq === 'daily';
     const opts = it.type === 'choice' || it.type === 'level' ? ((it.options && it.options.length ? it.options : LEVELS) as string[]) : [];
     const ordered = it.label.toLowerCase() === 'mood' ? [...opts].reverse() : opts;
-    const valueAt = (period: string, isNow: boolean): number | null => {
-      const v = logFor(fu.id, it.freq, period)?.values?.[it.id];
-      if (it.type === 'tick') return v === true ? 1 : isNow ? null : 0;
-      if (it.type === 'number') return typeof v === 'number' && v > 0 ? v : null;
-      const i = ordered.indexOf(v);
-      return i >= 0 ? i : null;
-    };
-    const dayVal = (k: string): number | null => (k > today ? null : k < firstDay && it.type === 'tick' ? null : valueAt(k, k === today));
-    const mean = (vals: (number | null)[]) => {
-      const x = vals.filter((v): v is number => v !== null);
-      return x.length ? x.reduce((a, b) => a + b, 0) / x.length : null;
-    };
-    const wkVal = (monday: string): number | null => (monday > today ? null : valueAt(monday, monday === mondayKey(now)));
-    const views: TrackerSeries['views'] = {};
-    if (isDaily) {
-      const n = range === 'week' ? 7 : 30;
-      views.day = Array.from({ length: n }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (n - 1 - i));
-        const k = dateKey(d);
-        return { key: k, label: n === 7 ? d.toLocaleDateString(undefined, { weekday: 'narrow' }) : String(d.getDate()), v: dayVal(k) };
-      });
-      views.week = Array.from({ length: 8 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (7 - i) * 7);
-        const mon = new Date(mondayKey(d) + 'T00:00:00');
-        const vals = Array.from({ length: 7 }, (_, j) => { const x = new Date(mon); x.setDate(x.getDate() + j); return dayVal(dateKey(x)); });
-        return { key: dateKey(mon), label: `${mon.getDate()}/${mon.getMonth() + 1}`, v: mean(vals) };
-      });
-      views.month = Array.from({ length: 12 }, (_, i) => {
-        const start = new Date();
-        start.setDate(1);
-        start.setMonth(start.getMonth() - (11 - i));
-        const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-        const vals: (number | null)[] = [];
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) vals.push(dayVal(dateKey(d)));
-        return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'narrow' }), v: mean(vals) };
-      });
-    } else {
-      views.week = Array.from({ length: 8 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (7 - i) * 7);
-        const k = mondayKey(d);
-        const wd = new Date(k + 'T00:00:00');
-        return { key: k, label: `${wd.getDate()}/${wd.getMonth() + 1}`, v: wkVal(k) };
-      });
-      views.month = Array.from({ length: 6 }, (_, i) => {
-        const start = new Date();
-        start.setDate(1);
-        start.setMonth(start.getMonth() - (5 - i));
-        const mk = monthKey(start);
-        const vals: (number | null)[] = [];
-        for (let d = new Date(start); monthKey(d) === mk; d.setDate(d.getDate() + 1)) if (d.getDay() === 1) vals.push(wkVal(dateKey(d)));
-        return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'short' }), v: mean(vals) };
-      });
-    }
     const lower = it.label.toLowerCase();
     return {
       id: fu.id + it.id,
@@ -570,8 +513,14 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       target: it.target,
       options: ordered,
       goodHigh: lower === 'energy' || lower === 'mood',
-      views,
-      grains: isDaily ? (['day', 'week', 'month'] as const).slice() : (['week', 'month'] as const).slice(),
+      isDaily: it.freq === 'daily',
+      raw: (period: string) => {
+        const v = logFor(fu.id, it.freq, period)?.values?.[it.id];
+        if (it.type === 'tick') return v === true ? 1 : 0;
+        if (it.type === 'number') return typeof v === 'number' && v > 0 ? v : null;
+        const idx = ordered.indexOf(v);
+        return idx >= 0 ? idx : null;
+      },
     };
   });
 
@@ -588,6 +537,9 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         bars={bars.map((b) => ({ key: b.key, label: b.label, full: b.full, frac: b.frac, active: b.active, isToday: b.isToday, doneIds: b.done.map((x) => x.fu.id + x.it.id), fullDays: b.fullDays, logged: b.logged, n: b.n }))}
         items={dailyItems.map(({ fu, it }) => ({ id: fu.id + it.id, label: it.label }))}
         trackers={trackers}
+        today={today}
+        firstDay={firstDay}
+        dailySpan={range === 'week' ? 7 : 30}
         avgPct={avgPct}
         totalFull={totalFull}
         totalLogged={totalLogged}
