@@ -419,7 +419,6 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
           coachSessionNotes: selectedWorkout.coachSessionNotes,
           structuredExercises: selectedWorkout.structuredExercises,
           clientCompletedAt: selectedWorkout.clientCompletedAt,
-          clientExerciseResults: (selectedWorkout as any).clientExerciseResults,
         }}
         onBack={() => setSelectedWorkout(null)}
         onMarkedComplete={() => {
