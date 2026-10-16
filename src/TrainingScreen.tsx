@@ -184,6 +184,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   const [dirty, setDirty] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [savingFix, setSavingFix] = useState(false);
+  const [saveNote, setSaveNote] = useState('');
   // A workout can only be marked done on its assigned day. After that day it counts as not done, unless the coach moved it.
   const now = new Date();
   const todayK = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -236,13 +237,24 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
       // profile photo elsewhere in this app.
       const edits: ResultMap = {};
       exercises.forEach((e) => { if (results[e.id]?.edited) edits[e.id] = results[e.id]; });
-      await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: new Date().toISOString(), ...(Object.keys(edits).length > 0 ? { clientExerciseResults: edits } : {}) }, { merge: true });
-      setResults(edits);
+      const stamp = new Date().toISOString();
+      let savedEdits = edits;
+      try {
+        await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: stamp, ...(Object.keys(edits).length > 0 ? { clientExerciseResults: edits } : {}) }, { merge: true });
+      } catch (err) {
+        // The workout must still count as done even if the edited numbers cannot be stored.
+        if (Object.keys(edits).length === 0) throw err;
+        await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: stamp }, { merge: true });
+        savedEdits = {};
+        setSaveNote('Your workout is saved, but the numbers you edited could not be saved. Please tell your coach.');
+      }
+      setResults(savedEdits);
       setDoneAt(new Date().toISOString());
       setAlreadyDone(true);
       onMarkedComplete();
     } catch (e) {
       console.warn('Could not mark workout complete:', e);
+      setSaveNote('Could not save. Check your internet and try again.');
     } finally {
       setMarkingComplete(false);
     }
@@ -263,6 +275,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
       setDirty(false);
     } catch (e) {
       console.warn('Could not save changes:', e);
+      setSaveNote('Could not save your changes. Please try again.');
     } finally {
       setSavingFix(false);
     }
@@ -533,6 +546,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
               </button>
             );
           })()}
+          {saveNote && <p className="mt-3 text-center text-[12px] text-amber-300">{saveNote}</p>}
           {confirming && (
             <div className="mt-3 rounded-2xl bg-[#252525] border border-amber-300/25 p-4 text-center">
               <p className="font-subheader text-[15px] text-white">Did you do everything exactly as set?</p>
@@ -547,6 +561,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
       )}
       {withinFix && IS_RECORDED && (
         <div className="mt-7 text-center">
+          {saveNote && <p className="mb-2 text-[12px] text-amber-300">{saveNote}</p>}
           <p className="text-[11px] text-white/45 mb-2">Forgot to add what you really did? You can still change it for 48 hours after finishing.</p>
           {dirty && (
             <button type="button" onClick={handleSaveFix} disabled={savingFix} className="w-full py-4 rounded-2xl font-subheader text-[16px] uppercase tracking-wide text-white" style={{ background: '#ec2226' }}>
