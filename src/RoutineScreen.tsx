@@ -498,54 +498,66 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const totalDays = range === 'year' ? activeBars.reduce((t, x) => t + x.n, 0) : activeBars.length;
   const rangeTitle = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Last 12 months';
 
-  // One graph for each tracked item (water, sleep, energy, habits, symptoms...) over the chosen period.
+  // One graph for each tracked item (water, sleep, energy, habits, symptoms...). Each has a Daily, Weekly and Monthly view.
   const trackerList = [...itemsFor('daily'), ...itemsFor('weekly')].filter(({ it }) => it.type !== 'text');
   const trackers: TrackerSeries[] = trackerList.map(({ fu, it }) => {
     const isDaily = it.freq === 'daily';
     const opts = it.type === 'choice' || it.type === 'level' ? ((it.options && it.options.length ? it.options : LEVELS) as string[]) : [];
     const ordered = it.label.toLowerCase() === 'mood' ? [...opts].reverse() : opts;
-    const valueAt = (period: string, isToday: boolean): number | null => {
+    const valueAt = (period: string, isNow: boolean): number | null => {
       const v = logFor(fu.id, it.freq, period)?.values?.[it.id];
-      if (it.type === 'tick') return v === true ? 1 : isToday ? null : 0;
+      if (it.type === 'tick') return v === true ? 1 : isNow ? null : 0;
       if (it.type === 'number') return typeof v === 'number' && v > 0 ? v : null;
       const i = ordered.indexOf(v);
       return i >= 0 ? i : null;
     };
-    const agg = isDaily && range === 'year';
-    let points: { key: string; label: string; v: number | null }[] = [];
-    if (!isDaily) {
-      // Weekly items: the last 8 weeks.
-      points = Array.from({ length: 8 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (7 - i) * 7);
-        const k = mondayKey(d);
-        const wd = new Date(k + 'T00:00:00');
-        return { key: k, label: `${wd.getDate()}/${wd.getMonth() + 1}`, v: k < mondayKey(new Date(firstDay + 'T00:00:00')) && it.type === 'tick' ? null : valueAt(k, k === mondayKey(now)) };
-      });
-    } else if (!agg) {
+    const dayVal = (k: string): number | null => (k > today ? null : k < firstDay && it.type === 'tick' ? null : valueAt(k, k === today));
+    const mean = (vals: (number | null)[]) => {
+      const x = vals.filter((v): v is number => v !== null);
+      return x.length ? x.reduce((a, b) => a + b, 0) / x.length : null;
+    };
+    const wkVal = (monday: string): number | null => (monday > today ? null : valueAt(monday, monday === mondayKey(now)));
+    const views: TrackerSeries['views'] = {};
+    if (isDaily) {
       const n = range === 'week' ? 7 : 30;
-      points = Array.from({ length: n }, (_, i) => {
+      views.day = Array.from({ length: n }, (_, i) => {
         const d = new Date();
         d.setDate(d.getDate() - (n - 1 - i));
         const k = dateKey(d);
-        const label = range === 'week' ? d.toLocaleDateString(undefined, { weekday: 'narrow' }) : String(d.getDate());
-        return { key: k, label, v: k < firstDay && it.type === 'tick' ? null : valueAt(k, k === today) };
+        return { key: k, label: n === 7 ? d.toLocaleDateString(undefined, { weekday: 'narrow' }) : String(d.getDate()), v: dayVal(k) };
       });
-    } else {
-      points = Array.from({ length: 12 }, (_, i) => {
+      views.week = Array.from({ length: 8 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (7 - i) * 7);
+        const mon = new Date(mondayKey(d) + 'T00:00:00');
+        const vals = Array.from({ length: 7 }, (_, j) => { const x = new Date(mon); x.setDate(x.getDate() + j); return dayVal(dateKey(x)); });
+        return { key: dateKey(mon), label: `${mon.getDate()}/${mon.getMonth() + 1}`, v: mean(vals) };
+      });
+      views.month = Array.from({ length: 12 }, (_, i) => {
         const start = new Date();
         start.setDate(1);
         start.setMonth(start.getMonth() - (11 - i));
         const end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
-        const vals: number[] = [];
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          const k = dateKey(d);
-          if (k > today) break;
-          if (k < firstDay && it.type === 'tick') continue;
-          const v = valueAt(k, k === today);
-          if (v !== null) vals.push(v);
-        }
-        return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'narrow' }), v: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null };
+        const vals: (number | null)[] = [];
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) vals.push(dayVal(dateKey(d)));
+        return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'narrow' }), v: mean(vals) };
+      });
+    } else {
+      views.week = Array.from({ length: 8 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (7 - i) * 7);
+        const k = mondayKey(d);
+        const wd = new Date(k + 'T00:00:00');
+        return { key: k, label: `${wd.getDate()}/${wd.getMonth() + 1}`, v: wkVal(k) };
+      });
+      views.month = Array.from({ length: 6 }, (_, i) => {
+        const start = new Date();
+        start.setDate(1);
+        start.setMonth(start.getMonth() - (5 - i));
+        const mk = monthKey(start);
+        const vals: (number | null)[] = [];
+        for (let d = new Date(start); monthKey(d) === mk; d.setDate(d.getDate() + 1)) if (d.getDay() === 1) vals.push(wkVal(dateKey(d)));
+        return { key: dateKey(start), label: start.toLocaleDateString(undefined, { month: 'short' }), v: mean(vals) };
       });
     }
     const lower = it.label.toLowerCase();
@@ -558,10 +570,8 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       target: it.target,
       options: ordered,
       goodHigh: lower === 'energy' || lower === 'mood',
-      freq: isDaily ? 'daily' : 'weekly',
-      agg,
-      points,
-      note: !isDaily ? 'Weekly · last 8 weeks' : agg ? 'Monthly average' : undefined,
+      views,
+      grains: isDaily ? (['day', 'week', 'month'] as const).slice() : (['week', 'month'] as const).slice(),
     };
   });
 
