@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MiniBarChart } from './MiniBarChart';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc } from './firebase';
-import { IS_RECORDED } from './variant';
 
 type ExType = 'Weighted' | 'Bodyweight' | 'Isometric' | 'Cardio';
 
@@ -97,76 +96,8 @@ const progressSeries = (ex: PerfExercise): { points: { date: string; value: numb
   return { points, unit, label };
 };
 
-// Zaki: the exercises the client finished also count as scores. Done as the coach set = the coach's target; edited = what the client typed.
-// So the first time an exercise is edited (lower than the target) that is the best so far, and once the target is done it becomes the best.
-interface DonePlan { id: string; date: string; planTitle?: string; clientCompletedAt?: string; clientExerciseResults?: Record<string, { edited?: boolean; sets?: any[] }>; structuredExercises?: any[] }
-
-const addDonePlans = (records: PerfRecord[], plans: DonePlan[]): PerfRecord[] => {
-  const out: PerfRecord[] = records.map((r) => ({ ...r, exercises: (r.exercises || []).map((e) => ({ ...e, entries: [...(e.entries || [])] })) }));
-  plans.filter((p) => p.clientCompletedAt).forEach((p) => {
-    const wname = p.planTitle || 'Workout';
-    let rec = out.find((r) => r.workoutName === wname);
-    if (!rec) { rec = { id: `plan-${wname}`, clientId: '', workoutName: wname, exercises: [] }; out.push(rec); }
-    (p.structuredExercises || []).filter((ex) => !ex.isStretchReminder && Array.isArray(ex.sets) && ex.sets.length > 0).forEach((ex) => {
-      const edit = p.clientExerciseResults?.[ex.id];
-      const kind: string = ex.exerciseType || 'Weighted';
-      const type: ExType = kind === 'Bodyweight' ? 'Bodyweight' : kind === 'Isometric' ? 'Isometric' : kind === 'DistanceCardio' || kind === 'DurationCardio' ? 'Cardio' : 'Weighted';
-      const sets: any[] = edit?.edited && Array.isArray(edit.sets) && edit.sets.length > 0
-        ? edit.sets
-        : ex.sets.map((s: any) => ({ weightKg: s.targetWeightKg, reps: s.targetReps, rpe: s.rpe, holdSeconds: s.holdSeconds, durationMinutes: s.durationMinutes, distanceKm: s.distanceKm }));
-      // One result for the exercise: its best set.
-      let pickSet = sets[0];
-      sets.forEach((s) => {
-        if (type === 'Weighted' && ((s.weightKg || 0) > (pickSet.weightKg || 0) || ((s.weightKg || 0) === (pickSet.weightKg || 0) && (s.reps || 0) > (pickSet.reps || 0)))) pickSet = s;
-        else if (type === 'Bodyweight' && (s.reps || 0) > (pickSet.reps || 0)) pickSet = s;
-        else if (type === 'Isometric' && (s.holdSeconds || 0) > (pickSet.holdSeconds || 0)) pickSet = s;
-        else if (type === 'Cardio' && ((s.distanceKm || 0) > (pickSet.distanceKm || 0) || ((s.distanceKm || 0) === (pickSet.distanceKm || 0) && (s.durationMinutes || 0) > (pickSet.durationMinutes || 0)))) pickSet = s;
-      });
-      const entry: Entry = {
-        id: `plan-${p.id}-${ex.id}`,
-        date: p.date,
-        weightKg: type === 'Weighted' ? pickSet.weightKg : undefined,
-        reps: type === 'Weighted' || type === 'Bodyweight' ? pickSet.reps : undefined,
-        rpe: pickSet.rpe,
-        durationSec: type === 'Isometric' ? pickSet.holdSeconds : type === 'Cardio' && pickSet.durationMinutes ? Math.round(pickSet.durationMinutes * 60) : undefined,
-        distanceKm: type === 'Cardio' ? pickSet.distanceKm : undefined,
-      };
-      const nm = String(ex.name || '').trim().toLowerCase();
-      let pe = rec!.exercises.find((e) => e.name.trim().toLowerCase() === nm);
-      if (!pe) { pe = { id: `plan-ex-${nm}`, name: ex.name, type, entries: [] }; rec!.exercises.push(pe); }
-      pe.entries.push(entry);
-    });
-  });
-  return out;
-};
-
-// Zaki: one card per exercise, with the best across every finished workout (coach-typed scores are not used). The card sits under the newest workout that has the exercise.
-const byExercise = (recs: PerfRecord[], plans: DonePlan[]): PerfRecord[] => {
-  const dateOfPlan: Record<string, string> = {};
-  plans.forEach((p) => { dateOfPlan[p.planTitle || 'Workout'] = (dateOfPlan[p.planTitle || 'Workout'] || '') > p.date ? dateOfPlan[p.planTitle || 'Workout'] : p.date; });
-  const merged = new Map<string, { ex: PerfExercise; title: string; date: string }>();
-  recs.forEach((r) => (r.exercises || []).forEach((e) => {
-    const k = e.name.trim().toLowerCase();
-    const cur = merged.get(k);
-    const d = dateOfPlan[r.workoutName] || '';
-    if (!cur) merged.set(k, { ex: { ...e, entries: [...e.entries] }, title: r.workoutName, date: d });
-    else {
-      cur.ex.entries.push(...e.entries);
-      if (d > cur.date) { cur.title = r.workoutName; cur.date = d; }
-    }
-  }));
-  const out = new Map<string, PerfRecord>();
-  merged.forEach(({ ex, title }) => {
-    const rec = out.get(title) || { id: `zaki-${title}`, clientId: '', workoutName: title, exercises: [] };
-    rec.exercises.push(ex);
-    out.set(title, rec);
-  });
-  return Array.from(out.values());
-};
-
 export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [records, setRecords] = useState<PerfRecord[]>([]);
-  const [donePlans, setDonePlans] = useState<DonePlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openEx, setOpenEx] = useState<PerfExercise | null>(null);
@@ -219,27 +150,15 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
       }
     );
 
-    // Zaki only: the client's own finished workouts.
-    const unsubPlans = IS_RECORDED
-      ? onSnapshot(
-          query(collection(db, 'intokine_given_session_plans'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
-          (snap) => setDonePlans(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }) as DonePlan)),
-          () => {}
-        )
-      : () => {};
-
     return () => {
       unsubDoc();
       unsubCol();
-      unsubPlans();
     };
   }, [clientId]);
 
-  const allRecords = useMemo(() => (IS_RECORDED ? byExercise(addDonePlans([], donePlans), donePlans) : records), [records, donePlans]);
-
   const groups = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return allRecords
+    return records
       .map((r) => ({
         workout: r.workoutName,
         items: (r.exercises || [])
@@ -249,19 +168,19 @@ export const ExerciseScores: React.FC<{ clientId: string }> = ({ clientId }) => 
       }))
       .filter((g) => g.items.length > 0)
       .sort((a, b) => a.workout.localeCompare(b.workout));
-  }, [allRecords, search]);
+  }, [records, search]);
 
   if (loading) {
     return <div className="text-center py-12 text-white/40 text-sm font-light">Loading your exercise scores...</div>;
   }
 
-  const totalExercises = allRecords.reduce((n, r) => n + (r.exercises || []).length, 0);
+  const totalExercises = records.reduce((n, r) => n + (r.exercises || []).length, 0);
 
   if (totalExercises === 0) {
     return (
       <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
         <p className="text-sm text-white/50 font-light leading-relaxed">
-          {IS_RECORDED ? 'No exercise scores yet — finish a workout and your best lifts, reps and times will appear here.' : 'No exercise scores yet — your coach will add your best lifts, reps and times here.'}
+          No exercise scores yet — your coach will add your best lifts, reps and times here.
         </p>
       </div>
     );
