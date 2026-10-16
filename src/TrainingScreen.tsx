@@ -175,6 +175,10 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   const [markingComplete, setMarkingComplete] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(!!workout.clientCompletedAt);
   const [videoEx, setVideoEx] = useState<TrainerizeExercise | null>(null);
+  // A workout can only be marked done on its assigned day. After that day it counts as not done, unless the coach moved it.
+  const now = new Date();
+  const todayK = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const missed = !alreadyDone && !!workout.date && workout.date < todayK;
 
   const toggleExerciseDone = (id: string) => {
     setCompletedExerciseIds((prev) => {
@@ -235,6 +239,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
         <div className="flex items-center gap-2 mb-2">
           <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide">Suggested Workout</span>
           {alreadyDone && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">✓ Completed</span>}
+          {missed && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/60">Not done</span>}
         </div>
         <h1 className="font-header text-[40px] leading-[1] text-white uppercase break-words">{workout.planTitle}</h1>
         {meta.length > 0 && (
@@ -416,7 +421,13 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
         </div>
       )}
 
-      {!alreadyDone && (
+      {missed && (
+        <div className="mt-7 rounded-2xl bg-[#252525] px-4 py-4 text-center">
+          <p className="font-subheader text-[15px] text-white">This workout was not done on its day</p>
+          <p className="text-[11px] text-white/50 font-light mt-1">It can only be marked done on the day it was assigned. Ask your coach if you need it moved.</p>
+        </div>
+      )}
+      {!alreadyDone && !missed && (
         <div className="mt-7">
           {exercises.length > 0 && (
             <div className="text-[11px] text-white/45 mb-2 px-1 text-center">
