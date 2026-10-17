@@ -266,18 +266,20 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
                     const hasAny = day.length > 0 || hasSched;
                     const allDone = day.length > 0 && day.every((p) => p.clientCompletedAt);
                     const missed = hasAny && !allDone && k < today;
+                    // No cell fill: the number, and a small dot underneath in the status colour (cyan scheduled, green done, grey not done).
+                    const dot = allDone ? '#34d399' : missed ? 'rgba(255,255,255,0.4)' : '#6ccbde';
                     return (
-                      <button type="button" key={k} onClick={() => setSelDay(selDay === k ? null : k)} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-[10px] font-mono ${k === today ? 'ring-1 ring-[#6ccbde]' : ''} ${selDay === k ? 'outline outline-2 outline-white/70' : ''} ${hasAny ? (allDone ? 'bg-emerald-400/20 text-emerald-300' : missed ? 'bg-white/[0.06] text-white/50' : 'bg-[#6ccbde]/20 text-[#6ccbde]') : 'text-white/30'}`}>
-                        <span className="font-bold">{i + 1}</span>
-                        {hasAny && <span className="w-1 h-1 rounded-full bg-current mt-0.5" />}
+                      <button type="button" key={k} onClick={() => setSelDay(selDay === k ? null : k)} className={`aspect-square rounded-lg flex flex-col items-center justify-center text-xs text-white ${k === today ? 'border border-[#6ccbde]/50' : ''} ${selDay === k ? 'bg-white/[0.15]' : 'hover:bg-white/[0.06]'}`}>
+                        {i + 1}
+                        <span className="flex h-1 mt-0.5">{hasAny && <span className="w-1 h-1 rounded-full" style={{ background: dot }} />}</span>
                       </button>
                     );
                   })}
                 </div>
                 <div className="flex items-center justify-center gap-3 text-[9px] text-white/40 mt-2">
-                  <span><i className="inline-block w-2 h-2 rounded-sm bg-[#6ccbde]/50 mr-1" />Scheduled</span>
-                  <span><i className="inline-block w-2 h-2 rounded-sm bg-emerald-400/50 mr-1" />Done</span>
-                  <span><i className="inline-block w-2 h-2 rounded-sm bg-white/20 mr-1" />Not done</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#6ccbde]" />Scheduled</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#34d399]" />Done</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-white/40" />Not done</span>
                 </div>
               </div>
               {(() => {
