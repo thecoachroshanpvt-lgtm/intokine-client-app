@@ -4,6 +4,7 @@ import { initializeClientFirebaseApp, doc, setDoc, collection, query, where, onS
 import { ContactCoachPill } from './CoachContact';
 import { IS_RECORDED } from './variant';
 import { bestOfAllTime, type BestPlan, type BestPerf } from './BestOfAllTime';
+import { ExerciseResultEditor, setText, type ResultMap, type ExerciseResult } from './ExerciseResultEditor';
 
 interface TrainerizeSet {
   id: string;
@@ -54,6 +55,7 @@ interface SuggestedWorkout {
   coachSessionNotes?: string;
   structuredExercises?: TrainerizeExercise[];
   clientCompletedAt?: string;
+  clientExerciseResults?: ResultMap; // Zaki: what the client really did on exercises they could not do as planned
 }
 
 interface TrainingScreenProps {
@@ -177,6 +179,10 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   const [markingComplete, setMarkingComplete] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(!!workout.clientCompletedAt);
   const [videoEx, setVideoEx] = useState<TrainerizeExercise | null>(null);
+  // Zaki: numbers the client changed on exercises they could not do as planned. Saved together with Mark Workout Complete.
+  const [results, setResults] = useState<ResultMap>(workout.clientExerciseResults || {});
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saveNote, setSaveNote] = useState('');
   // Zaki only: what the client has really done before, to show the best of all time on each exercise.
   const [bestPlans, setBestPlans] = useState<BestPlan[]>([]);
   const [bestPerf, setBestPerf] = useState<BestPerf[]>([]);
@@ -212,6 +218,16 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
     });
   };
 
+  const saveResult = (id: string, r: ExerciseResult) => {
+    setResults((prev) => ({ ...prev, [id]: r }));
+    setCompletedExerciseIds((prev) => new Set(prev).add(id)); // saving what they did also counts the exercise as done
+    setEditingId(null);
+  };
+  const resetResult = (id: string) => {
+    setResults((prev) => { const n = { ...prev }; delete n[id]; return n; });
+    setEditingId(null);
+  };
+
   const exercises = workout.structuredExercises || [];
   const allExercisesDone = exercises.length > 0 && exercises.every((ex) => completedExerciseIds.has(ex.id));
   const isDoneId = (id: string) => alreadyDone || completedExerciseIds.has(id);
@@ -229,11 +245,22 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
       // suggested workout - never touch anything else on the plan
       // record, matching the same narrow-write pattern used for the
       // profile photo elsewhere in this app.
-      await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: new Date().toISOString() }, { merge: true });
+      const stamp = new Date().toISOString();
+      const edits: ResultMap = {};
+      exercises.forEach((e) => { if (results[e.id]?.edited && completedExerciseIds.has(e.id)) edits[e.id] = results[e.id]; });
+      try {
+        await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: stamp, ...(Object.keys(edits).length > 0 ? { clientExerciseResults: edits } : {}) }, { merge: true });
+      } catch (err) {
+        // The workout must still count as done even if the changed numbers cannot be stored.
+        if (Object.keys(edits).length === 0) throw err;
+        await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: stamp }, { merge: true });
+        setSaveNote('Your workout is saved, but the numbers you changed could not be saved. Please tell your coach.');
+      }
       setAlreadyDone(true);
       onMarkedComplete();
     } catch (e) {
       console.warn('Could not mark workout complete:', e);
+      setSaveNote('Could not save. Check your internet and try again.');
     } finally {
       setMarkingComplete(false);
     }
@@ -416,6 +443,36 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                               </div>
                             )}
 
+                            {/* Zaki: what the client really did, when it was not the planned numbers */}
+                            {IS_RECORDED && results[ex.id]?.edited && editingId !== ex.id && (
+                              <div className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-amber-300">What I did</span>
+                                  {!alreadyDone && !missed && <button type="button" onClick={() => setEditingId(ex.id)} className="text-[11px] font-semibold text-amber-300">Change</button>}
+                                </div>
+                                <div className="mt-1.5 space-y-0.5">
+                                  {results[ex.id].sets.map((r, i) => (
+                                    <div key={i} className="text-[13px] font-mono text-white/90">{results[ex.id].sets.length > 1 ? `${i + 1}.  ` : ''}{setText(ex.exerciseType, r)}</div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {IS_RECORDED && editingId === ex.id && (
+                              <ExerciseResultEditor
+                                kind={ex.exerciseType}
+                                sets={ex.sets}
+                                initial={results[ex.id]}
+                                onSave={(r) => saveResult(ex.id, r)}
+                                onCancel={() => setEditingId(null)}
+                                onReset={results[ex.id] ? () => resetResult(ex.id) : undefined}
+                              />
+                            )}
+                            {IS_RECORDED && !alreadyDone && !missed && !results[ex.id]?.edited && editingId !== ex.id && ex.sets.length > 0 && (
+                              <button type="button" onClick={() => setEditingId(ex.id)} className="mt-3 text-[11px] font-semibold text-white/55 underline decoration-white/20">
+                                Did less?
+                              </button>
+                            )}
+
                             {ex.coachCues && (
                               <div className="mt-4 flex gap-2.5">
                                 <div className="w-[3px] rounded-full bg-[#ec2226]/70 shrink-0" />
@@ -482,6 +539,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
               </button>
             );
           })()}
+          {saveNote && <p className="mt-3 text-center text-[12px] text-amber-300">{saveNote}</p>}
         </div>
       )}
 
