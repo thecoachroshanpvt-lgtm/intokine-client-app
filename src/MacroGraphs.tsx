@@ -114,6 +114,7 @@ const Card: React.FC<{
 
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto">
         <line x1={L} x2={W - R} y1={ty} y2={ty} stroke="#6ccbde" strokeWidth="1" strokeDasharray="4 3" />
+        <text x={W - R} y={ty - 3} textAnchor="end" fontSize="8" fontWeight="700" fill="#6ccbde">Target {compact(s.target)}{s.unit ? ' ' + s.unit : ''}</text>
         <line x1={L} x2={W - R} y1={T + ih} y2={T + ih} stroke="rgba(255,255,255,0.1)" />
         {pts.map((p, i) => {
           const h = p.v ? (p.v / top) * ih : 0;
