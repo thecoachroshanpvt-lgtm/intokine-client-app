@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { IS_RECORDED } from './variant';
 
 interface WelcomeScreenProps {
   onContinue: () => void;
@@ -7,6 +8,13 @@ interface WelcomeScreenProps {
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
   const [imageFailed, setImageFailed] = useState(false);
   const [wordmarkFailed, setWordmarkFailed] = useState(false);
+  // Zaki app only: the first tap on CONTINUE swaps the INTOKINE logo for the ZAKI logo on the same screen; the second tap enters the app.
+  const [zakiStage, setZakiStage] = useState(false);
+  const [zakiLogoFailed, setZakiLogoFailed] = useState(false);
+  const handleContinue = () => {
+    if (IS_RECORDED && !zakiStage && !zakiLogoFailed) setZakiStage(true);
+    else onContinue();
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#1c1c1c] flex flex-col justify-between">
@@ -30,6 +38,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         .ik-line { animation: ikLine 0.6s ease-out 2.2s both; transform-origin: center; }
         .ik-tag  { animation: ikUp 0.7s ease-out 2.4s both; }
         .ik-btn  { animation: ikUp 0.7s ease-out 2.7s both; }
+        .ik-swap-out { transition: opacity 0.55s ease, transform 0.55s ease; }
+        .ik-swap-out.gone { opacity: 0; transform: scale(0.94); }
+        .ik-swap-in { transition: opacity 0.7s ease 0.35s, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s; opacity: 0; transform: scale(1.06); }
+        .ik-swap-in.shown { opacity: 1; transform: scale(1); }
         @media (prefers-reduced-motion: reduce) {
           .ik-icon, .ik-word, .ik-line, .ik-tag, .ik-btn { animation: none; }
         }
@@ -58,29 +70,41 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8 text-center">
-        {/* Slot keeps the final (small) size; the image is drawn large and scaled down so it stays sharp. */}
-        <div className="relative h-6 sm:h-8 w-full mb-11 sm:mb-14">
-          <img
-            src="/brand-icon.png"
-            alt=""
-            className="ik-icon absolute left-0 right-0 mx-auto w-auto object-contain top-1/2 -mt-8"
-          />
+        <div className="relative flex flex-col items-center w-full">
+          <div className={`ik-swap-out flex flex-col items-center w-full ${zakiStage ? 'gone' : ''}`} aria-hidden={zakiStage}>
+          {/* Slot keeps the final (small) size; the image is drawn large and scaled down so it stays sharp. */}
+          <div className="relative h-6 sm:h-8 w-full mb-11 sm:mb-14">
+            <img
+              src="/brand-icon.png"
+              alt=""
+              className="ik-icon absolute left-0 right-0 mx-auto w-auto object-contain top-1/2 -mt-8"
+            />
+          </div>
+          {!wordmarkFailed ? (
+            <img
+              src="/brand-wordmark.png"
+              alt="INTOKINE"
+              onError={() => setWordmarkFailed(true)}
+              className="ik-word h-[4.5rem] sm:h-24 w-auto max-w-[88%] object-contain drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
+            />
+          ) : (
+            <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95]">
+              INTOKINE
+            </h1>
+          )}
+          </div>
+          {IS_RECORDED && !zakiLogoFailed && (
+            <img
+              src="/zaki-logo.png"
+              alt="ZAKI"
+              onError={() => setZakiLogoFailed(true)}
+              className={`ik-swap-in ${zakiStage ? 'shown' : ''} absolute left-0 right-0 top-1/2 -translate-y-1/2 mx-auto h-[10rem] sm:h-[13rem] w-auto max-w-[88%] object-contain pointer-events-none`}
+            />
+          )}
         </div>
-        {!wordmarkFailed ? (
-          <img
-            src="/brand-wordmark.png"
-            alt="INTOKINE"
-            onError={() => setWordmarkFailed(true)}
-            className="ik-word h-[4.5rem] sm:h-24 w-auto max-w-[88%] object-contain drop-shadow-[0_6px_24px_rgba(0,0,0,0.55)]"
-          />
-        ) : (
-          <h1 className="font-header text-5xl sm:text-7xl text-white leading-[0.95]">
-            INTOKINE
-          </h1>
-        )}
         <div
           className="ik-line mt-7 sm:mt-9 h-[2px] w-14 rounded-full"
-          style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+          style={{ background: 'linear-gradient(90deg, #ec2226 0%, #6ccbde 100%)' }}
         />
         <p className="ik-tag mt-6 sm:mt-7 text-[10px] sm:text-xs text-white/70 font-semibold uppercase tracking-[0.22em] leading-[2.2] whitespace-nowrap">
           Your program. Your progress.
@@ -91,9 +115,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
 
       <div className="ik-btn relative z-10 px-8 pb-10 sm:pb-14">
         <button
-          onClick={onContinue}
+          onClick={handleContinue}
           className="w-full sm:w-auto sm:mx-auto sm:block sm:px-16 py-4 rounded-2xl font-bold text-sm text-white shadow-xl active:scale-[0.98] transition"
-          style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}
+          style={{ background: 'linear-gradient(90deg, #ec2226 0%, #6ccbde 100%)' }}
         >
           CONTINUE
         </button>
