@@ -1,7 +1,7 @@
 // Zaki: the best of all time on one exercise.
 // It counts what was really done: the planned numbers of workouts the client finished, and the coach's own Performance entries.
 // Workouts that are planned but not finished never count.
-export interface BestPlan { clientCompletedAt?: string; structuredExercises?: any[] }
+export interface BestPlan { clientCompletedAt?: string; structuredExercises?: any[]; clientExerciseResults?: Record<string, { edited?: boolean; sets?: any[] }> }
 export interface BestPerf { exercises?: { name: string; entries?: any[] }[] }
 
 interface Cand { w: number; reps: number; hold: number; dist: number; dur: number } // hold = seconds, dur = minutes
@@ -14,6 +14,12 @@ export const bestOfAllTime = (name: string, kind: string | undefined, plans: Bes
     if (!p.clientCompletedAt) return;
     (p.structuredExercises || []).forEach((ex) => {
       if (ex.isStretchReminder || !same(ex.name || '', name)) return;
+      // If the client changed the numbers, what they did counts instead of the plan.
+      const edit = p.clientExerciseResults?.[ex.id];
+      if (edit?.edited && Array.isArray(edit.sets) && edit.sets.length > 0) {
+        edit.sets.forEach((s: any) => c.push({ w: s.weightKg || 0, reps: s.reps || 0, hold: s.holdSeconds || 0, dist: s.distanceKm || 0, dur: s.durationMinutes || 0 }));
+        return;
+      }
       (ex.sets || []).forEach((s: any) => c.push({ w: s.targetWeightKg || 0, reps: s.targetReps || 0, hold: s.holdSeconds || 0, dist: s.distanceKm || 0, dur: s.durationMinutes || 0 }));
     });
   });
