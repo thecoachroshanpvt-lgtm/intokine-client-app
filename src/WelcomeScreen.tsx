@@ -17,7 +17,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#1c1c1c] flex flex-col justify-between">
+    <div className="min-h-screen relative overflow-hidden bg-[#1c1c1c] flex flex-col justify-between" onClick={zakiStage ? onContinue : undefined}>
       {/* Intro animation: the icon appears large, then glides up and the wordmark reveals beneath it. */}
       <style>{`
         @keyframes ikIcon {
@@ -40,6 +40,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         .ik-btn  { animation: ikUp 0.7s ease-out 2.7s both; }
         .ik-swap-out { transition: opacity 0.55s ease, transform 0.55s ease; }
         .ik-swap-out.gone { opacity: 0; transform: scale(0.94); }
+        .ik-fade { transition: opacity 0.5s ease; }
+        .ik-fade.gone { opacity: 0; pointer-events: none; }
         .ik-swap-in { transition: opacity 0.7s ease 0.35s, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.35s; opacity: 0; transform: scale(1.06); }
         .ik-swap-in.shown { opacity: 1; transform: scale(1); }
         @media (prefers-reduced-motion: reduce) {
@@ -68,6 +70,18 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.75) 100%)' }}
       />
 
+      {/* Zaki app, second screen: only the ZAKI logo, centred on the screen. A tap anywhere opens the app. */}
+      {IS_RECORDED && !zakiLogoFailed && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+          <img
+            src="/zaki-logo.png"
+            alt="ZAKI"
+            onError={() => setZakiLogoFailed(true)}
+            className={`ik-swap-in ${zakiStage ? 'shown' : ''} w-[58%] max-w-[16rem] h-auto object-contain`}
+          />
+        </div>
+      )}
+
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8 text-center">
         <div className="relative flex flex-col items-center w-full">
@@ -93,15 +107,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
             </h1>
           )}
           </div>
-          {IS_RECORDED && !zakiLogoFailed && (
-            <img
-              src="/zaki-logo.png"
-              alt="ZAKI"
-              onError={() => setZakiLogoFailed(true)}
-              className={`ik-swap-in ${zakiStage ? 'shown' : ''} absolute left-0 right-0 top-1/2 -translate-y-1/2 mx-auto h-[10rem] sm:h-[13rem] w-auto max-w-[88%] object-contain pointer-events-none`}
-            />
-          )}
         </div>
+        <div className={`ik-fade flex flex-col items-center ${zakiStage ? 'gone' : ''}`}>
         <div
           className="ik-line mt-7 sm:mt-9 h-[2px] w-14 rounded-full"
           style={{ background: 'linear-gradient(90deg, #ec2226 0%, #6ccbde 100%)' }}
@@ -111,8 +118,10 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
           <br />
           Built by your coach.
         </p>
+        </div>
       </div>
 
+      <div className={`ik-fade relative z-10 ${zakiStage ? 'gone' : ''}`}>
       <div className="ik-btn relative z-10 px-8 pb-10 sm:pb-14">
         <button
           onClick={handleContinue}
@@ -121,6 +130,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         >
           CONTINUE
         </button>
+      </div>
       </div>
     </div>
   );
