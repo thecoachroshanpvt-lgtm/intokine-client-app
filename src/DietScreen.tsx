@@ -85,6 +85,7 @@ interface DietPlan {
   nutritionistContact?: string;
   dietType: string;
   dailyCalories: number;
+  targetCalories?: number; // set by the nutritionist in the Builder; used instead of the meal total when present
   proteinGrams: number;
   carbsGrams: number;
   fatGrams: number;
@@ -364,7 +365,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   // What was really eaten today: the option and amount the client picked, plus the macros the nutritionist added for "something else".
   const todayRes = dayMacros(meals, todayLog, reviews[today]);
   const eatenKcal = todayRes.total.kcal;
-  const kcalPct = plan.dailyCalories > 0 ? Math.min(100, Math.round((eatenKcal / plan.dailyCalories) * 100)) : 0;
+  const kcalTarget = plan.targetCalories || plan.dailyCalories;
+  const kcalPct = kcalTarget > 0 ? Math.min(100, Math.round((eatenKcal / kcalTarget) * 100)) : 0;
   const allDone = meals.length > 0 && eatenToday.size === meals.length;
 
   // Meal consistency: the share of planned meals ticked each day. Days before the first tick do not count against the client.
@@ -455,7 +457,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       return id === 'kcal' ? r.total.kcal : id === 'p' ? r.total.p : id === 'c' ? r.total.c : r.total.f;
     };
     const series = [
-      { id: 'kcal', label: 'Calories', unit: 'kcal', target: plan.dailyCalories, color: '#ffffff' },
+      { id: 'kcal', label: 'Calories', unit: 'kcal', target: kcalTarget, color: '#ffffff' },
       { id: 'p', label: 'Protein', unit: 'g', target: plan.proteinGrams, color: '#6ccbde' },
       { id: 'c', label: 'Carbs', unit: 'g', target: plan.carbsGrams, color: '#c084fc' },
       { id: 'f', label: 'Fats', unit: 'g', target: plan.fatGrams, color: '#ec2226' },
@@ -492,7 +494,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div>
           <div className="flex items-end justify-between">
             <div className="font-header text-3xl text-white tracking-wide leading-none">
-              {eatenKcal}<span className="text-sm font-light text-white/50 ml-1 font-sans">/ {plan.dailyCalories} kcal</span>
+              {eatenKcal}<span className="text-sm font-light text-white/50 ml-1 font-sans">/ {kcalTarget} kcal</span>
             </div>
             <div className="text-xs text-white/50"><span className="text-white font-semibold font-mono">{eatenToday.size}/{meals.length}</span> meals</div>
           </div>
