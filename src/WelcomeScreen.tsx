@@ -77,7 +77,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
             src="/zaki-logo.png"
             alt="ZAKI"
             onError={() => setZakiLogoFailed(true)}
-            className={`ik-swap-in ${zakiStage ? 'shown' : ''} w-[58%] max-w-[16rem] h-auto object-contain`}
+            className={`ik-swap-in ${zakiStage ? 'shown' : ''} w-[44%] max-w-[12rem] h-auto object-contain`}
           />
         </div>
       )}
