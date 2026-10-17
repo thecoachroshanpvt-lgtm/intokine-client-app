@@ -10,6 +10,7 @@ import {
   where,
   onSnapshot,
   setDoc,
+  deleteDoc,
 } from 'firebase/firestore';
 import {
   getAuth,
@@ -74,6 +75,7 @@ export {
   where,
   onSnapshot,
   setDoc,
+  deleteDoc,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,

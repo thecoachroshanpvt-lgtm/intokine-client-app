@@ -3,7 +3,12 @@ import { createPortal } from 'react-dom';
 import { SupplementsCard } from './SupplementsCard';
 import { ConsistencyChart } from './ConsistencyChart';
 import { FloatingWhatsApp } from './FloatingWhatsApp';
-import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
+import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc, deleteDoc } from './firebase';
+import { MealLogSheet } from './MealLogSheet';
+import type { SheetMeal, SheetResult } from './MealLogSheet';
+import { MacroGraphs } from './MacroGraphs';
+import { dayMacros, addDaysKey, PHOTO_DAYS, PORTIONS, reviewApplies, reviewHasMacros } from './dietMacros';
+import type { MealEntry as LoggedMeal, MealReview } from './dietMacros';
 
 // Builds a wa.me deep link from whatever format the contact number was stored in.
 function buildWhatsAppLink(contact: string): string {
@@ -94,6 +99,7 @@ interface MealLog {
   date: string;
   eaten: string[];
   supplementsTaken?: string[];
+  entries?: Record<string, LoggedMeal>;
 }
 
 function niceDate(k: string): string {
@@ -112,15 +118,20 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [saveError, setSaveError] = useState('');
   const [range, setRange] = useState<'week' | 'month' | 'year'>('week');
   const [detail, setDetail] = useState(false); // the day-by-day popup of the consistency card
-  // Ticks are collected first and only saved after the client confirms them in a popup.
-  const [pendingMeals, setPendingMeals] = useState<Set<string> | null>(null);
+  // Supplement ticks are collected first and only saved after the client confirms them in a popup.
+  // Meals are logged one by one in their own popup (photo, option, amount).
+  const [reviews, setReviews] = useState<Record<string, Record<string, MealReview>>>({}); // date -> meal id -> nutritionist review
+  const [sheetMeal, setSheetMeal] = useState<string | null>(null);
+  const [sheetSaving, setSheetSaving] = useState(false);
+  const [sheetError, setSheetError] = useState('');
+  const [macroPage, setMacroPage] = useState(false);
   const [pendingSupps, setPendingSupps] = useState<Set<string> | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   // Same as the other popups in the app: the page behind stays still and the pull-to-refresh is switched off while it is open.
   useEffect(() => {
-    if (!detail && !confirmOpen) return;
+    if (!detail && !confirmOpen && !sheetMeal) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     document.body.setAttribute('data-popup-open', '1');
@@ -128,7 +139,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       document.body.style.overflow = prev;
       document.body.removeAttribute('data-popup-open');
     };
-  }, [detail, confirmOpen]);
+  }, [detail, confirmOpen, sheetMeal]);
   const [pickedVar, setPickedVar] = useState<Record<string, number>>({}); // which option tab is open on each meal
   // Re-check the date once a minute so the checklist resets at midnight.
   const [, setTick] = useState(0);
@@ -173,6 +184,45 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     return () => unsub();
   }, [clientId]);
 
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    const unsub = onSnapshot(
+      query(collection(db, 'intokine_meal_reviews'), where('clientId', '==', clientId)),
+      (snap) => {
+        const next: Record<string, Record<string, MealReview>> = {};
+        snap.docs.forEach((d) => {
+          const x = d.data() as any;
+          if (x.date) next[x.date] = x.meals || {};
+        });
+        setReviews(next);
+      },
+      (err) => console.warn('Could not load nutritionist reviews:', err)
+    );
+    return () => unsub();
+  }, [clientId]);
+
+  // Meal photos are kept for 14 days. Once a day this phone removes this client's photos that are older than that (free storage stays small).
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    const flag = `intokine_photo_cleanup_${clientId}`;
+    try {
+      if (localStorage.getItem(flag) === dateKey(new Date())) return;
+    } catch { /* storage unavailable: just clean up */ }
+    const now = dateKey(new Date());
+    (async () => {
+      try {
+        for (let i = PHOTO_DAYS + 1; i <= PHOTO_DAYS + 14; i++) {
+          await deleteDoc(doc(db, 'intokine_meal_photos', `${clientId}_${addDaysKey(now, -i)}`));
+        }
+        try { localStorage.setItem(flag, now); } catch { /* ignore */ }
+      } catch (e) {
+        console.warn('Photo cleanup skipped:', e);
+      }
+    })();
+  }, [clientId]);
+
   const meals = useMemo(
     () => [...(plan?.meals || [])].sort((a, b) => MEAL_ORDER.indexOf(a.mealTime) - MEAL_ORDER.indexOf(b.mealTime)),
     [plan]
@@ -189,19 +239,12 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     return n;
   };
   const sameSet = (a: Set<string>, b: Set<string>) => a.size === b.size && Array.from(a).every((x) => b.has(x));
-  const shownMeals = pendingMeals ?? eatenToday;
   const shownSupps = pendingSupps ?? suppTaken;
-  const mealsChanged = pendingMeals !== null && !sameSet(pendingMeals, eatenToday);
   const suppsChanged = pendingSupps !== null && !sameSet(pendingSupps, suppTaken);
-  const dirty = mealsChanged || suppsChanged;
-  const changeCount =
-    (mealsChanged ? Array.from(pendingMeals!).filter((x) => !eatenToday.has(x)).length + Array.from(eatenToday).filter((x) => !pendingMeals!.has(x)).length : 0) +
-    (suppsChanged ? Array.from(pendingSupps!).filter((x) => !suppTaken.has(x)).length + Array.from(suppTaken).filter((x) => !pendingSupps!.has(x)).length : 0);
+  const dirty = suppsChanged;
 
-  const toggleMeal = (mealId: string) => setPendingMeals(flip(pendingMeals ?? eatenToday, mealId));
   const toggleSupplement = (id: string) => setPendingSupps(flip(pendingSupps ?? suppTaken, id));
   const undoChanges = () => {
-    setPendingMeals(null);
     setPendingSupps(null);
     setConfirmOpen(false);
     setSaveError('');
@@ -212,20 +255,18 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     if (!dirty || confirmOpen) return;
     const t = window.setTimeout(() => setConfirmOpen(true), 80);
     return () => window.clearTimeout(t);
-  }, [dirty, pendingMeals, pendingSupps, confirmOpen]);
+  }, [dirty, pendingSupps, confirmOpen]);
 
   const confirmSave = async () => {
     setSaving(true);
     setSaveError('');
     const payload: Record<string, any> = { clientId, date: today, updatedAt: new Date().toISOString() };
-    if (mealsChanged) payload.eaten = Array.from(pendingMeals!);
     if (suppsChanged) payload.supplementsTaken = Array.from(pendingSupps!);
     try {
       const { db } = initializeClientFirebaseApp();
       if (!db) throw new Error('offline');
       await setDoc(doc(db, 'intokine_meal_logs', `${clientId}_${today}`), payload, { merge: true });
-      setLogs((prev) => [...prev.filter((l) => l.date !== today), { eaten: [], ...(prev.find((l) => l.date === today) || {}), date: today, ...(mealsChanged ? { eaten: payload.eaten } : {}), ...(suppsChanged ? { supplementsTaken: payload.supplementsTaken } : {}) }]);
-      setPendingMeals(null);
+      setLogs((prev) => [...prev.filter((l) => l.date !== today), { eaten: [], ...(prev.find((l) => l.date === today) || {}), date: today, ...(suppsChanged ? { supplementsTaken: payload.supplementsTaken } : {}) }]);
       setPendingSupps(null);
       setConfirmOpen(false);
       setSavedMsg(true);
@@ -235,6 +276,72 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       setSaveError('Could not save. Please check your connection and try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const portionLabel = (v?: number) => (PORTIONS.find((x) => x.value === v) || PORTIONS[1]).label;
+
+  const sheetData = (m: MealEntry): SheetMeal => ({
+    id: m.id,
+    mealTime: m.mealTime,
+    description: m.description,
+    base: { kcal: m.calories || 0, p: m.proteinGrams || 0, c: m.carbsGrams || 0, f: m.fatGrams || 0 },
+    variants: (m.variants || []).map((v, i) => ({
+      id: v.id,
+      label: v.label?.trim() || `Option ${i + 1}`,
+      lines: v.items.map((it) => (it.portion ? `${it.name} · ${it.portion}` : it.name)),
+      macros: { kcal: v.calories || m.calories || 0, p: v.proteinGrams ?? m.proteinGrams ?? 0, c: v.carbsGrams ?? m.carbsGrams ?? 0, f: v.fatGrams ?? m.fatGrams ?? 0 },
+    })),
+  });
+
+  // Saves one meal: the photo first (its own small document), then the meal entry in today's log.
+  const saveMeal = async (meal: MealEntry, r: SheetResult) => {
+    setSheetSaving(true);
+    setSheetError('');
+    try {
+      const { db } = initializeClientFirebaseApp();
+      if (!db) throw new Error('offline');
+      const at = new Date().toISOString();
+      if (r.photoDataUrl) {
+        await setDoc(
+          doc(db, 'intokine_meal_photos', `${clientId}_${today}`),
+          { clientId, date: today, updatedAt: at, photos: { [meal.id]: { dataUrl: r.photoDataUrl, mealTime: meal.mealTime, at } } },
+          { merge: true }
+        );
+      }
+      const entry: Record<string, any> = { status: r.status, at };
+      if (r.status === 'eaten') {
+        if (r.variantId) entry.variantId = r.variantId;
+        if (r.variantLabel) entry.variantLabel = r.variantLabel;
+        entry.portion = r.portion || 1;
+        if (r.macros) entry.macros = r.macros;
+        entry.photo = true;
+      } else if (r.status === 'else') {
+        entry.note = r.note || '';
+        entry.photo = true;
+      }
+      const eaten = new Set(eatenToday);
+      if (r.status === 'eaten' || r.status === 'else') eaten.add(meal.id);
+      else eaten.delete(meal.id);
+      // Only this meal's entry is replaced (mergeFields), so the other meals and the supplements of the day stay as they are.
+      await setDoc(
+        doc(db, 'intokine_meal_logs', `${clientId}_${today}`),
+        { clientId, date: today, updatedAt: at, eaten: Array.from(eaten), entries: { [meal.id]: entry } },
+        { mergeFields: ['clientId', 'date', 'updatedAt', 'eaten', `entries.${meal.id}`] }
+      );
+      setLogs((old) => {
+        const cur = old.find((l) => l.date === today);
+        const next: MealLog = { ...(cur || { date: today, eaten: [] }), date: today, eaten: Array.from(eaten), entries: { ...(cur?.entries || {}), [meal.id]: entry as LoggedMeal } };
+        return [...old.filter((l) => l.date !== today), next];
+      });
+      setSheetMeal(null);
+      setSavedMsg(true);
+      window.setTimeout(() => setSavedMsg(false), 2500);
+    } catch (e) {
+      console.warn('Could not save meal:', e);
+      setSheetError('Could not save. Please check your connection and try again.');
+    } finally {
+      setSheetSaving(false);
     }
   };
 
@@ -254,9 +361,9 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     );
   }
 
-  const sum = (key: 'calories' | 'proteinGrams' | 'carbsGrams' | 'fatGrams') =>
-    meals.filter((m) => eatenToday.has(m.id)).reduce((s, m) => s + (m[key] || 0), 0);
-  const eatenKcal = sum('calories');
+  // What was really eaten today: the option and amount the client picked, plus the macros the nutritionist added for "something else".
+  const todayRes = dayMacros(meals, todayLog, reviews[today]);
+  const eatenKcal = todayRes.total.kcal;
   const kcalPct = plan.dailyCalories > 0 ? Math.min(100, Math.round((eatenKcal / plan.dailyCalories) * 100)) : 0;
   const allDone = meals.length > 0 && eatenToday.size === meals.length;
 
@@ -329,13 +436,53 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const rangeTitle = range === 'week' ? 'Last 7 days' : range === 'month' ? 'Last 30 days' : 'Last 12 months';
 
   const macros: { label: string; eaten: number; target: number; color: string }[] = [
-    { label: 'Protein', eaten: sum('proteinGrams'), target: plan.proteinGrams, color: '#6ccbde' },
-    { label: 'Carbs', eaten: sum('carbsGrams'), target: plan.carbsGrams, color: '#ffffff' },
-    { label: 'Fats', eaten: sum('fatGrams'), target: plan.fatGrams, color: '#ec2226' },
+    { label: 'Protein', eaten: Math.round(todayRes.total.p), target: plan.proteinGrams, color: '#6ccbde' },
+    { label: 'Carbs', eaten: Math.round(todayRes.total.c), target: plan.carbsGrams, color: '#ffffff' },
+    { label: 'Fats', eaten: Math.round(todayRes.total.f), target: plan.fatGrams, color: '#ec2226' },
   ];
+
+  // Macro graphs page: every day against the target, same look as the Routine graphs.
+  if (macroPage) {
+    const cache = new Map<string, ReturnType<typeof dayMacros>>();
+    const resOf = (day: string) => {
+      let r = cache.get(day);
+      if (!r) { r = dayMacros(meals, logs.find((l) => l.date === day), reviews[day]); cache.set(day, r); }
+      return r;
+    };
+    const value = (id: string, day: string): number | null => {
+      const r = resOf(day);
+      if (!r.logged) return null;
+      return id === 'kcal' ? r.total.kcal : id === 'p' ? r.total.p : id === 'c' ? r.total.c : r.total.f;
+    };
+    const series = [
+      { id: 'kcal', label: 'Calories', unit: 'kcal', target: plan.dailyCalories, color: '#ffffff' },
+      { id: 'p', label: 'Protein', unit: 'g', target: plan.proteinGrams, color: '#6ccbde' },
+      { id: 'c', label: 'Carbs', unit: 'g', target: plan.carbsGrams, color: '#c084fc' },
+      { id: 'f', label: 'Fats', unit: 'g', target: plan.fatGrams, color: '#ec2226' },
+    ];
+    return (
+      <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto space-y-4">
+        <button onClick={() => setMacroPage(false)} className="text-[12px] font-semibold text-[#6ccbde] hover:text-white flex items-center gap-1">
+          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          Diet
+        </button>
+        <div className="rounded-2xl px-4 py-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
+          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde]">Macro progress</div>
+          <p className="text-[11px] text-white/50 mt-1.5 leading-relaxed">What you ate each day against your daily targets. Green bars are within 10% of the target. An amber dot means a meal is still waiting for your nutritionist's macros.</p>
+        </div>
+        <MacroGraphs series={series} value={value} pending={(d) => resOf(d).pending > 0} today={today} firstDay={firstDay} />
+      </div>
+    );
+  }
 
   return (
     <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 pb-8`}>
+      {sheetMeal && (() => {
+        const m = meals.find((x) => x.id === sheetMeal);
+        if (!m) return null;
+        const e = todayLog?.entries?.[m.id];
+        return <MealLogSheet key={m.id} meal={sheetData(m)} existing={e} saving={sheetSaving} error={sheetError} onSave={(r) => saveMeal(m, r)} onClose={() => setSheetMeal(null)} />;
+      })()}
       {/* Plan and today in one card: name, who made it, then how today is going */}
       <div className="rounded-2xl p-4 space-y-4" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
         <div>
@@ -365,6 +512,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             <div className="text-[9px] text-white/40 uppercase mt-0.5">Water</div>
           </div>
         </div>
+        {todayRes.pending > 0 && <p className="text-[11px] text-amber-300 text-center">{todayRes.pending} {todayRes.pending === 1 ? 'meal is' : 'meals are'} waiting for your nutritionist to add the macros</p>}
         {allDone && <p className="text-xs text-emerald-400 font-semibold text-center">All meals done today. Great work!</p>}
       </div>
       {isRealContact(plan.nutritionistContact) && <FloatingWhatsApp href={buildWhatsAppLink(plan.nutritionistContact)} />}
@@ -429,21 +577,10 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div className="anim-overlay fixed inset-0 z-[120] bg-black/70 flex items-center justify-center p-5">
           <div data-no-pull className="anim-card w-full max-w-sm max-h-[80vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-4 border-b border-white/[0.08]">
-              <div className="font-subheader text-[17px] text-white">Confirm today's update</div>
+              <div className="font-subheader text-[17px] text-white">Confirm today's supplements</div>
               <div className="text-[11px] text-white/40">{niceDate(today)} · check it and confirm to save</div>
             </div>
             <div className="overflow-y-auto p-4 space-y-4" style={{ overscrollBehavior: 'contain' }}>
-              <div>
-                <div className="text-[10px] text-white/40 uppercase font-semibold mb-2">Meals eaten · {shownMeals.size} of {meals.length}</div>
-                <div className="space-y-1.5">
-                  {meals.map((m) => (
-                    <div key={m.id} className="flex items-center justify-between gap-2 text-xs">
-                      <span className={shownMeals.has(m.id) ? 'text-white' : 'text-white/40'}>{m.mealTime}</span>
-                      <span className={`text-[10px] font-bold ${shownMeals.has(m.id) ? 'text-emerald-400' : 'text-white/30'}`}>{shownMeals.has(m.id) ? '✓ Eaten' : 'Not eaten'}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
               {(plan.supplements || []).length > 0 && (
                 <div>
                   <div className="text-[10px] text-white/40 uppercase font-semibold mb-2">Supplements taken · {(plan.supplements || []).filter((x) => shownSupps.has(x.id)).length} of {(plan.supplements || []).length}</div>
@@ -473,10 +610,15 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         <div className="space-y-2.5">
           <div className="flex items-baseline justify-between px-1">
             <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde]">Today's meals</div>
-            <div className="text-[10px] text-white/40">Tap a meal when you have eaten it</div>
+            <div className="text-[10px] text-white/40">Tap a meal to log it with a photo</div>
           </div>
           {meals.map((meal) => {
-            const done = shownMeals.has(meal.id);
+            const entry = todayLog?.entries?.[meal.id];
+            const st = entry?.status === 'none' ? undefined : entry?.status;
+            const done = st === 'eaten' || st === 'else' || (!st && eatenToday.has(meal.id));
+            const skipped = st === 'skipped';
+            const rv = reviews[today]?.[meal.id];
+            const rvOk = reviewApplies(rv, entry) ? rv : undefined;
             const options = meal.variants || [];
             const multi = options.length > 1;
             const vi = multi ? Math.min(pickedVar[meal.id] || 0, options.length - 1) : 0;
@@ -486,7 +628,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             const carb = shown?.carbsGrams ?? meal.carbsGrams;
             const fat = shown?.fatGrams ?? meal.fatGrams;
             return (
-              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden ${done ? 'border-emerald-500/40' : 'border-white/[0.08]'}`}
+              <div key={meal.id} className={`rounded-2xl border transition overflow-hidden ${done ? 'border-emerald-500/40' : skipped ? 'border-[#ec2226]/40' : 'border-white/[0.08]'}`}
                 style={{ background: mealCardBackground(meal.mealTime), backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#252525' }}>
                 {multi && (
                   <div className="px-4 pt-3 text-[10px] text-white/40">Choose one option</div>
@@ -501,12 +643,22 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                     ))}
                   </div>
                 )}
-                <button type="button" onClick={() => toggleMeal(meal.id)} aria-pressed={done} className="w-full text-left p-4 block">
+                <button type="button" onClick={() => { setSheetError(''); setSheetMeal(meal.id); }} className="w-full text-left p-4 block">
                   <span className="flex items-center gap-3">
-                    <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${done ? 'bg-emerald-500 border-emerald-500 text-black' : 'border-white/25 text-transparent ik-nudge'}`} aria-hidden>✓</span>
+                    <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs ${done ? 'bg-emerald-500 border-emerald-500 text-black' : skipped ? 'border-[#ec2226] text-[#ec2226]' : 'border-white/25 text-transparent ik-nudge'}`} aria-hidden>{skipped ? '✕' : '✓'}</span>
                     <span className="font-subheader text-[17px] text-white flex-1">{MEAL_TIME_ICONS[meal.mealTime] || '🍴'} {meal.mealTime}</span>
                   </span>
-                  <span className="block mt-2.5 pl-9">
+                  <span className="block mt-1.5 pl-9 text-[11px] leading-snug">
+                    {st === 'eaten' && <span className="block text-emerald-400 font-semibold">Eaten{entry?.variantLabel && options.length > 1 ? ` · ${entry.variantLabel}` : ''} · {portionLabel(entry?.portion)}{rvOk && reviewHasMacros(rvOk) ? ` · ${rvOk.kcal} kcal (set by your nutritionist)` : entry?.macros ? ` · ${entry.macros.kcal} kcal` : ''}</span>}
+                    {st === 'else' && (rvOk && reviewHasMacros(rvOk)
+                      ? <span className="block text-emerald-400 font-semibold">Something else · {rvOk.kcal} kcal · {rvOk.p}g protein added by your nutritionist</span>
+                      : <span className="block text-amber-300 font-semibold">Something else · waiting for your nutritionist</span>)}
+                    {st === 'skipped' && <span className="block text-[#ec2226] font-semibold">Skipped · counts as 0</span>}
+                    {!st && !done && <span className="block text-[#6ccbde]/80">📷 Tap to log this meal</span>}
+                    {rv && rv.verdict === 'mismatch' && <span className="block text-amber-300 mt-0.5">Your nutritionist says the photo does not match the plan{rv.note ? `: ${rv.note}` : '.'}</span>}
+                    {rv && rv.verdict === 'ok' && !rv.note && <span className="block text-white/40 mt-0.5">Photo checked by your nutritionist ✓</span>}
+                  </span>
+                  <span className="block mt-2 pl-9">
                     {shown ? (
                       <>
                         {shown.items.map((it) => (
@@ -545,6 +697,16 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
           <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] mb-2">Notes from your coach</div>
           <div className="text-xs text-white/60 font-light whitespace-pre-wrap leading-relaxed">{plan.notes}</div>
         </div>
+      )}
+
+      {meals.length > 0 && (
+        <button type="button" onClick={() => setMacroPage(true)} className="w-full text-left rounded-2xl p-4 border border-white/[0.08] bg-[#252525] flex items-center justify-between gap-3">
+          <span>
+            <span className="block font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde]">Macro progress</span>
+            <span className="block text-[11px] text-white/50 mt-1">Calories, protein, carbs and fats against your targets</span>
+          </span>
+          <span className="text-[11px] font-semibold text-[#6ccbde] shrink-0">Open ›</span>
+        </button>
       )}
 
       {meals.length > 0 && (
