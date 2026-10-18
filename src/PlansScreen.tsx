@@ -479,23 +479,6 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {photoError && <p className="text-xs text-[#ec2226] font-light">{photoError}</p>}
 
-      {/* Package expired notification */}
-      {!IS_RECORDED && journey?.expired && (
-        <div className="bg-[#ec2226]/10 border border-[#ec2226]/40 rounded-2xl p-4 flex items-start gap-3" role="alert">
-          <span className="w-2 h-2 mt-1.5 rounded-full bg-[#ec2226] shrink-0" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
-          <div>
-            <p className="font-subheader text-[17px] text-white">Package expired</p>
-            <p className="text-[11px] text-white/60 font-light mt-0.5 leading-relaxed">
-              {journey.mode === 'sessions' ? (
-                <>You completed all <span className="font-mono">{packageSessions}</span> sessions in your package. Please contact your coach to renew.</>
-              ) : (
-                <>Your package ended on {renewalDate}. You completed <span className="font-mono">{completedSessions}</span> session{completedSessions === 1 ? '' : 's'}. Please contact your coach to renew.</>
-              )}
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Zaki package: counted in days. Shows "Day X of N"; once the days are over it becomes a renew card. Tap for the package history at any time. */}
       {IS_RECORDED && startDate && (renewalDate || packageSessions) && (() => {
         const DAY = 1000 * 60 * 60 * 24;
@@ -626,8 +609,29 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
         rows.sort((p, q) => q.date.localeCompare(p.date));
         const absentCount = rows.filter((r) => r.label === 'ABSENT').length;
         return (
-          <div className="rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}>
+          <div
+            className={`rounded-2xl overflow-hidden ${journey.expired ? 'bg-[#ec2226]/10 border border-[#ec2226]/40' : ''}`}
+            style={journey.expired ? undefined : { background: 'linear-gradient(160deg, rgba(236,34,38,0.1), rgba(108,203,222,0.06))' }}
+            role={journey.expired ? 'alert' : undefined}
+          >
             <button type="button" onClick={() => setPackageHistoryOpen((o) => !o)} className="w-full text-left p-4 space-y-2" aria-expanded={packageHistoryOpen}>
+              {journey.expired ? (
+                <div className="flex items-start gap-3">
+                  <span className="w-2 h-2 mt-1.5 rounded-full bg-[#ec2226] shrink-0" style={{ animation: 'bcaPulse 1.8s ease-out infinite' }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-subheader text-[17px] text-white">Package expired</p>
+                    <p className="text-[11px] text-white/60 font-light mt-0.5 leading-relaxed">
+                      {journey.mode === 'sessions' ? (
+                        <>You completed all <span className="font-mono">{packageSessions}</span> sessions in your package. Please contact your coach to renew.</>
+                      ) : (
+                        <>Your package ended on {renewalDate}. You completed <span className="font-mono">{completedSessions}</span> session{completedSessions === 1 ? '' : 's'}. Please contact your coach to renew.</>
+                      )}
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-white/40 mt-0.5" style={{ display: 'inline-block', transform: packageHistoryOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+                </div>
+              ) : (
+              <>
               <div className="flex items-center justify-between">
                 <span className="font-subheader text-[17px] text-white">
                   <span className="font-mono">{completedSessions}</span>
@@ -647,10 +651,12 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
                 />
               </div>
               {alertText && (
-                <p className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: journey.expired ? '#ec2226' : '#f59e0b' }}>
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: journey.expired ? '#ec2226' : '#f59e0b' }} />
+                <p className="text-[11px] font-semibold flex items-center gap-1.5" style={{ color: '#f59e0b' }}>
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#f59e0b' }} />
                   {alertText}
                 </p>
+              )}
+              </>
               )}
               {!packageHistoryOpen && <p className="text-[10px] text-white/30 font-light">Tap to see your attendance for this package</p>}
             </button>
