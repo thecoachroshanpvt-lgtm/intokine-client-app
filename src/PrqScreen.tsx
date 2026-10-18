@@ -378,6 +378,7 @@ const questions: QuestionConfig[] = [
   // Section 11 - Body Composition
   { key: 'bmi', type: 'number', label: 'BMI, if you know it from a recent scan', section: 'Body Composition' },
   { key: 'fatMassKg', type: 'number', label: 'Fat mass, if known (kg)', section: 'Body Composition' },
+  { key: 'fatMassPercent', type: 'number', label: 'Fat mass, if known (%)', section: 'Body Composition' },
   { key: 'skeletalMuscleMassKg', type: 'number', label: 'Skeletal muscle mass, if known (kg)', section: 'Body Composition' },
 
   // Section 12 - Goals & Readiness
@@ -591,6 +592,7 @@ export const PrqScreen: React.FC<PrqScreenProps> = ({ clientId, clientName, clie
         leftForearmInches: toNum(form.leftForearmInches),
         bmi: toNum(form.bmi),
         fatMassKg: toNum(form.fatMassKg),
+        fatMassPercent: toNum(form.fatMassPercent),
         skeletalMuscleMassKg: toNum(form.skeletalMuscleMassKg),
         readinessToAdoptHealthyLifestyle: toNum(form.readinessToAdoptHealthyLifestyle) || 5,
         hasSpecificHealthGoals: toBool(form.hasSpecificHealthGoals),
