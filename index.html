@@ -16,11 +16,18 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1c1c1c" />
+    <!-- The app is dark by design. This tells Android browsers not to re-colour it with their own automatic dark mode,
+         which was flattening the selected-row field of the PRQ number wheels. -->
+    <meta name="color-scheme" content="dark" />
+    <meta name="supported-color-schemes" content="dark" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="INTOKINE" />
 
     <style>
+      html {
+        color-scheme: dark;
+      }
       html, body {
         margin: 0;
         padding: 0;
