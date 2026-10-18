@@ -67,6 +67,8 @@ interface AssessmentSnapshot {
   weightKg?: number;
   bodyFatPercentage?: number;
   muscleMassKg?: number;
+  bodyFatKg?: number;
+  skeletalMuscleMassKg?: number;
   visceralFatLevel?: number;
   bmi?: number;
   weightNormalMin?: number;
@@ -78,6 +80,12 @@ interface AssessmentSnapshot {
   muscleMassNormalMin?: number;
   muscleMassNormalMax?: number;
   muscleMassGoal?: number;
+  bodyFatKgNormalMin?: number;
+  bodyFatKgNormalMax?: number;
+  bodyFatKgGoal?: number;
+  skeletalMuscleNormalMin?: number;
+  skeletalMuscleNormalMax?: number;
+  skeletalMuscleGoal?: number;
   bmiNormalMin?: number;
   bmiNormalMax?: number;
   bmiGoal?: number;
@@ -1187,6 +1195,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
       {topTab === 'bca' && (() => {
         const weightData = chronological.filter((a) => a.weightKg != null).map((a) => ({ date: a.date, value: a.weightKg as number }));
         const bodyFatData = chronological.filter((a) => a.bodyFatPercentage != null).map((a) => ({ date: a.date, value: a.bodyFatPercentage as number }));
+        const bodyFatKgData = chronological.filter((a) => a.bodyFatKg != null).map((a) => ({ date: a.date, value: a.bodyFatKg as number }));
+        const skeletalData = chronological.filter((a) => a.skeletalMuscleMassKg != null).map((a) => ({ date: a.date, value: a.skeletalMuscleMassKg as number }));
         const muscleData = chronological.filter((a) => a.muscleMassKg != null).map((a) => ({ date: a.date, value: a.muscleMassKg as number }));
         const visceralData = chronological.filter((a) => a.visceralFatLevel != null).map((a) => ({ date: a.date, value: a.visceralFatLevel as number }));
 
@@ -1228,13 +1238,15 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         const bcaRows = [
           bcaRow('Weight', 'kg', 'weightKg', 'weight'),
           bcaRow('Body Fat', '%', 'bodyFatPercentage', 'bodyFat'),
+          bcaRow('Body Fat (kg)', 'kg', 'bodyFatKg', 'bodyFatKg'),
           bcaRow('Muscle Mass', 'kg', 'muscleMassKg', 'muscleMass'),
+          bcaRow('Skeletal Muscle Mass', 'kg', 'skeletalMuscleMassKg', 'skeletalMuscle'),
           bcaRow('BMI', '', 'bmi', 'bmi'),
           bcaRow('Visceral Fat', '', 'visceralFatLevel', 'visceralFat'),
         ];
         const hasAnyBcaData = bcaRows.some((r) => r.current !== undefined);
 
-        if (weightData.length === 0 && bodyFatData.length === 0 && muscleData.length === 0 && visceralData.length === 0 && bmiData.length === 0) {
+        if (weightData.length === 0 && bodyFatData.length === 0 && bodyFatKgData.length === 0 && skeletalData.length === 0 && muscleData.length === 0 && visceralData.length === 0 && bmiData.length === 0) {
           return (
             <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
               <p className="text-sm text-white/50 font-light leading-relaxed">No BCA data shared yet.</p>
@@ -1306,9 +1318,19 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <MiniLineChart data={bodyFatData} color="#f59e0b" unit="%" />
             </div>
             <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #f59e0b, transparent)' }} />
+              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Body Fat (kg)</span>
+              <MiniLineChart data={bodyFatKgData} color="#f59e0b" unit="kg" />
+            </div>
+            <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+              <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
+              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Muscle Mass</span>
+              <MiniLineChart data={muscleData} color="#6ccbde" unit="kg" />
+            </div>
+            <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #6ccbde, transparent)' }} />
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">Skeletal Muscle Mass</span>
-              <MiniLineChart data={muscleData} color="#6ccbde" unit="kg" />
+              <MiniLineChart data={skeletalData} color="#6ccbde" unit="kg" />
             </div>
             <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, #10b981, transparent)' }} />
