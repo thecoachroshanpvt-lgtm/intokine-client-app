@@ -68,9 +68,6 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
 
       {/* Katba second screen: looping background video, fades in with the logo. Muted + playsInline so phones start it automatically. */}
       {IS_RECORDED && !videoFailed && (
-        <div className="absolute inset-0 pointer-events-none" style={{ background: '#0d0d0d', opacity: zakiStage ? 1 : 0, transition: 'opacity 0.8s ease 0.2s' }} />
-      )}
-      {IS_RECORDED && !videoFailed && (
         <video
           src="/katba-welcome.mp4"
           poster="/welcome-photo.JPEG"
@@ -81,7 +78,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
           preload="auto"
           onError={() => setVideoFailed(true)}
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ opacity: zakiStage ? 0.45 : 0, transition: 'opacity 0.8s ease 0.2s' }}
+          style={{ opacity: zakiStage ? 1 : 0, transition: 'opacity 0.8s ease 0.2s' }}
         />
       )}
 
@@ -91,7 +88,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse 85% 65% at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.22) 55%, rgba(0,0,0,0.68) 100%), linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1))',
+              'radial-gradient(ellipse 85% 65% at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.10) 55%, rgba(0,0,0,0.50) 100%)',
             opacity: zakiStage ? 1 : 0,
             transition: 'opacity 0.8s ease 0.2s',
           }}
@@ -101,7 +98,12 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
       {/* Dark overlay so text stays readable over any photo */}
       <div
         className="absolute inset-0"
-        style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.75) 100%)' }}
+        style={{
+          background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.75) 100%)',
+          // on the Katba video screen this layer is lighter, so the video keeps its natural look
+          opacity: IS_RECORDED && zakiStage && !videoFailed ? 0.4 : 1,
+          transition: 'opacity 0.8s ease 0.2s',
+        }}
       />
 
       {/* Zaki app, second screen: only the ZAKI logo, centred on the screen. A tap anywhere opens the app. */}
