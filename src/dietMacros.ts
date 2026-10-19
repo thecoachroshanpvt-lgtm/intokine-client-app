@@ -14,6 +14,8 @@ export interface MealEntry {
   photo?: boolean;
   macros?: Macro;
   at?: string;
+  own?: boolean; // a meal the client added themselves (targets-only plans): the macros are what the client typed
+  mealTime?: string; // own meals: Breakfast, Lunch ...
 }
 
 export interface MealReview {
@@ -84,6 +86,15 @@ export function dayMacros(meals: PlanMealLite[], log: DayLogLite | undefined, re
     total.c += r.macro.c;
     total.f += r.macro.f;
     if (r.pending) pending += 1;
+  });
+  // Targets-only plans: meals the client added themselves count with the macros they typed.
+  const planIds = new Set(meals.map((m) => m.id));
+  Object.entries(log?.entries || {}).forEach(([id, e]) => {
+    if (planIds.has(id) || !e || !e.own || e.status !== 'eaten' || !e.macros) return;
+    total.kcal += e.macros.kcal || 0;
+    total.p += e.macros.p || 0;
+    total.c += e.macros.c || 0;
+    total.f += e.macros.f || 0;
   });
   const anything = !!log && (eaten.size > 0 || Object.values(log.entries || {}).some((e) => e && e.status !== 'none'));
   return { total: { kcal: Math.round(total.kcal), p: r1(total.p), c: r1(total.c), f: r1(total.f) }, pending, logged: anything };
