@@ -88,11 +88,11 @@ export const ClientLoginScreen: React.FC = () => {
       <div className="w-full max-w-sm space-y-10 relative z-10">
         <div className="flex flex-col items-center text-center">
           {IS_RECORDED && !zakiLogoFailed ? (
-            <img src="/zaki-logo.png" alt="KATBA" onError={() => setZakiLogoFailed(true)} className="w-24 h-auto object-contain" />
+            <img src="/zaki-logo.png" alt="KATBA" onError={() => setZakiLogoFailed(true)} className="w-[13.5rem] max-w-[72%] h-auto object-contain" style={{ filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.35))' }} />
           ) : (
             <img src="/brand-icon.png" alt="INTOKINE" className="h-5 w-auto object-contain" />
           )}
-          <p className="mt-5 text-[10px] text-white/55 font-semibold uppercase tracking-[0.18em] whitespace-nowrap">Sign in to see your training plan</p>
+          <p className="mt-7 text-[10px] text-white/55 font-semibold uppercase tracking-[0.18em] whitespace-nowrap">Sign in to see your training plan</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-3">
