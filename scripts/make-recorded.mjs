@@ -52,14 +52,14 @@ for (const f of files) {
     const upper = /\buppercase\b/.test(body);
     body = body.replace(/text-\[#6ccbde\](?:\/80)?/g, selected ? `text-[${RED}]` : upper ? 'text-white/85' : `text-[${GOLD}]`);
     body = body.replace(/(hover:)?border-\[#6ccbde\]\/(?:25|30|40)(?!\d)/g, (_x, h) => (h ? 'hover:border-white/30' : 'border-white/20'));
-    body = body.replace(/to-\[#6ccbde\](\/\d+)?/g, (_x, o) => `to-[${GOLD}]${o || ''}`);
+    body = body.replace(/to-\[#6ccbde\](\/\d+)?/g, (_x, o) => `to-[${RED}]${o || ''}`); // no red-to-gold gradients: gradients end in red too
     return q + body + q;
   });
   s = s.replace(/text-\[#6ccbde\](?:\/80)?/g, `text-[${GOLD}]`);
   // inline styles: filled backgrounds stay brand red, every other cyan colour value becomes the gold accent
   s = s.replace(/(background(?:Color)?:\s*)(['"])#6ccbde\2/g, `$1'${RED}'`);
   s = s.replace(/(['"])#6ccbde\1/g, `$1${GOLD}$1`);
-  s = s.replace(/(linear-gradient\([^)]*?)#6ccbde/g, `$1${GOLD}`);
+  s = s.replace(/(linear-gradient\([^)]*?)#6ccbde/g, `$1${RED}`);
   if (f.endsWith('.css')) s = s.split(CYAN).join(RED);
   // every remaining cyan becomes red
   s = s.split(CYAN).join(RED).split(CYAN.toUpperCase()).join(RED);
