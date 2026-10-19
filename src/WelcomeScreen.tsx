@@ -68,6 +68,9 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
 
       {/* Katba second screen: looping background video, fades in with the logo. Muted + playsInline so phones start it automatically. */}
       {IS_RECORDED && !videoFailed && (
+        <div className="absolute inset-0 pointer-events-none" style={{ background: '#0d0d0d', opacity: zakiStage ? 1 : 0, transition: 'opacity 0.8s ease 0.2s' }} />
+      )}
+      {IS_RECORDED && !videoFailed && (
         <video
           src="/katba-welcome.mp4"
           poster="/welcome-photo.JPEG"
@@ -78,7 +81,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
           preload="auto"
           onError={() => setVideoFailed(true)}
           className="absolute inset-0 w-full h-full object-cover"
-          style={{ opacity: zakiStage ? 1 : 0, transition: 'opacity 0.8s ease 0.2s' }}
+          style={{ opacity: zakiStage ? 0.45 : 0, transition: 'opacity 0.8s ease 0.2s' }}
         />
       )}
 
