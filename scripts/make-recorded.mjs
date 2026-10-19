@@ -31,6 +31,10 @@ for (const f of files) {
   const p = path.join(src, f);
   let s = fs.readFileSync(p, 'utf8');
   const before = s;
+  // the welcome screen's red-to-cyan gradient (button + line) stays exactly as in the other client apps
+  const keepGrad = f === 'WelcomeScreen.tsx';
+  const GRAD = `${RED} 0%, ${CYAN} 100%`;
+  if (keepGrad) s = s.split(GRAD).join('__KEEP_GRAD__');
   // a solid cyan button had dark text; on solid red the text must be white (only inside the same class string)
   s = s.replace(new RegExp(`(${cyanBg}[^'"\`]{0,80}?)${darkText}`, 'g'), '$1text-white');
   s = s.replace(new RegExp(`${darkText}([^'"\`]{0,80}?${cyanBg})`, 'g'), 'text-white$1');
@@ -41,6 +45,7 @@ for (const f of files) {
   s = s.split(CYAN).join(RED).split(CYAN.toUpperCase()).join(RED);
   // keep the original spacing: a space inside a Tailwind class like shadow-[...rgba(...)] would break the class
   s = s.replace(/rgba\((\s*)108,(\s*)203,(\s*)222/g, (_m, a, b, c) => `rgba(${a}236,${b}34,${c}38`);
+  if (keepGrad) s = s.split('__KEEP_GRAD__').join(GRAD);
   if (s !== before) { fs.writeFileSync(p, s); changed++; }
 }
 
