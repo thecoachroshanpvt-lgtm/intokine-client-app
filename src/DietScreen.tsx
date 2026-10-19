@@ -7,6 +7,9 @@ import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc,
 import { MealLogSheet } from './MealLogSheet';
 import type { SheetMeal, SheetResult } from './MealLogSheet';
 import { MacroGraphs } from './MacroGraphs';
+import { OwnMealSheet } from './OwnMealSheet';
+import { IS_RECORDED } from './variant';
+import type { OwnMealResult } from './OwnMealSheet';
 import { dayMacros, addDaysKey, PHOTO_DAYS, PORTIONS, reviewApplies, reviewHasMacros } from './dietMacros';
 import type { MealEntry as LoggedMeal, MealReview } from './dietMacros';
 
@@ -86,6 +89,7 @@ interface DietPlan {
   dietType: string;
   dailyCalories: number;
   targetCalories?: number; // set by the nutritionist in the Builder; used instead of the meal total when present
+  selfLog?: boolean; // targets only: the client adds their own meals and macros
   proteinGrams: number;
   carbsGrams: number;
   fatGrams: number;
@@ -126,13 +130,17 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [sheetSaving, setSheetSaving] = useState(false);
   const [sheetError, setSheetError] = useState('');
   const [macroPage, setMacroPage] = useState(false);
+  // Targets-only plans: 'new' = adding a meal, an id = editing that meal.
+  const [ownSheet, setOwnSheet] = useState<string | null>(null);
+  const [ownSaving, setOwnSaving] = useState(false);
+  const [ownError, setOwnError] = useState('');
   const [pendingSupps, setPendingSupps] = useState<Set<string> | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   // Same as the other popups in the app: the page behind stays still and the pull-to-refresh is switched off while it is open.
   useEffect(() => {
-    if (!detail && !confirmOpen && !sheetMeal) return;
+    if (!detail && !confirmOpen && !sheetMeal && !ownSheet) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     document.body.setAttribute('data-popup-open', '1');
@@ -140,7 +148,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       document.body.style.overflow = prev;
       document.body.removeAttribute('data-popup-open');
     };
-  }, [detail, confirmOpen, sheetMeal]);
+  }, [detail, confirmOpen, sheetMeal, ownSheet]);
   const [pickedVar, setPickedVar] = useState<Record<string, number>>({}); // which option tab is open on each meal
   // Re-check the date once a minute so the checklist resets at midnight.
   const [, setTick] = useState(0);
@@ -346,6 +354,47 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     }
   };
 
+  // Meals the client added themselves (targets-only plans), in meal-time order.
+  const ownMeals = Object.entries<LoggedMeal>(todayLog?.entries || {})
+    .filter(([, e]) => e && e.own && e.status === 'eaten' && e.macros)
+    .map(([id, e]) => ({ id, e }))
+    .sort((a, b) => MEAL_ORDER.indexOf(a.e.mealTime || '') - MEAL_ORDER.indexOf(b.e.mealTime || '') || String(a.e.at || '').localeCompare(String(b.e.at || '')));
+
+  // Saves (or deletes) one own meal in today's log. Same document as the other meals, only this meal's entry is replaced.
+  const saveOwn = async (id: string, r: OwnMealResult | null) => {
+    setOwnSaving(true);
+    setOwnError('');
+    try {
+      const { db } = initializeClientFirebaseApp();
+      if (!db) throw new Error('offline');
+      const at = new Date().toISOString();
+      const entry: Record<string, any> = r
+        ? { status: 'eaten', own: true, mealTime: r.mealTime, note: r.note, portion: 1, macros: r.macros, at }
+        : { status: 'none', own: true, at };
+      const eaten = new Set(todayLog?.eaten || []);
+      if (r) eaten.add(id);
+      else eaten.delete(id);
+      await setDoc(
+        doc(db, 'intokine_meal_logs', `${clientId}_${today}`),
+        { clientId, date: today, updatedAt: at, eaten: Array.from(eaten), entries: { [id]: entry } },
+        { mergeFields: ['clientId', 'date', 'updatedAt', 'eaten', `entries.${id}`] }
+      );
+      setLogs((old) => {
+        const cur = old.find((l) => l.date === today);
+        const next: MealLog = { ...(cur || { date: today, eaten: [] }), date: today, eaten: Array.from(eaten), entries: { ...(cur?.entries || {}), [id]: entry as LoggedMeal } };
+        return [...old.filter((l) => l.date !== today), next];
+      });
+      setOwnSheet(null);
+      setSavedMsg(true);
+      window.setTimeout(() => setSavedMsg(false), 2500);
+    } catch (e) {
+      console.warn('Could not save meal:', e);
+      setOwnError('Could not save. Please check your connection and try again.');
+    } finally {
+      setOwnSaving(false);
+    }
+  };
+
   if (loading) {
     return <div className="text-center py-12 text-white/40 text-sm font-light">Loading your diet plan...</div>;
   }
@@ -362,6 +411,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     );
   }
 
+  // Targets-only plan: the client adds their own meals (online/offline clients app only, not Zaki).
+  const selfOn = !!plan.selfLog && !IS_RECORDED;
   // What was really eaten today: the option and amount the client picked, plus the macros the nutritionist added for "something else".
   const todayRes = dayMacros(meals, todayLog, reviews[today]);
   const eatenKcal = todayRes.total.kcal;
@@ -479,6 +530,12 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
 
   return (
     <div className={`px-5 pt-4 max-w-4xl mx-auto space-y-4 pb-8`}>
+      {ownSheet && selfOn && (() => {
+        const ex = ownSheet !== 'new' ? ownMeals.find((x) => x.id === ownSheet)?.e : undefined;
+        const id = ownSheet === 'new' ? `own-${Date.now()}` : ownSheet;
+        return <OwnMealSheet key={ownSheet} mealTimes={MEAL_ORDER} icons={MEAL_TIME_ICONS} existing={ex} saving={ownSaving} error={ownError}
+          onSave={(r) => saveOwn(id, r)} onDelete={() => saveOwn(ownSheet, null)} onClose={() => setOwnSheet(null)} />;
+      })()}
       {sheetMeal && (() => {
         const m = meals.find((x) => x.id === sheetMeal);
         if (!m) return null;
@@ -496,7 +553,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
             <div className="font-header text-3xl text-white tracking-wide leading-none">
               {eatenKcal}<span className="text-sm font-light text-white/50 ml-1 font-sans">/ {kcalTarget} kcal</span>
             </div>
-            <div className="text-xs text-white/50"><span className="text-white font-semibold font-mono">{eatenToday.size}/{meals.length}</span> meals</div>
+            <div className="text-xs text-white/50">{selfOn ? <><span className="text-white font-semibold font-mono">{ownMeals.length}</span> {ownMeals.length === 1 ? 'meal' : 'meals'} logged</> : <><span className="text-white font-semibold font-mono">{eatenToday.size}/{meals.length}</span> meals</>}</div>
           </div>
           <div className="w-full h-1.5 bg-white/[0.08] rounded-full overflow-hidden mt-2.5">
             <div className="h-full rounded-full transition-all" style={{ width: `${kcalPct}%`, background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }} />
@@ -607,6 +664,45 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         document.body
       )}
 
+      {/* Targets-only plan: the client adds their own meals */}
+      {selfOn && (
+        <div className="space-y-2.5">
+          <div className="flex items-baseline justify-between px-1">
+            <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde]">Today's meals</div>
+            <div className="text-[10px] text-white/40">Add each meal with its calories and macros</div>
+          </div>
+          {ownMeals.map(({ id, e }) => (
+            <div key={id} className="rounded-2xl border border-emerald-500/40 overflow-hidden"
+              style={{ background: mealCardBackground(e.mealTime || ''), backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#252525' }}>
+              <button type="button" onClick={() => { setOwnError(''); setOwnSheet(id); }} className="w-full text-left p-4 block">
+                <span className="flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 text-xs bg-emerald-500 border-emerald-500 text-black" aria-hidden>✓</span>
+                  <span className="font-subheader text-[17px] text-white flex-1">{MEAL_TIME_ICONS[e.mealTime || ''] || '🍴'} {e.mealTime || 'Meal'}</span>
+                </span>
+                <span className="block mt-1.5 pl-9 text-[11px] leading-snug">
+                  <span className="block text-emerald-400 font-semibold">Logged · tap to edit</span>
+                </span>
+                {e.note ? <span className="block mt-2 pl-9 text-xs font-light leading-relaxed text-white/50">{e.note}</span> : null}
+                <span className="grid grid-cols-4 divide-x divide-white/[0.08] text-center mt-3 pt-3 border-t border-white/[0.06]">
+                  {([['kcal', e.macros!.kcal, '', '#ffffff'], ['Protein', e.macros!.p, 'g', '#6ccbde'], ['Carbs', e.macros!.c, 'g', '#ffffff'], ['Fats', e.macros!.f, 'g', '#ec2226']] as const).map(([label, val, unit, color]) => (
+                    <span key={label} className="px-1">
+                      <span className="block text-sm font-bold font-mono leading-none" style={{ color }}>{val || 0}<span className="text-[9px] font-normal text-white/40">{unit}</span></span>
+                      <span className="block text-[9px] text-white/40 uppercase mt-1">{label}</span>
+                    </span>
+                  ))}
+                </span>
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => { setOwnError(''); setOwnSheet('new'); }}
+            className="w-full py-4 rounded-2xl border border-dashed border-[#6ccbde]/50 text-[#6ccbde] text-sm font-bold bg-[#6ccbde]/[0.05] active:scale-[0.99] transition-transform">
+            + Add a meal
+          </button>
+          {ownMeals.length === 0 && <p className="text-[11px] text-white/40 text-center">No meals added yet today. Tap "Add a meal" after you eat.</p>}
+          {saveError && <p className="text-xs text-[#ec2226]">{saveError}</p>}
+        </div>
+      )}
+
       {/* Meals checklist */}
       {meals.length > 0 && (
         <div className="space-y-2.5">
@@ -701,7 +797,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </div>
       )}
 
-      {meals.length > 0 && (
+      {(meals.length > 0 || selfOn) && (
         <button type="button" onClick={() => setMacroPage(true)} className="w-full text-left rounded-2xl p-4 border border-white/[0.08] bg-[#252525] flex items-center justify-between gap-3">
           <span>
             <span className="block font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde]">Macro progress</span>
