@@ -101,7 +101,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         style={{
           background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.3) 35%, rgba(0,0,0,0.75) 100%)',
           // on the Katba video screen this layer is lighter, so the video keeps its natural look
-          opacity: IS_RECORDED && zakiStage && !videoFailed ? 0.4 : 1,
+          opacity: IS_RECORDED && zakiStage && !videoFailed ? 0.65 : 1,
           transition: 'opacity 0.8s ease 0.2s',
         }}
       />
