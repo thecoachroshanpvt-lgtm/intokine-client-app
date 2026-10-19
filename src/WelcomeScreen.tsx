@@ -82,6 +82,19 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         />
       )}
 
+      {/* Katba second screen: darker video with a soft vignette (dark edges, lighter centre behind the logo). */}
+      {IS_RECORDED && !videoFailed && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 85% 65% at 50% 50%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.22) 55%, rgba(0,0,0,0.68) 100%), linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.1))',
+            opacity: zakiStage ? 1 : 0,
+            transition: 'opacity 0.8s ease 0.2s',
+          }}
+        />
+      )}
+
       {/* Dark overlay so text stays readable over any photo */}
       <div
         className="absolute inset-0"
