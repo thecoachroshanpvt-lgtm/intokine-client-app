@@ -1,161 +1,145 @@
-import React, { useMemo, useState } from 'react';
-import { ChevronRight, Video, Trash2, Calendar } from 'lucide-react';
-import { usePrimeStore } from '../../lib/store';
-import type { ClientMasterRecord, ZakiMeeting } from '../../types';
+import React, { useEffect, useState } from 'react';
+import { initializeClientFirebaseApp, onSnapshot, doc } from './firebase';
 
-// Group meetings for Zaki clients. One meeting is put on every active Katba client's record, so the Zaki app shows it on Home
-// and in the Workouts tab with a Join Google Meet button. Meetings can be scheduled days or weeks ahead.
+// Group meetings scheduled by the coach for Zaki clients. They live on the client's own record (zakiMeetings),
+// which this app already reads, so no extra database access is needed.
 
-const inputCls = 'w-full bg-[#1b1c23] border border-white/[0.08] rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-[#6ccbde] [color-scheme:dark]';
+export interface ZakiMeeting {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  time: string; // "19:00" or "07:00 PM"
+  meetLink: string;
+  notes?: string;
+}
 
-const todayKey = () => {
-  const n = new Date();
-  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
-};
-const prettyDate = (k: string) => {
+const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const parseDateKey = (k: string) => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(k);
-  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : k;
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
 };
-const prettyTime = (t: string) => {
-  const m = /^(\d{1,2}):(\d{2})/.exec(t || '');
-  if (!m) return t || '';
-  const h = Number(m[1]);
-  return `${h % 12 === 0 ? 12 : h % 12}:${m[2]} ${h >= 12 ? 'PM' : 'AM'}`;
-};
-const cleanLink = (raw: string) => {
-  const v = raw.trim();
-  if (!v) return '';
+function formatTime(t: string): { clock: string; period: string } | null {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
+  if (!m) return null;
+  let h = Number(m[1]);
+  const suffix = m[3] ? m[3].toUpperCase() : '';
+  if (suffix) {
+    if (suffix === 'PM' && h < 12) h += 12;
+    if (suffix === 'AM' && h === 12) h = 0;
+  }
+  if (h > 23) return null;
+  return { clock: `${h % 12 === 0 ? 12 : h % 12}:${m[2]}`, period: h >= 12 ? 'PM' : 'AM' };
+}
+// Minutes since midnight for "19:00" or "07:00 PM"; null if it cannot be read.
+function minutesOf(t: string): number | null {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
+  if (!m) return null;
+  let h = Number(m[1]);
+  const suffix = m[3] ? m[3].toUpperCase() : '';
+  if (suffix) {
+    if (suffix === 'PM' && h < 12) h += 12;
+    if (suffix === 'AM' && h === 12) h = 0;
+  }
+  return h > 23 ? null : h * 60 + Number(m[2]);
+}
+// The Join button is available from the meeting time until this many minutes after it starts.
+const JOIN_WINDOW_MIN = 180;
+
+function safeLink(raw?: string): string | null {
+  const v = (raw || '').trim();
+  if (!v) return null;
   const withProto = /^https?:\/\//i.test(v) ? v : `https://${v}`;
   try {
     const u = new URL(withProto);
-    return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : '';
+    return u.protocol === 'https:' || u.protocol === 'http:' ? u.toString() : null;
   } catch {
-    return '';
+    return null;
   }
-};
+}
 
-export const ZakiMeetings: React.FC<{
-  onBack: () => void;
-  /** Katba clients assigned to the person who is logged in. */
-  myClients: ClientMasterRecord[];
-  isOwner: boolean;
-  createdBy: string;
-}> = ({ onBack, myClients, isOwner, createdBy }) => {
-  const { clientMasterRecords, scheduleZakiMeeting, deleteZakiMeeting } = usePrimeStore();
-  const [title, setTitle] = useState('Katba group meeting');
-  const [date, setDate] = useState(todayKey());
-  const [time, setTime] = useState('19:00');
-  const [link, setLink] = useState('');
-  const [notes, setNotes] = useState('');
-  const [scopeAll, setScopeAll] = useState(false);
-  const [msg, setMsg] = useState('');
-
-  const allZaki = clientMasterRecords.filter((c) => c.service === 'Recorded Training' && c.status === 'Active');
-  const mineActive = myClients.filter((c) => c.service === 'Recorded Training' && c.status === 'Active');
-  const targets = isOwner && scopeAll ? allZaki : mineActive;
-
-  // The meetings this person scheduled, collected from the client records.
-  const meetings = useMemo(() => {
-    const byId = new Map<string, { m: ZakiMeeting; count: number }>();
-    clientMasterRecords.forEach((c) =>
-      (c.zakiMeetings || []).forEach((m) => {
-        if (m.createdBy && m.createdBy !== createdBy) return;
-        const cur = byId.get(m.id);
-        byId.set(m.id, { m, count: (cur?.count || 0) + 1 });
-      })
+// The client's upcoming meetings (today and later), soonest first.
+export function useZakiMeetings(clientId: string): ZakiMeeting[] {
+  const [all, setAll] = useState<ZakiMeeting[]>([]);
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    return onSnapshot(
+      doc(db, 'intokine_clients', clientId),
+      (d) => setAll(Array.isArray((d.data() as any)?.zakiMeetings) ? ((d.data() as any).zakiMeetings as ZakiMeeting[]) : []),
+      () => {}
     );
-    return Array.from(byId.values()).sort((a, b) => (a.m.date + a.m.time).localeCompare(b.m.date + b.m.time));
-  }, [clientMasterRecords, createdBy]);
-  const today = todayKey();
-  const upcoming = meetings.filter((x) => x.m.date >= today);
-  const past = meetings.filter((x) => x.m.date < today).reverse();
+  }, [clientId]);
+  const today = dateKey(new Date());
+  return all.filter((m) => m.date >= today).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+}
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const url = cleanLink(link);
-    if (!url) { setMsg('Please paste a valid Google Meet link.'); return; }
-    if (!title.trim() || !date || !time) { setMsg('Please fill in the title, date and time.'); return; }
-    if (targets.length === 0) { setMsg('There are no active Katba clients to invite.'); return; }
-    scheduleZakiMeeting(
-      { id: `ZM-${Date.now()}`, title: title.trim(), date, time, meetLink: url, notes: notes.trim() || undefined, createdBy },
-      targets.map((c) => c.id)
-    );
-    setMsg(`Meeting scheduled for ${targets.length} Katba client${targets.length === 1 ? '' : 's'}.`);
-    setLink('');
-    setNotes('');
-    window.setTimeout(() => setMsg(''), 5000);
-  };
-
-  const row = ({ m, count }: { m: ZakiMeeting; count: number }) => (
-    <div key={m.id} className="rounded-2xl p-4 border border-[#6ccbde]/20 bg-gradient-to-br from-[#6ccbde]/10 to-transparent flex items-center gap-3">
-      <div className="w-9 h-9 shrink-0 rounded-xl bg-[#6ccbde]/15 flex items-center justify-center text-[#6ccbde]"><Video className="w-4 h-4" /></div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-semibold text-white truncate">{m.title}</div>
-        <div className="text-[11px] text-neutral-400 truncate">{prettyDate(m.date)} · {prettyTime(m.time)} · {count} client{count === 1 ? '' : 's'}</div>
-        <a href={m.meetLink} target="_blank" rel="noopener noreferrer" className="text-[11px] text-[#6ccbde] underline">Open Meet link</a>
-      </div>
-      <button
-        type="button"
-        onClick={() => { if (window.confirm(`Delete "${m.title}" on ${prettyDate(m.date)}? It will also disappear from the Katba app.`)) deleteZakiMeeting(m.id); }}
-        aria-label="Delete meeting"
-        className="p-2 -mr-1 text-neutral-500 hover:text-red-400 shrink-0"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
-    </div>
-  );
-
+export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
+  // Re-check the time every 30 seconds so the Join button appears on its own at the meeting time.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const now = new Date();
+  const today = dateKey(now);
+  const d = parseDateKey(m.date);
+  const t = formatTime(m.time);
+  const link = safeLink(m.meetLink);
+  const isToday = m.date === today;
+  const startMin = minutesOf(m.time);
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  // Join is only available at the assigned time (and for a few hours after it starts), on the meeting day.
+  const joinOpen = isToday && startMin !== null && nowMin >= startMin && nowMin <= startMin + JOIN_WINDOW_MIN;
+  const ended = isToday && startMin !== null && nowMin > startMin + JOIN_WINDOW_MIN;
   return (
-    <div className="space-y-4">
-      <button type="button" onClick={onBack} className="text-xs font-bold text-[#6ccbde] hover:text-white flex items-center gap-1">
-        <ChevronRight className="w-4 h-4 rotate-180" /> Back
-      </button>
-
-      <form onSubmit={submit} className="bg-[#15161b] border border-white/[0.06] rounded-2xl p-4 space-y-3">
-        <div>
-          <h3 className="text-sm font-bold text-white flex items-center gap-2"><Calendar className="w-4 h-4 text-[#6ccbde]" /> Schedule a group meeting</h3>
-          <p className="text-[11px] text-neutral-400 mt-1">It is sent to {targets.length} active Katba client{targets.length === 1 ? '' : 's'} and shows in their app with a Join Google Meet button. You can schedule it days or weeks ahead.</p>
+    <div className="rounded-2xl p-3 border border-[#c084fc]/30 bg-gradient-to-br from-[#c084fc]/15 to-[#c084fc]/[0.03]">
+      <div className="flex items-center gap-3">
+        <div className="w-14 shrink-0 rounded-xl bg-[#c084fc]/10 border border-[#c084fc]/25 py-2 text-center">
+          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#c084fc] leading-none">{d ? d.toLocaleDateString(undefined, { weekday: 'short' }) : '—'}</div>
+          <div className="text-lg font-semibold font-mono text-white leading-none mt-1.5 mb-1">{d ? d.getDate() : '—'}</div>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 leading-none">{d ? d.toLocaleDateString(undefined, { month: 'short' }) : ''}</div>
         </div>
-        <div>
-          <label className="text-[11px] text-neutral-400 font-semibold block mb-1">Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputCls} />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-[11px] text-neutral-400 font-semibold block mb-1">Date</label>
-            <input type="date" min={todayKey()} value={date} onChange={(e) => setDate(e.target.value)} className={inputCls + ' font-mono'} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-1">
+            {t ? (
+              <>
+                <span className="text-base font-semibold font-mono text-white leading-none">{t.clock}</span>
+                <span className="text-[10px] font-bold text-white/50">{t.period}</span>
+              </>
+            ) : (
+              <span className="text-sm font-bold text-white">{m.time || 'Time TBC'}</span>
+            )}
           </div>
-          <div>
-            <label className="text-[11px] text-neutral-400 font-semibold block mb-1">Time</label>
-            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className={inputCls + ' font-mono'} />
-          </div>
+          <div className="text-xs font-semibold text-white/80 mt-1 truncate">{m.title}</div>
+          <div className="text-[11px] text-white/40 font-light truncate">Group meeting · Google Meet</div>
         </div>
-        <div>
-          <label className="text-[11px] text-neutral-400 font-semibold block mb-1">Google Meet link *</label>
-          <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://meet.google.com/abc-defg-hij" className={inputCls} />
-        </div>
-        <div>
-          <label className="text-[11px] text-neutral-400 font-semibold block mb-1">Notes (optional)</label>
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. Bring your questions on form" className={inputCls} />
-        </div>
-        {isOwner && (
-          <label className="flex items-center gap-2 text-[11px] text-neutral-300">
-            <input type="checkbox" checked={scopeAll} onChange={(e) => setScopeAll(e.target.checked)} />
-            Include every coach's Katba clients ({allZaki.length}), not only mine ({mineActive.length})
-          </label>
-        )}
-        {msg && <p className="text-[11px] font-semibold text-[#6ccbde]">{msg}</p>}
-        <button type="submit" className="w-full py-3 bg-[#6ccbde] text-[#0b0c10] font-semibold rounded-xl text-sm hover:brightness-110 transition">Schedule meeting</button>
-      </form>
-
-      <div className="space-y-2.5">
-        <div className="text-[10px] font-bold text-neutral-500 uppercase px-1">Upcoming meetings</div>
-        {upcoming.length === 0 ? <p className="text-xs text-neutral-500 px-1">No upcoming meetings.</p> : upcoming.map(row)}
+        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: '#c084fc', borderColor: '#c084fc40', backgroundColor: '#c084fc15' }}>
+          {isToday ? 'TODAY' : 'MEETING'}
+        </span>
       </div>
-      {past.length > 0 && (
-        <div className="space-y-2.5">
-          <div className="text-[10px] font-bold text-neutral-500 uppercase px-1">Past meetings</div>
-          {past.map(row)}
+      {m.notes ? <p className="mt-2 text-[11px] text-white/50 font-light">{m.notes}</p> : null}
+      {joinOpen ? (
+        link ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-[#c084fc] text-[#0b0c10] text-sm font-bold py-2.5 active:scale-[0.99] transition"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2.5" y="6" width="13" height="12" rx="2.5" />
+              <path d="M15.5 10.5l6-3.5v10l-6-3.5" />
+            </svg>
+            Join Google Meet
+          </a>
+        ) : (
+          <div className="mt-3 w-full rounded-xl bg-white/[0.04] border border-white/[0.06] text-[11px] text-white/50 text-center py-2.5">
+            Your coach will add the Google Meet link here
+          </div>
+        )
+      ) : (
+        <div className="mt-3 w-full rounded-xl bg-[#c084fc]/[0.07] border border-[#c084fc]/20 text-[11px] text-white/55 text-center py-2.5">
+          {ended ? 'This meeting has ended.' : `The Join Google Meet button appears at ${t ? `${t.clock} ${t.period}` : 'the meeting time'}${isToday ? '' : ` on ${d ? d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : m.date}`}.`}
         </div>
       )}
     </div>
