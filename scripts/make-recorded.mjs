@@ -22,6 +22,11 @@ fs.writeFileSync(variantPath, variant);
 // 2. accent colour: cyan -> brand red, everywhere (pages, charts, popups, animations)
 const RED = '#ec2226';
 const CYAN = '#6ccbde';
+// Katba colour roles (change here to retune the whole app):
+//  RED  = brand: buttons, active tabs, selected states, progress, big highlights
+//  GOLD = energy accent: values, links, protein, chart lines, small highlights
+//  section labels = soft white, idle borders = neutral grey
+const GOLD = '#ffb020';
 const DARK = '#0b0c10';
 let changed = 0;
 const darkText = '(?:text-black|text-\\[#0d0e12\\]|text-\\[#0b0c10\\]|text-\\[#1c1c1c\\])';
@@ -41,6 +46,21 @@ for (const f of files) {
   // the same for inline styles
   s = s.split(`background: '${CYAN}', color: '${DARK}'`).join(`background: '${RED}', color: '#ffffff'`);
   s = s.split(`background: '${CYAN}', color: '#0d0e12'`).join(`background: '${RED}', color: '#ffffff'`);
+  // role-based recolour of the old cyan (instead of turning everything red)
+  s = s.replace(/(["'`])([^"'`\n]*6ccbde[^"'`\n]*)\1/g, (_m, q, body) => {
+    const selected = /bg-\[#6ccbde\]\/(?:1\d|2\d)|border-\[#6ccbde\]\/50|bg-\[#6ccbde\](?!\/)/.test(body);
+    const upper = /\buppercase\b/.test(body);
+    body = body.replace(/text-\[#6ccbde\](?:\/80)?/g, selected ? `text-[${RED}]` : upper ? 'text-white/85' : `text-[${GOLD}]`);
+    body = body.replace(/(hover:)?border-\[#6ccbde\]\/(?:25|30|40)(?!\d)/g, (_x, h) => (h ? 'hover:border-white/30' : 'border-white/20'));
+    body = body.replace(/to-\[#6ccbde\](\/\d+)?/g, (_x, o) => `to-[${GOLD}]${o || ''}`);
+    return q + body + q;
+  });
+  s = s.replace(/text-\[#6ccbde\](?:\/80)?/g, `text-[${GOLD}]`);
+  // inline styles: filled backgrounds stay brand red, every other cyan colour value becomes the gold accent
+  s = s.replace(/(background(?:Color)?:\s*)(['"])#6ccbde\2/g, `$1'${RED}'`);
+  s = s.replace(/(['"])#6ccbde\1/g, `$1${GOLD}$1`);
+  s = s.replace(/(linear-gradient\([^)]*?)#6ccbde/g, `$1${GOLD}`);
+  if (f.endsWith('.css')) s = s.split(CYAN).join(RED);
   // every remaining cyan becomes red
   s = s.split(CYAN).join(RED).split(CYAN.toUpperCase()).join(RED);
   // keep the original spacing: a space inside a Tailwind class like shadow-[...rgba(...)] would break the class
