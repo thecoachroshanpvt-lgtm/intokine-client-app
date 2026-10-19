@@ -88,7 +88,7 @@ export const ClientLoginScreen: React.FC = () => {
       <div className="w-full max-w-sm space-y-10 relative z-10">
         <div className="flex flex-col items-center text-center">
           {IS_RECORDED && !zakiLogoFailed ? (
-            <img src="/zaki-logo.png" alt="ZAKI" onError={() => setZakiLogoFailed(true)} className="w-24 h-auto object-contain" />
+            <img src="/zaki-logo.png" alt="KATBA" onError={() => setZakiLogoFailed(true)} className="w-24 h-auto object-contain" />
           ) : (
             <img src="/brand-icon.png" alt="INTOKINE" className="h-5 w-auto object-contain" />
           )}
