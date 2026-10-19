@@ -11,6 +11,8 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
   // Zaki app only: the first tap on CONTINUE swaps the INTOKINE logo for the ZAKI logo on the same screen; the second tap enters the app.
   const [zakiStage, setZakiStage] = useState(false);
   const [zakiLogoFailed, setZakiLogoFailed] = useState(false);
+  // Katba second screen: an optional looping background video (public-recorded/katba-welcome.mp4). If the file is missing, the photo stays.
+  const [videoFailed, setVideoFailed] = useState(false);
   const handleContinue = () => {
     if (IS_RECORDED && !zakiStage && !zakiLogoFailed) setZakiStage(true);
     else onContinue();
@@ -61,6 +63,22 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onContinue }) => {
         <div
           className="absolute inset-0"
           style={{ background: 'linear-gradient(160deg, #1c1c1c 0%, #1c1c1c 50%, #ec2226 140%)' }}
+        />
+      )}
+
+      {/* Katba second screen: looping background video, fades in with the logo. Muted + playsInline so phones start it automatically. */}
+      {IS_RECORDED && !videoFailed && (
+        <video
+          src="/katba-welcome.mp4"
+          poster="/welcome-photo.JPEG"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          onError={() => setVideoFailed(true)}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: zakiStage ? 1 : 0, transition: 'opacity 0.8s ease 0.2s' }}
         />
       )}
 
