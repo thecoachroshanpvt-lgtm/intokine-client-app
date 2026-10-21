@@ -13,7 +13,8 @@ const W = 1080;
 const H = 1920;
 const BRAND = '#ec2226';
 const ACCENT = '#6ccbde';
-const BODY = '"Raleway", "Barlow", -apple-system, "Helvetica Neue", Arial, sans-serif';
+const HEAD = '"Oswald", "Archivo Narrow", "Arial Narrow", Impact, sans-serif';
+const BODY = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif'; // clean system font: the same digits on every phone
 
 const rgba = (hex: string, a: number) => {
   const n = parseInt(hex.slice(1), 16);
@@ -35,7 +36,7 @@ export type ShareMode = 'card' | 'photo' | 'sticker';
 
 async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null; dim: number }) {
   try {
-    await Promise.all([document.fonts.load(`300 100px Raleway`), document.fonts.load(`600 40px Raleway`), document.fonts.load(`400 40px Raleway`)]);
+    await Promise.all([document.fonts.load(`700 100px Oswald`), document.fonts.load(`600 40px Oswald`), document.fonts.load(`300 100px Raleway`), document.fonts.load(`600 40px Raleway`), document.fonts.load(`400 40px Raleway`)]);
   } catch { /* the fallback fonts are used */ }
   const logo = await loadImage('/brand-icon.png');
   canvas.width = W;
@@ -128,55 +129,74 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
   c.font = `300 330px ${BODY}`;
   ls(-8);
   const num = o.overall === null ? '--' : String(o.overall);
-  c.fillText(num, cx - 24, 930);
+  c.fillText(num, cx - 24, 880);
   const nw = c.measureText(num).width;
   c.font = `300 96px ${BODY}`;
   c.fillStyle = 'rgba(255,255,255,0.7)';
   c.textAlign = 'left';
   ls(0);
-  c.fillText('%', cx - 24 + nw / 2 + 8, 930 - 150);
+  c.fillText('%', cx - 24 + nw / 2 + 8, 880 - 150);
   c.textAlign = 'center';
   noShadow();
 
-  // ---- a flowing line, like a movement trail: the more consistent, the further it travels
-  const X0 = 110, X1 = W - 110, MID = 1070, AMP = 52;
-  const at = (t: number) => ({ x: X0 + (X1 - X0) * t, y: MID - AMP * Math.sin(t * Math.PI * 2.5) });
+  // ---- a rising trail, like the elevation line of a run: it climbs as far as the score, with a soft fill underneath
+  const X0 = 110, X1 = W - 110, BASE = 1190, RISE = 215;
+  const at = (t: number) => {
+    const e = t * t * (3 - 2 * t); // smooth start and finish
+    return { x: X0 + (X1 - X0) * t, y: BASE - RISE * (0.82 * e + 0.18 * t) - 14 * Math.sin(t * Math.PI * 4) * (1 - t * 0.6) };
+  };
   const trace = (to: number) => {
     c.beginPath();
-    for (let i = 0; i <= 120; i++) {
-      const t = (to * i) / 120;
-      const p = at(t);
+    for (let i = 0; i <= 140; i++) {
+      const p = at((to * i) / 140);
       if (i === 0) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y);
     }
   };
   c.lineJoin = 'round';
   c.lineCap = 'round';
-  c.lineWidth = 5;
+  c.lineWidth = 4;
   c.strokeStyle = track;
   trace(1); c.stroke();
   if (pct > 0) {
-    const tEnd = Math.max(pct, 0.02);
+    const tEnd = Math.max(pct, 0.03);
     const grad = c.createLinearGradient(X0, 0, X1, 0);
     grad.addColorStop(0, BRAND);
     grad.addColorStop(1, ACCENT);
+    // the fill under the line fades down to nothing
+    const e0 = at(tEnd);
+    const fill = c.createLinearGradient(0, e0.y - 40, 0, BASE + 40);
+    fill.addColorStop(0, rgba(ACCENT, see ? 0.38 : 0.4));
+    fill.addColorStop(1, rgba(BRAND, 0));
+    c.save();
+    trace(tEnd);
+    c.lineTo(e0.x, BASE + 40);
+    c.lineTo(X0, BASE + 40);
+    c.closePath();
+    c.fillStyle = fill;
+    c.fill();
+    c.restore();
     c.save();
     c.shadowColor = rgba(ACCENT, see ? 0.3 : 0.5);
-    c.shadowBlur = 26;
-    c.lineWidth = 12;
+    c.shadowBlur = 24;
+    c.lineWidth = 11;
     c.strokeStyle = grad;
     trace(tEnd); c.stroke();
-    const e = at(tEnd);
+    // the tip: a bright dot with a soft ring around it
     c.shadowColor = 'rgba(255,255,255,0.8)';
-    c.shadowBlur = 24;
+    c.shadowBlur = 22;
     c.fillStyle = '#fff';
-    c.beginPath(); c.arc(e.x, e.y, 17, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.arc(e0.x, e0.y, 16, 0, Math.PI * 2); c.fill();
+    c.shadowBlur = 0;
+    c.lineWidth = 3;
+    c.strokeStyle = 'rgba(255,255,255,0.5)';
+    c.beginPath(); c.arc(e0.x, e0.y, 31, 0, Math.PI * 2); c.stroke();
     c.restore();
   }
 
   // ---- one warm line, about movement
   shadow();
   c.fillStyle = 'rgba(255,255,255,0.92)';
-  c.font = `400 56px ${BODY}`;
+  c.font = `300 58px ${BODY}`;
   ls(1);
   c.fillText(headline(o.overall), cx, 1262);
   noShadow();
@@ -198,7 +218,7 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
     ls(6);
     c.fillText(p.label.toUpperCase(), x, my + 54);
     noShadow();
-    // hairline: grey track, brand colour for the share done
+    // hairline: grey track, accent colour for the share done
     const bw = 130, by = my + 86;
     c.lineWidth = 3;
     c.lineCap = 'round';
