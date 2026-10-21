@@ -33,7 +33,7 @@ const headline = (overall: number | null) =>
 
 export type ShareMode = 'card' | 'photo' | 'sticker';
 
-async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null }) {
+async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null; dim: number }) {
   try {
     await Promise.all([document.fonts.load(`300 100px Raleway`), document.fonts.load(`600 40px Raleway`), document.fonts.load(`400 40px Raleway`)]);
   } catch { /* the fallback fonts are used */ }
@@ -55,12 +55,15 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
       const pw = o.photo.width * k, ph = o.photo.height * k;
       c.drawImage(o.photo, (W - pw) / 2, (H - ph) / 2, pw, ph);
     }
-    // a very light scrim at the top and bottom only, so the photo stays bright
+    // a dark layer over the whole photo (the client can change how dark), so the writing is readable on bright photos
+    c.fillStyle = `rgba(0,0,0,${o.dim})`;
+    c.fillRect(0, 0, W, H);
+    // a little extra shade at the top and bottom where the logo and the scores sit
     const sc = c.createLinearGradient(0, 0, 0, H);
-    sc.addColorStop(0, 'rgba(0,0,0,0.38)');
-    sc.addColorStop(0.3, 'rgba(0,0,0,0.08)');
-    sc.addColorStop(0.7, 'rgba(0,0,0,0.08)');
-    sc.addColorStop(1, 'rgba(0,0,0,0.45)');
+    sc.addColorStop(0, 'rgba(0,0,0,0.3)');
+    sc.addColorStop(0.3, 'rgba(0,0,0,0)');
+    sc.addColorStop(0.65, 'rgba(0,0,0,0)');
+    sc.addColorStop(1, 'rgba(0,0,0,0.35)');
     c.fillStyle = sc;
     c.fillRect(0, 0, W, H);
     // the logo, writing and rings are see-through, so the photo shows behind them
@@ -220,6 +223,7 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mode, setMode] = useState<ShareMode>('card');
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
+  const [dim, setDim] = useState(0.5); // how dark the layer over the photo is
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [preview, setPreview] = useState('');
   const [busy, setBusy] = useState(false);
@@ -230,9 +234,9 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
     const cv = document.createElement('canvas');
     canvasRef.current = cv;
     setPreview('');
-    draw(cv, { name, overall, parts, days, mode, photo }).then(() => { if (live) setPreview(cv.toDataURL('image/png')); });
+    draw(cv, { name, overall, parts, days, mode, photo, dim }).then(() => { if (live) setPreview(cv.toDataURL('image/png')); });
     return () => { live = false; };
-  }, [name, overall, parts, days, mode, photo]);
+  }, [name, overall, parts, days, mode, photo, dim]);
 
   const toFile = () =>
     new Promise<File | null>((resolve) => {
@@ -304,7 +308,14 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
             img.src = url;
           }} />
         {mode === 'photo' && (
-          <button type="button" onClick={() => fileRef.current?.click()} className="w-full py-2 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold">{photo ? 'Change photo' : 'Choose a photo'}</button>
+          <div className="space-y-2">
+            <button type="button" onClick={() => fileRef.current?.click()} className="w-full py-2 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold">{photo ? 'Change photo' : 'Choose a photo'}</button>
+            <label className="flex items-center gap-3 text-[11px] text-white/60">
+              <span className="shrink-0">Darker layer</span>
+              <input type="range" min={0} max={75} step={5} value={Math.round(dim * 100)} onChange={(e) => setDim(Number(e.target.value) / 100)} className="flex-1" />
+              <span className="w-8 text-right font-mono">{Math.round(dim * 100)}%</span>
+            </label>
+          </div>
         )}
         {mode === 'sticker' && <p className="text-[10px] text-white/45 text-center">Sticker has a see-through background. Save it, then place it over your own photo in the story.</p>}
 
