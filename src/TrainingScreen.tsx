@@ -5,6 +5,7 @@ import { ContactCoachPill } from './CoachContact';
 import { IS_RECORDED } from './variant';
 import { bestOfAllTime, type BestPlan, type BestPerf } from './BestOfAllTime';
 import { ExerciseResultEditor, setText, type ResultMap, type ExerciseResult } from './ExerciseResultEditor';
+import { durationCell } from './duration';
 
 interface TrainerizeSet {
   id: string;
@@ -82,7 +83,7 @@ const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean):
   if (type === 'Weighted') cells.push({ label: 'Weight', value: String(s.targetWeightKg || 0), unit: 'kg' }, { label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Bodyweight') cells.push({ label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Isometric') cells.push({ label: 'Hold', value: String(s.holdSeconds || 0), unit: 'sec' });
-  else if (type === 'DurationCardio') cells.push({ label: 'Time', value: String(s.durationMinutes || 0), unit: 'min' }, { label: 'Method', value: s.method || dash, text: true });
+  else if (type === 'DurationCardio') cells.push({ label: 'Time', value: durationCell(s.durationMinutes).value, unit: durationCell(s.durationMinutes).unit }, { label: 'Method', value: s.method || dash, text: true });
   else if (type === 'DistanceCardio') cells.push({ label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }, { label: 'Method', value: s.method || dash, text: true });
   if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash, text: true });
   if (type === 'Weighted' || type === 'Bodyweight' || type === 'Isometric') cells.push({ label: 'RPE', value: rpe, accent: true });
