@@ -1,6 +1,7 @@
 import { IS_RECORDED } from './variant';
 import React, { useEffect, useMemo, useState } from 'react';
-import { initializeClientFirebaseApp, collection, query, where, onSnapshot } from './firebase';
+import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc } from './firebase';
+import { ConsistencyShare } from './ConsistencyShare';
 
 // Home: one overall consistency score for the last 30 days, made from four parts -
 // Diet (meals ticked), Routine (follow-up items answered), Sessions (coach sessions attended) and Workouts (suggested workouts done).
@@ -34,7 +35,10 @@ export const OverallProgressCard: React.FC<{
   startDate: string | null;
   plans: { date: string; isSuggestedWorkout?: boolean; clientCompletedAt?: string }[];
   sessions: { date: string; status?: string; attendanceStatus?: string }[];
-}> = ({ clientId, startDate, plans, sessions }) => {
+  clientName?: string;
+}> = ({ clientId, startDate, plans, sessions, clientName }) => {
+  const [share, setShare] = useState(false);
+  const [ownName, setOwnName] = useState('');
   const [meals, setMeals] = useState<Meal[]>([]);
   const [planFrom, setPlanFrom] = useState<string | null>(null);
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
@@ -63,7 +67,8 @@ export const OverallProgressCard: React.FC<{
       () => {}
     );
     const u4 = onSnapshot(query(collection(db, 'intokine_routine_logs'), where('clientId', '==', clientId)), (s) => setRoutineLogs(s.docs.map((d) => d.data() as RoutineLog)), () => {});
-    return () => { u1(); u2(); u3(); u4(); };
+    const u5 = onSnapshot(doc(db, 'intokine_clients', clientId), (s) => setOwnName(String((s.data() as any)?.name || '')), () => {});
+    return () => { u1(); u2(); u3(); u4(); u5(); };
   }, [clientId]);
 
   const parts = useMemo<Part[]>(() => {
@@ -148,9 +153,21 @@ export const OverallProgressCard: React.FC<{
   const overall = live.length ? Math.round((live.reduce((a, p) => a + (p.frac as number), 0) / live.length) * 100) : null;
   const ringColor = overall === null ? 'rgba(255,255,255,0.15)' : consistencyColor(overall / 100);
   const R = 40, C = 2 * Math.PI * R;
+  // The card shows three scores: Diet, Routine and Workouts (coach sessions and suggested workouts together).
+  const shareParts = useMemo(() => {
+    const by = (k: string) => parts.find((p) => p.key === k);
+    const wk = [by('sessions'), by('workouts')].filter(Boolean) as Part[];
+    const wDone = wk.reduce((a, p) => a + p.done, 0), wTotal = wk.reduce((a, p) => a + p.total, 0);
+    const out: { key: string; label: string; frac: number | null }[] = [];
+    (['diet', 'routine'] as const).forEach((k) => { const p = by(k); if (p) out.push({ key: k, label: p.label, frac: p.frac }); });
+    out.push({ key: 'workouts', label: 'Workouts', frac: wTotal > 0 ? Math.min(1, wDone / wTotal) : null });
+    return out;
+  }, [parts]);
 
   return (
-    <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
+    <>
+    <div role="button" tabIndex={0} onClick={() => setShare(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShare(true); }}
+      className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 cursor-pointer active:scale-[0.99] transition-transform">
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-white/40 uppercase font-semibold">Your consistency</span>
         <span className="text-[10px] text-white/40">Last {DAYS} days</span>
@@ -189,6 +206,13 @@ export const OverallProgressCard: React.FC<{
           })}
         </div>
       </div>
+
+      <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-semibold text-[#6ccbde]">
+        <span>Tap to share your card</span>
+        <span aria-hidden>›</span>
+      </div>
     </div>
+    {share && <ConsistencyShare name={clientName || ownName} overall={overall} days={DAYS} parts={shareParts} onClose={() => setShare(false)} />}
+    </>
   );
 };
