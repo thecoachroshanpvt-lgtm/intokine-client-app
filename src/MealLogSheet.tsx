@@ -40,7 +40,8 @@ export const MealLogSheet: React.FC<{
   const [photo, setPhoto] = useState<string>('');
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoErr, setPhotoErr] = useState('');
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null); // camera
+  const galleryRef = useRef<HTMLInputElement>(null); // photos already on the phone
 
   const hadPhoto = !!existing?.photo && (existing.status === 'eaten' || existing.status === 'else');
   const hasPhoto = !!photo || hadPhoto;
@@ -59,6 +60,7 @@ export const MealLogSheet: React.FC<{
     } finally {
       setPhotoBusy(false);
       if (fileRef.current) fileRef.current.value = '';
+      if (galleryRef.current) galleryRef.current.value = '';
     }
   };
 
@@ -141,23 +143,34 @@ export const MealLogSheet: React.FC<{
 
           {mode !== 'skip' && (
             <div>
-              <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">Photo of your meal <span className="text-[#ec2226]">(required)</span></div>
+              <div className="text-[10px] text-white/40 uppercase font-semibold mb-1.5">Photo of your meal <span className="text-[#ec2226]">(required)</span> <span className="normal-case font-normal text-white/30">· take one now or pick one you took earlier</span></div>
               <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
+              <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
               {photo ? (
                 <div className="flex items-center gap-3">
                   <img src={photo} alt="Your meal" className="w-20 h-20 rounded-xl object-cover border border-white/[0.1]" />
-                  <button type="button" onClick={() => fileRef.current?.click()} className="text-[11px] font-bold text-[#6ccbde]">Retake photo</button>
+                  <div className="flex flex-col gap-1.5">
+                    <button type="button" onClick={() => fileRef.current?.click()} className="text-left text-[11px] font-bold text-[#6ccbde]">Retake photo</button>
+                    <button type="button" onClick={() => galleryRef.current?.click()} className="text-left text-[11px] font-bold text-[#6ccbde]">Choose from gallery</button>
+                  </div>
                 </div>
               ) : hadPhoto ? (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-xs text-emerald-400 font-semibold">✓ Photo saved</span>
                   <button type="button" onClick={() => fileRef.current?.click()} className="text-[11px] font-bold text-[#6ccbde]">Take a new one</button>
+                  <button type="button" onClick={() => galleryRef.current?.click()} className="text-[11px] font-bold text-[#6ccbde]">Choose from gallery</button>
                 </div>
               ) : (
-                <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy}
-                  className="w-full py-5 rounded-xl border border-dashed border-[#6ccbde]/50 text-[#6ccbde] text-xs font-bold bg-[#6ccbde]/[0.05] disabled:opacity-60">
-                  {photoBusy ? 'Preparing photo...' : '📷  Take a photo of your meal'}
-                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => fileRef.current?.click()} disabled={photoBusy}
+                    className="py-5 rounded-xl border border-dashed border-[#6ccbde]/50 text-[#6ccbde] text-xs font-bold bg-[#6ccbde]/[0.05] disabled:opacity-60">
+                    {photoBusy ? 'Preparing photo...' : '📷  Take a photo'}
+                  </button>
+                  <button type="button" onClick={() => galleryRef.current?.click()} disabled={photoBusy}
+                    className="py-5 rounded-xl border border-dashed border-[#6ccbde]/50 text-[#6ccbde] text-xs font-bold bg-[#6ccbde]/[0.05] disabled:opacity-60">
+                    {photoBusy ? 'Preparing photo...' : '🖼️  From gallery'}
+                  </button>
+                </div>
               )}
               {photoErr && <p className="text-[11px] text-[#ec2226] mt-1.5">{photoErr}</p>}
             </div>
