@@ -16,6 +16,7 @@ export interface MealEntry {
   at?: string;
   own?: boolean; // a meal the client added themselves (targets-only plans): the macros are what the client typed
   mealTime?: string; // own meals: Breakfast, Lunch ...
+  foods?: { name: string; qty: number; unit: string }[]; // own meals: each food and its quantity
 }
 
 export interface MealReview {
