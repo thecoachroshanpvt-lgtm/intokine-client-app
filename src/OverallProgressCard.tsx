@@ -71,19 +71,27 @@ export const OverallProgressCard: React.FC<{
     return () => { u1(); u2(); u3(); u4(); u5(); };
   }, [clientId]);
 
-  const parts = useMemo<Part[]>(() => {
+  // The four parts for a window: the last N days, or everything since the client started ('all').
+  const build = (span: number | 'all'): Part[] => {
     const now = new Date();
     const today = dateKey(now);
     const from = new Date(now);
-    from.setDate(from.getDate() - (DAYS - 1));
+    from.setDate(from.getDate() - ((span === 'all' ? DAYS : span) - 1));
     let winStart = dateKey(from);
-    if (startDate && startDate > winStart && startDate <= today) winStart = startDate;
+    if (span === 'all') {
+      // from the start date; if there is none, from the earliest thing the client did (at most about three years back)
+      const earliest = [...mealLogs.map((l) => l.date), ...sessions.map((s) => s.date), ...plans.map((p) => p.date)].filter(Boolean).sort()[0];
+      const floor = new Date(now);
+      floor.setDate(floor.getDate() - 1100);
+      const base = startDate && startDate <= today ? startDate : earliest && earliest <= today ? earliest : winStart;
+      winStart = base < dateKey(floor) ? dateKey(floor) : base;
+    } else if (startDate && startDate > winStart && startDate <= today) winStart = startDate;
     const days: string[] = [];
-    for (let i = DAYS - 1; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const k = dateKey(d);
-      if (k >= winStart) days.push(k);
+    for (let k = winStart; k <= today; ) {
+      days.push(k);
+      const d = new Date(k + 'T00:00:00');
+      d.setDate(d.getDate() + 1);
+      k = dateKey(d);
     }
     const make = (key: string, label: string, done: number, total: number): Part => ({ key, label, done, total, frac: total > 0 ? Math.min(1, done / total) : null });
 
@@ -147,22 +155,24 @@ export const OverallProgressCard: React.FC<{
     const all = [make('diet', 'Diet', dDone, dTotal), make('routine', 'Routine', rDone, rTotal), make('sessions', 'Sessions', sDone, sTotal), make('workouts', 'Workouts', wDone, wTotal)];
     // The recorded-sessions app has no coach sessions to attend.
     return IS_RECORDED ? all.filter((x) => x.key !== 'sessions') : all;
-  }, [meals, planFrom, mealLogs, followUps, routineLogs, sessions, plans, startDate]);
+  };
+  const parts = useMemo<Part[]>(() => build(DAYS), [meals, planFrom, mealLogs, followUps, routineLogs, sessions, plans, startDate]);
+  const allTime = useMemo<Part[]>(() => build('all'), [meals, planFrom, mealLogs, followUps, routineLogs, sessions, plans, startDate]);
 
   const live = parts.filter((p) => p.frac !== null);
   const overall = live.length ? Math.round((live.reduce((a, p) => a + (p.frac as number), 0) / live.length) * 100) : null;
   const ringColor = overall === null ? 'rgba(255,255,255,0.15)' : consistencyColor(overall / 100);
   const R = 40, C = 2 * Math.PI * R;
-  // The card shows three scores: Diet, Routine and Workouts (coach sessions and suggested workouts together).
+  // The share card: the big score, Diet and Routine are the last 30 days (a client can always recover to 100);
+  // Workouts is the total number of sessions and suggested workouts done since the start.
   const shareParts = useMemo(() => {
     const by = (k: string) => parts.find((p) => p.key === k);
-    const wk = [by('sessions'), by('workouts')].filter(Boolean) as Part[];
-    const wDone = wk.reduce((a, p) => a + p.done, 0), wTotal = wk.reduce((a, p) => a + p.total, 0);
-    const out: { key: string; label: string; frac: number | null }[] = [];
+    const doneTotal = allTime.filter((p) => p.key === 'sessions' || p.key === 'workouts').reduce((a, p) => a + p.done, 0);
+    const out: { key: string; label: string; frac: number | null; count?: number }[] = [];
     (['diet', 'routine'] as const).forEach((k) => { const p = by(k); if (p) out.push({ key: k, label: p.label, frac: p.frac }); });
-    out.push({ key: 'workouts', label: 'Workouts', frac: wTotal > 0 ? Math.min(1, wDone / wTotal) : null });
+    out.push({ key: 'workouts', label: 'Workouts', frac: null, count: Math.round(doneTotal) });
     return out;
-  }, [parts]);
+  }, [parts, allTime]);
 
   return (
     <>
