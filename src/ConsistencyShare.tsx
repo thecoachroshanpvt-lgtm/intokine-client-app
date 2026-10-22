@@ -1,228 +1,358 @@
-import { IS_RECORDED } from './variant';
-import React, { useEffect, useMemo, useState } from 'react';
-import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc } from './firebase';
-import { ConsistencyShare } from './ConsistencyShare';
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { APP_NAME } from './variant';
 
-// Home: one overall consistency score for the last 30 days, made from four parts -
-// Diet (meals ticked), Routine (follow-up items answered), Sessions (coach sessions attended) and Workouts (suggested workouts done).
-// A part with nothing due yet is left out of the overall score. Today only counts once something is done today.
+// The "share your consistency" card: a Strava-style 9:16 picture for an Instagram story.
+// Opened by tapping "Your consistency" on the home page. It is drawn on a canvas (so it is a real picture, with no screenshot needed),
+// shown as a preview, and handed to the phone's share sheet (Instagram, WhatsApp, Save image...).
+// Two looks: "Card" (full dark brand background) and "Sticker" (transparent, to lay over your own photo in the story).
 
-const DAYS = 30;
-// App colours only: green when strong, cyan when building, red when low (no yellow).
-const consistencyColor = (f: number) => (f >= 0.8 ? '#34d399' : f >= 0.5 ? '#6ccbde' : '#ec2226');
-const pad = (n: number) => String(n).padStart(2, '0');
-const dateKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-const mondayKey = (d: Date) => {
-  const x = new Date(d);
-  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
-  return dateKey(x);
+export interface SharePart { key: string; label: string; frac: number | null; count?: number; sub?: string }
+
+const W = 1080;
+const H = 1920;
+const BRAND = '#ec2226';
+const ACCENT = '#6ccbde';
+const BODY = '"Raleway", "Barlow", -apple-system, "Helvetica Neue", Arial, sans-serif';
+
+const rgba = (hex: string, a: number) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 };
-const monthKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
 
-type Freq = 'daily' | 'weekly' | 'monthly';
-interface FuItem { id: string; label?: string; type: string; freq: Freq }
-interface FollowUp { id: string; date?: string; active?: boolean; items?: FuItem[] }
-interface RoutineLog { followUpId: string; freq: Freq; period: string; values?: Record<string, any> }
-interface MealLog { date: string; eaten?: string[] }
-interface Meal { id: string }
+const loadImage = (src: string) =>
+  new Promise<HTMLImageElement | null>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
 
-const answered = (type: string, v: any) => (type === 'tick' ? v === true : type === 'number' ? typeof v === 'number' && v > 0 : v !== undefined && v !== '' && v !== null);
+const headline = (overall: number | null) =>
+  overall === null ? 'Your movement journey starts here' : overall >= 90 ? 'Moving beautifully' : overall >= 80 ? 'Moving with purpose' : overall >= 60 ? 'Finding your flow' : overall >= 40 ? 'Keep moving' : 'Every movement counts';
 
-interface Part { key: string; label: string; done: number; total: number; frac: number | null }
+export type ShareMode = 'card' | 'photo' | 'sticker';
 
-export const OverallProgressCard: React.FC<{
-  clientId: string;
-  startDate: string | null;
-  plans: { date: string; isSuggestedWorkout?: boolean; clientCompletedAt?: string }[];
-  sessions: { date: string; status?: string; attendanceStatus?: string }[];
-  clientName?: string;
-}> = ({ clientId, startDate, plans, sessions, clientName }) => {
-  const [share, setShare] = useState(false);
-  const [ownName, setOwnName] = useState('');
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [planFrom, setPlanFrom] = useState<string | null>(null);
-  const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
-  const [followUps, setFollowUps] = useState<FollowUp[]>([]);
-  const [routineLogs, setRoutineLogs] = useState<RoutineLog[]>([]);
+async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null; dim: number }) {
+  try {
+    await Promise.all([document.fonts.load(`300 100px Raleway`), document.fonts.load(`600 40px Raleway`), document.fonts.load(`400 40px Raleway`)]);
+  } catch { /* the fallback fonts are used */ }
+  const logo = await loadImage('/brand-icon.png');
+  canvas.width = W;
+  canvas.height = H;
+  const c = canvas.getContext('2d');
+  if (!c) return;
+  const ls = (px: number) => { try { (c as any).letterSpacing = `${px}px`; } catch { /* older browsers */ } };
+  c.clearRect(0, 0, W, H);
+  const see = o.mode !== 'card'; // photo or sticker: no solid background, so the writing gets a soft shadow
+
+  if (o.mode === 'photo') {
+    c.fillStyle = '#15171d';
+    c.fillRect(0, 0, W, H);
+    if (o.photo) {
+      // cover the whole story picture, centred
+      const k = Math.max(W / o.photo.width, H / o.photo.height);
+      const pw = o.photo.width * k, ph = o.photo.height * k;
+      c.drawImage(o.photo, (W - pw) / 2, (H - ph) / 2, pw, ph);
+    }
+    // a dark layer over the whole photo (the client can change how dark), so the writing is readable on bright photos
+    c.fillStyle = `rgba(0,0,0,${o.dim})`;
+    c.fillRect(0, 0, W, H);
+    // a little extra shade at the top and bottom where the logo and the scores sit
+    const sc = c.createLinearGradient(0, 0, 0, H);
+    sc.addColorStop(0, 'rgba(0,0,0,0.3)');
+    sc.addColorStop(0.3, 'rgba(0,0,0,0)');
+    sc.addColorStop(0.65, 'rgba(0,0,0,0)');
+    sc.addColorStop(1, 'rgba(0,0,0,0.35)');
+    c.fillStyle = sc;
+    c.fillRect(0, 0, W, H);
+    // the logo, writing and rings are see-through, so the photo shows behind them
+    c.globalAlpha = 0.82;
+  }
+
+  if (o.mode === 'card') {
+    const bg = c.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#15171d');
+    bg.addColorStop(1, '#0b0c10');
+    c.fillStyle = bg;
+    c.fillRect(0, 0, W, H);
+    // two soft colour clouds, nothing sharp
+    const g1 = c.createRadialGradient(W * 0.85, 330, 0, W * 0.85, 330, 760);
+    g1.addColorStop(0, rgba(ACCENT, 0.2));
+    g1.addColorStop(1, rgba(ACCENT, 0));
+    c.fillStyle = g1;
+    c.fillRect(0, 0, W, H);
+    const g2 = c.createRadialGradient(W * 0.1, 1600, 0, W * 0.1, 1600, 820);
+    g2.addColorStop(0, rgba(BRAND, 0.24));
+    g2.addColorStop(1, rgba(BRAND, 0));
+    c.fillStyle = g2;
+    c.fillRect(0, 0, W, H);
+  }
+
+  const shadow = () => { if (see) { c.shadowColor = 'rgba(0,0,0,0.5)'; c.shadowBlur = 20; c.shadowOffsetY = 3; } };
+  const noShadow = () => { c.shadowColor = 'transparent'; c.shadowBlur = 0; c.shadowOffsetY = 0; };
+  const track = see ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.09)';
+  const cx = W / 2;
+  c.textAlign = 'center';
+  c.textBaseline = 'alphabetic';
+
+  // ---- logo, centred (inside Instagram's safe area)
+  if (logo) {
+    const lh = 58;
+    const lw = (logo.width / logo.height) * lh;
+    shadow();
+    c.drawImage(logo, cx - lw / 2, 290, lw, lh);
+    noShadow();
+  } else {
+    c.fillStyle = '#fff';
+    c.font = `600 48px ${BODY}`;
+    c.fillText(APP_NAME, cx, 336);
+  }
+
+  // ---- title
+  shadow();
+  c.fillStyle = 'rgba(255,255,255,0.9)';
+  c.font = `600 36px ${BODY}`;
+  ls(10);
+  c.fillText('MY CONSISTENCY', cx, 452);
+  noShadow();
+
+  // ---- the number: big and light, no circle
+  const pct = o.overall === null ? 0 : o.overall / 100;
+  shadow();
+  c.fillStyle = '#fff';
+  c.font = `300 330px ${BODY}`;
+  ls(-8);
+  const num = o.overall === null ? '--' : String(o.overall);
+  c.fillText(num, cx - 24, 880);
+  const nw = c.measureText(num).width;
+  c.font = `300 96px ${BODY}`;
+  c.fillStyle = 'rgba(255,255,255,0.7)';
+  c.textAlign = 'left';
+  ls(0);
+  c.fillText('%', cx - 24 + nw / 2 + 8, 880 - 150);
+  c.textAlign = 'center';
+  noShadow();
+
+  // ---- a rising trail, like the elevation line of a run: it climbs as far as the score, with a soft fill underneath
+  const X0 = 110, X1 = W - 110, BASE = 1190, RISE = 215;
+  const at = (t: number) => {
+    const e = t * t * (3 - 2 * t); // smooth start and finish
+    return { x: X0 + (X1 - X0) * t, y: BASE - RISE * (0.82 * e + 0.18 * t) - 14 * Math.sin(t * Math.PI * 4) * (1 - t * 0.6) };
+  };
+  const trace = (to: number) => {
+    c.beginPath();
+    for (let i = 0; i <= 140; i++) {
+      const p = at((to * i) / 140);
+      if (i === 0) c.moveTo(p.x, p.y); else c.lineTo(p.x, p.y);
+    }
+  };
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+  c.lineWidth = 4;
+  c.strokeStyle = track;
+  trace(1); c.stroke();
+  if (pct > 0) {
+    const tEnd = Math.max(pct, 0.03);
+    const grad = c.createLinearGradient(X0, 0, X1, 0);
+    grad.addColorStop(0, BRAND);
+    grad.addColorStop(1, ACCENT);
+    // the fill under the line fades down to nothing
+    const e0 = at(tEnd);
+    const fill = c.createLinearGradient(0, e0.y - 40, 0, BASE + 40);
+    fill.addColorStop(0, rgba(ACCENT, see ? 0.38 : 0.4));
+    fill.addColorStop(1, rgba(BRAND, 0));
+    c.save();
+    trace(tEnd);
+    c.lineTo(e0.x, BASE + 40);
+    c.lineTo(X0, BASE + 40);
+    c.closePath();
+    c.fillStyle = fill;
+    c.fill();
+    c.restore();
+    c.save();
+    c.shadowColor = rgba(ACCENT, see ? 0.3 : 0.5);
+    c.shadowBlur = 24;
+    c.lineWidth = 11;
+    c.strokeStyle = grad;
+    trace(tEnd); c.stroke();
+    // the tip: a bright dot with a soft ring around it
+    c.shadowColor = 'rgba(255,255,255,0.8)';
+    c.shadowBlur = 22;
+    c.fillStyle = '#fff';
+    c.beginPath(); c.arc(e0.x, e0.y, 16, 0, Math.PI * 2); c.fill();
+    c.shadowBlur = 0;
+    c.lineWidth = 3;
+    c.strokeStyle = 'rgba(255,255,255,0.5)';
+    c.beginPath(); c.arc(e0.x, e0.y, 31, 0, Math.PI * 2); c.stroke();
+    c.restore();
+  }
+
+  // ---- one warm line, about movement
+  shadow();
+  c.fillStyle = 'rgba(255,255,255,0.92)';
+  c.font = `300 58px ${BODY}`;
+  ls(1);
+  c.fillText(headline(o.overall), cx, 1262);
+  noShadow();
+
+  // ---- three quiet numbers with a hairline under each
+  const rows = o.parts;
+  const n = Math.max(rows.length, 1);
+  const col = (W - 2 * 100) / n;
+  const my = 1500;
+  rows.forEach((p, i) => {
+    const x = 100 + col * i + col / 2;
+    shadow();
+    c.fillStyle = '#fff';
+    c.font = `300 86px ${BODY}`;
+    ls(-2);
+    c.fillText(p.count !== undefined ? String(p.count) : p.frac === null ? '–' : `${Math.round(p.frac * 100)}`, x, my);
+    c.fillStyle = 'rgba(255,255,255,0.7)';
+    c.font = `600 24px ${BODY}`;
+    ls(6);
+    c.fillText(p.label.toUpperCase(), x, my + 54);
+    noShadow();
+    // hairline: grey track, accent colour for the share done (a count, like sessions, has no hairline)
+    const bw = 130, by = my + 86;
+    if (p.count === undefined) {
+      c.lineWidth = 3;
+      c.lineCap = 'round';
+      c.strokeStyle = track;
+      c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x + bw / 2, by); c.stroke();
+      if (p.frac !== null && p.frac > 0) {
+        c.strokeStyle = ACCENT;
+        c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x - bw / 2 + bw * Math.max(p.frac, 0.04), by); c.stroke();
+      }
+    }
+    if (p.sub) {
+      shadow();
+      c.fillStyle = 'rgba(255,255,255,0.5)';
+      c.font = `400 21px ${BODY}`;
+      ls(3);
+      c.fillText(p.sub.toUpperCase(), x, my + 128);
+      noShadow();
+    }
+  });
+
+  // ---- footer
+  shadow();
+  c.fillStyle = 'rgba(255,255,255,0.5)';
+  c.font = `600 24px ${BODY}`;
+  ls(8);
+  c.fillText(APP_NAME, cx, 1730);
+  noShadow();
+}
+
+export const ConsistencyShare: React.FC<{ name: string; overall: number | null; parts: SharePart[]; days: number; onClose: () => void }> = ({ name, overall, parts, days, onClose }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [mode, setMode] = useState<ShareMode>('card');
+  const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
+  const [dim, setDim] = useState(0.5); // how dark the layer over the photo is
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [preview, setPreview] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
 
   useEffect(() => {
-    const { db } = initializeClientFirebaseApp();
-    if (!db) return;
-    const u1 = onSnapshot(
-      query(collection(db, 'intokine_nutrition_plans'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
-      (snap) => {
-        const stamp = (d: any) => Number(String(d.id || '').split('-')[1]) || 0;
-        const newest = [...snap.docs].sort((a, b) => stamp(b) - stamp(a))[0];
-        const data: any = newest?.data();
-        setMeals(Array.isArray(data?.meals) ? data.meals : []);
-        const ts = data ? stamp(data) : 0;
-        setPlanFrom(ts ? dateKey(new Date(ts)) : null);
-      },
-      () => {}
-    );
-    const u2 = onSnapshot(query(collection(db, 'intokine_meal_logs'), where('clientId', '==', clientId)), (s) => setMealLogs(s.docs.map((d) => d.data() as MealLog)), () => {});
-    const u3 = onSnapshot(
-      query(collection(db, 'intokine_followups'), where('clientId', '==', clientId), where('clientVisible', '==', true)),
-      (s) => setFollowUps(s.docs.map((d) => ({ id: d.id, ...(d.data() as any) }) as FollowUp)),
-      () => {}
-    );
-    const u4 = onSnapshot(query(collection(db, 'intokine_routine_logs'), where('clientId', '==', clientId)), (s) => setRoutineLogs(s.docs.map((d) => d.data() as RoutineLog)), () => {});
-    const u5 = onSnapshot(doc(db, 'intokine_clients', clientId), (s) => setOwnName(String((s.data() as any)?.name || '')), () => {});
-    return () => { u1(); u2(); u3(); u4(); u5(); };
-  }, [clientId]);
+    let live = true;
+    const cv = document.createElement('canvas');
+    canvasRef.current = cv;
+    setPreview('');
+    draw(cv, { name, overall, parts, days, mode, photo, dim }).then(() => { if (live) setPreview(cv.toDataURL('image/png')); });
+    return () => { live = false; };
+  }, [name, overall, parts, days, mode, photo, dim]);
 
-  // The four parts for a window: the last N days, or everything since the client started ('all').
-  const build = (span: number | 'all'): Part[] => {
-    const now = new Date();
-    const today = dateKey(now);
-    const from = new Date(now);
-    from.setDate(from.getDate() - ((span === 'all' ? DAYS : span) - 1));
-    let winStart = dateKey(from);
-    if (span === 'all') {
-      // from the start date; if there is none, from the earliest thing the client did (at most about three years back)
-      const earliest = [...mealLogs.map((l) => l.date), ...sessions.map((s) => s.date), ...plans.map((p) => p.date)].filter(Boolean).sort()[0];
-      const floor = new Date(now);
-      floor.setDate(floor.getDate() - 1100);
-      const base = startDate && startDate <= today ? startDate : earliest && earliest <= today ? earliest : winStart;
-      winStart = base < dateKey(floor) ? dateKey(floor) : base;
-    } else if (startDate && startDate > winStart && startDate <= today) winStart = startDate;
-    const days: string[] = [];
-    for (let k = winStart; k <= today; ) {
-      days.push(k);
-      const d = new Date(k + 'T00:00:00');
-      d.setDate(d.getDate() + 1);
-      k = dateKey(d);
-    }
-    const make = (key: string, label: string, done: number, total: number): Part => ({ key, label, done, total, frac: total > 0 ? Math.min(1, done / total) : null });
-
-    // Diet: each day counts the share of planned meals ticked.
-    let dDone = 0, dTotal = 0;
-    if (meals.length > 0) {
-      const ids = new Set(meals.map((m) => m.id));
-      days.forEach((k) => {
-        if (planFrom && k < planFrom) return;
-        const eaten = (mealLogs.find((l) => l.date === k)?.eaten || []).filter((id) => ids.has(id)).length;
-        if (k === today && eaten === 0) return;
-        dDone += Math.min(1, eaten / meals.length);
-        dTotal += 1;
-      });
-    }
-
-    // Routine: every item of every active follow-up, once per day / week / month.
-    let rDone = 0, rTotal = 0;
-    const seenItems = new Set<string>(); // an item added twice (dietitian and coach) counts once, the newest copy
-    followUps.filter((f) => f.active !== false).sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach((f) => {
-      (f.items || []).forEach((it) => {
-        const dupKey = (it.label || '').trim().toLowerCase();
-        if (seenItems.has(dupKey)) return;
-        if (dupKey === 'any change in my health or medicines' || dupKey === 'questions for my dietitian') return; // retired items
-        seenItems.add(dupKey);
-        const periods = new Set<string>();
-        days.forEach((k) => {
-          if (f.date && k < f.date) return;
-          const d = new Date(k + 'T00:00:00');
-          periods.add(it.freq === 'daily' ? k : it.freq === 'weekly' ? mondayKey(d) : monthKey(d));
-        });
-        const current = it.freq === 'daily' ? today : it.freq === 'weekly' ? mondayKey(now) : monthKey(now);
-        periods.forEach((p) => {
-          const ok = answered(it.type, routineLogs.find((l) => l.followUpId === f.id && l.freq === it.freq && l.period === p)?.values?.[it.id]);
-          if (p === current && !ok) return;
-          rTotal += 1;
-          if (ok) rDone += 1;
-        });
-      });
+  const toFile = () =>
+    new Promise<File | null>((resolve) => {
+      const cv = canvasRef.current;
+      if (!cv) return resolve(null);
+      cv.toBlob((b) => resolve(b ? new File([b], `${APP_NAME.toLowerCase()}-consistency.png`, { type: 'image/png' }) : null), 'image/png');
     });
 
-    // Sessions: attended out of attended + absent (a session nobody has marked yet is not counted).
-    let sDone = 0, sTotal = 0;
-    sessions.forEach((s) => {
-      if (s.date < winStart || s.date > today) return;
-      const att = s.attendanceStatus;
-      if (s.status === 'Completed' || att === 'Present' || att === 'Late') { sDone += 1; sTotal += 1; }
-      else if (att === 'Absent' || att === 'No Show') sTotal += 1;
-    });
-
-    // Workouts: suggested workouts marked complete out of those given.
-    let wDone = 0, wTotal = 0;
-    plans.forEach((p) => {
-      if (!p.isSuggestedWorkout || p.date < winStart || p.date > today) return;
-      const ok = !!p.clientCompletedAt;
-      if (p.date === today && !ok) return;
-      wTotal += 1;
-      if (ok) wDone += 1;
-    });
-
-    const all = [make('diet', 'Diet', dDone, dTotal), make('routine', 'Routine', rDone, rTotal), make('sessions', 'Sessions', sDone, sTotal), make('workouts', 'Workouts', wDone, wTotal)];
-    // The recorded-sessions app has no coach sessions to attend.
-    return IS_RECORDED ? all.filter((x) => x.key !== 'sessions') : all;
+  const save = async () => {
+    const f = await toFile();
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = f.name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    setMsg('Saved. Open Instagram, add a story, and pick the picture from your photos.');
   };
-  const parts = useMemo<Part[]>(() => build(DAYS), [meals, planFrom, mealLogs, followUps, routineLogs, sessions, plans, startDate]);
-  const allTime = useMemo<Part[]>(() => build('all'), [meals, planFrom, mealLogs, followUps, routineLogs, sessions, plans, startDate]);
 
-  const live = parts.filter((p) => p.frac !== null);
-  const overall = live.length ? Math.round((live.reduce((a, p) => a + (p.frac as number), 0) / live.length) * 100) : null;
-  const ringColor = overall === null ? 'rgba(255,255,255,0.15)' : consistencyColor(overall / 100);
-  const R = 40, C = 2 * Math.PI * R;
-  // The share card: the big score, Diet and Routine are the last 30 days (a client can always recover to 100);
-  // Workouts is the total number of sessions and suggested workouts done since the start.
-  const shareParts = useMemo(() => {
-    const by = (k: string) => parts.find((p) => p.key === k);
-    const doneTotal = allTime.filter((p) => p.key === 'sessions' || p.key === 'workouts').reduce((a, p) => a + p.done, 0);
-    const out: { key: string; label: string; frac: number | null; count?: number }[] = [];
-    (['diet', 'routine'] as const).forEach((k) => { const p = by(k); if (p) out.push({ key: k, label: p.label, frac: p.frac }); });
-    out.push({ key: 'workouts', label: 'Workouts', frac: null, count: Math.round(doneTotal) });
-    return out;
-  }, [parts, allTime]);
+  const share = async () => {
+    setBusy(true);
+    setMsg('');
+    try {
+      const f = await toFile();
+      if (!f) throw new Error('no file');
+      const nav: any = navigator;
+      if (nav.canShare && nav.canShare({ files: [f] })) {
+        await nav.share({ files: [f], title: `${APP_NAME} consistency` });
+      } else {
+        await save();
+      }
+    } catch (e: any) {
+      // closing the share sheet is not an error
+      if (e?.name !== 'AbortError') setMsg('Could not open the share sheet. Use "Save image" and add it to your story.');
+    }
+    setBusy(false);
+  };
 
-  return (
-    <>
-    <div role="button" tabIndex={0} onClick={() => setShare(true)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShare(true); }}
-      className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 cursor-pointer active:scale-[0.99] transition-transform">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] text-white/40 uppercase font-semibold">Your consistency</span>
-        <span className="text-[10px] text-white/40">Last {DAYS} days</span>
-      </div>
+  return createPortal(
+    <div className="fixed inset-0 z-[400] bg-black/85 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-sm max-h-full overflow-y-auto bg-[#1c1c1c] border border-white/[0.08] rounded-3xl p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <span className="font-header text-[20px] text-white leading-none">Share your consistency</span>
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.08] text-white/80 text-lg leading-none" aria-label="Close">×</button>
+        </div>
 
-      <div className="flex items-center gap-4 mt-3">
-        <div className="relative w-[92px] h-[92px] shrink-0">
-          <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-            <circle cx="50" cy="50" r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="9" />
-            {overall !== null && (
-              <circle cx="50" cy="50" r={R} fill="none" stroke={ringColor} strokeWidth="9" strokeLinecap="round"
-                strokeDasharray={C} strokeDashoffset={C * (1 - overall / 100)} style={{ transition: 'stroke-dashoffset .6s ease' }} />
-            )}
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-header text-[26px] text-white leading-none">{overall === null ? '--' : overall}</span>
-            <span className="text-[9px] text-white/40 mt-0.5">{overall === null ? 'no data' : 'overall %'}</span>
+        <div className="flex bg-black/30 rounded-full p-0.5">
+          {([['Card', 'card'], ['Photo', 'photo'], ['Sticker', 'sticker']] as const).map(([l, v]) => (
+            <button key={l} type="button" onClick={() => { setMode(v); if (v === 'photo' && !photo) fileRef.current?.click(); }}
+              className={`flex-1 py-1.5 rounded-full text-[11px] font-bold ${mode === v ? 'bg-[#6ccbde]/20 text-[#6ccbde]' : 'text-white/50'}`}>{l}</button>
+          ))}
+        </div>
+
+        <div className="mx-auto rounded-2xl overflow-hidden border border-white/[0.08]" style={{ aspectRatio: '9 / 16', maxHeight: '58vh', background: mode === 'sticker' ? 'repeating-conic-gradient(#3a3a3a 0% 25%, #2a2a2a 0% 50%) 50% / 24px 24px' : '#0b0c10' }}>
+          {preview ? <img src={preview} alt="Your consistency card" className="w-full h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-[11px] text-white/40">Making your card...</div>}
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = () => { setPhoto(img); setMode('photo'); };
+            img.onerror = () => setMsg('Could not open that photo. Try another one.');
+            img.src = url;
+          }} />
+        {mode === 'photo' && (
+          <div className="space-y-2">
+            <button type="button" onClick={() => fileRef.current?.click()} className="w-full py-2 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold">{photo ? 'Change photo' : 'Choose a photo'}</button>
+            <label className="flex items-center gap-3 text-[11px] text-white/60">
+              <span className="shrink-0">Darker layer</span>
+              <input type="range" min={0} max={75} step={5} value={Math.round(dim * 100)} onChange={(e) => setDim(Number(e.target.value) / 100)} className="flex-1" />
+              <span className="w-8 text-right font-mono">{Math.round(dim * 100)}%</span>
+            </label>
           </div>
-        </div>
+        )}
+        {mode === 'sticker' && <p className="text-[10px] text-white/45 text-center">Sticker has a see-through background. Save it, then place it over your own photo in the story.</p>}
 
-        <div className="flex-1 min-w-0 space-y-2.5">
-          {parts.map((p) => {
-            const pct = p.frac === null ? null : Math.round(p.frac * 100);
-            const col = p.frac === null ? 'rgba(255,255,255,0.2)' : consistencyColor(p.frac);
-            return (
-              <div key={p.key}>
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[11px] font-semibold text-white/80">{p.label}</span>
-                  <span className="text-[11px] font-mono text-white/60">{pct === null ? 'Not started' : `${pct}%`}</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-white/[0.08] mt-1 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${pct ?? 0}%`, backgroundColor: col, transition: 'width .6s ease' }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <button type="button" disabled={!preview || busy} onClick={share}
+          className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
+          style={{ background: `linear-gradient(90deg, ${BRAND} 0%, ${ACCENT} 100%)` }}>
+          {busy ? 'Opening...' : 'Share to Instagram story'}
+        </button>
+        <button type="button" disabled={!preview} onClick={save} className="w-full py-2.5 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold disabled:opacity-40">Save image</button>
+        {msg && <p className="text-[11px] text-white/55 text-center">{msg}</p>}
       </div>
-
-      <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-semibold text-[#6ccbde]">
-        <span>Tap to share your card</span>
-        <span aria-hidden>›</span>
-      </div>
-    </div>
-    {share && <ConsistencyShare name={clientName || ownName} overall={overall} days={DAYS} parts={shareParts} onClose={() => setShare(false)} />}
-    </>
+    </div>,
+    document.body
   );
 };
