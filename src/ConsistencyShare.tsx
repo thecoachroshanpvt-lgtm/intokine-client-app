@@ -13,7 +13,7 @@ const W = 1080;
 const H = 1920;
 const BRAND = '#ec2226';
 const ACCENT = '#6ccbde';
-const HEAD = '"Oswald", "Archivo Narrow", "Arial Narrow", Impact, sans-serif';
+const HEAD = '"Swiss 721 BT Bold Condensed", "Oswald", "Archivo Narrow", "Arial Narrow", Impact, sans-serif'; // the brand number font (Oswald stands in until the Swiss file is in public/fonts)
 const BODY = '-apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif'; // clean system font: the same digits on every phone
 
 const rgba = (hex: string, a: number) => {
@@ -36,7 +36,7 @@ export type ShareMode = 'card' | 'photo' | 'sticker';
 
 async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null; dim: number }) {
   try {
-    await Promise.all([document.fonts.load(`700 100px Oswald`), document.fonts.load(`600 40px Oswald`), document.fonts.load(`300 100px Raleway`), document.fonts.load(`600 40px Raleway`), document.fonts.load(`400 40px Raleway`)]);
+    await Promise.all([document.fonts.load(`700 100px "Swiss 721 BT Bold Condensed"`), document.fonts.load(`700 100px Oswald`), document.fonts.load(`600 40px Oswald`), document.fonts.load(`300 100px Raleway`), document.fonts.load(`600 40px Raleway`), document.fonts.load(`400 40px Raleway`)]);
   } catch { /* the fallback fonts are used */ }
   const logo = await loadImage('/brand-icon.png');
   canvas.width = W;
@@ -126,12 +126,12 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
   const pct = o.overall === null ? 0 : o.overall / 100;
   shadow();
   c.fillStyle = '#fff';
-  c.font = `300 330px ${BODY}`;
-  ls(-8);
+  c.font = `700 390px ${HEAD}`;
+  ls(0);
   const num = o.overall === null ? '--' : String(o.overall);
   c.fillText(num, cx - 24, 880);
   const nw = c.measureText(num).width;
-  c.font = `300 96px ${BODY}`;
+  c.font = `700 104px ${HEAD}`;
   c.fillStyle = 'rgba(255,255,255,0.7)';
   c.textAlign = 'left';
   ls(0);
@@ -210,8 +210,8 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
     const x = 100 + col * i + col / 2;
     shadow();
     c.fillStyle = '#fff';
-    c.font = `300 86px ${BODY}`;
-    ls(-2);
+    c.font = `700 104px ${HEAD}`;
+    ls(1);
     c.fillText(p.frac === null ? '–' : `${Math.round(p.frac * 100)}`, x, my);
     c.fillStyle = 'rgba(255,255,255,0.7)';
     c.font = `600 24px ${BODY}`;
