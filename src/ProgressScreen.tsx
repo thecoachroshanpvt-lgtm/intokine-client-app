@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { buildActs } from './CategoryJourney';
+import type { Act } from './CategoryJourney';
 import { createPortal } from 'react-dom';
 import {
   initializeClientFirebaseApp,
@@ -493,7 +495,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                       </div>
                       {d.note && (
                         <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
-                          <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
+                          <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Review</span>
                           <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{d.note}</p>
                         </div>
                       )}
@@ -514,7 +516,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                       </div>
                       {d.note && (
                         <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
-                          <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
+                          <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Review</span>
                           <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{d.note}</p>
                         </div>
                       )}
@@ -543,7 +545,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
                         </div>
                         {h.note && (
                           <div className="mt-2 pt-2 border-t border-white/[0.06] w-full">
-                            <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
+                            <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{h.note}</p>
                           </div>
                         )}
@@ -555,7 +557,7 @@ const AchievementsTimeline: React.FC<{ items: RoadmapItem[]; compact?: boolean; 
             )}
             {openItem.note && !(openItem.rows || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !(openItem.sides || []).some((d) => (d.note || '').trim() === openItem.note!.trim()) && !hist.some((h) => (h.note || '').trim() === openItem.note!.trim()) && (
               <div className="pt-3 border-t border-white/[0.06]">
-                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{openItem.note}</p>
               </div>
             )}
@@ -728,16 +730,17 @@ const ActivityGraphModal: React.FC<{ item: RoadmapItem; tag: string; fit: boolea
             <div className="space-y-1.5">
               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block">{item.rowsTitle || 'Result journey'}</span>
               {item.rows.map((d, k) => (
-                <div key={`${d.date}-${k}`} className="flex items-center justify-between gap-2 bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
+                <div key={`${d.date}-${k}`} className="flex flex-wrap items-center justify-between gap-2 bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
                   <span className="text-[11px] text-white/50 font-mono">{d.date}</span>
                   <span className="text-[11px] font-black text-white font-mono text-right">{d.text}</span>
+                  {d.note && <p className="basis-full text-[11px] text-white/70 leading-relaxed whitespace-pre-line border-t border-white/[0.06] pt-1.5 mt-0.5"><span className="font-subheader text-[10px] text-[#6ccbde] uppercase tracking-wide mr-1.5">Review</span>{d.note}</p>}
                 </div>
               ))}
             </div>
           )}
           {item.note && (
             <div className="bg-[#252525] border border-white/[0.06] rounded-lg px-3 py-2">
-              <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Coach review</span>
+              <span className="font-subheader text-[11px] text-[#6ccbde] uppercase tracking-wide block mb-0.5">Review</span>
               <p className="text-xs text-white/90 leading-relaxed whitespace-pre-line">{item.note}</p>
             </div>
           )}
@@ -799,6 +802,7 @@ const AchievedTiles: React.FC<{ items: RoadmapItem[]; label: string }> = ({ item
 const AchievementFitRow: React.FC<{ title: string; items: RoadmapItem[]; route?: boolean; singleCard?: boolean }> = ({ title, items: rawItems, route }) => {
   const [open, setOpen] = React.useState(false);
   const items = /^Posture/.test(title) ? rawItems.map((x) => ({ ...x, status: 'Pass' })) : rawItems;
+  if (/^(Balance|Core|Flexibility|Movement|Cardio|Muscular|SAQ|Power)/.test(title)) return null; // these categories have no achievements card
   const fitItems = items.filter((x) => x.status === 'AlreadyFit');
   const passedItems = items.filter((x) => x.status !== 'AlreadyFit');
   const fitCount = fitItems.length;
@@ -982,6 +986,117 @@ const SideComparison: React.FC<{ data: SidePoint[]; unit?: string }> = ({ data, 
   );
 };
 
+
+// Tap any graph card of these categories to open its whole journey (same pop-up as the achievements).
+const normTitle = (t: string) => t.toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+const actToItem = (a: Act): RoadmapItem => {
+  const score = a.kind === 'score10';
+  const base: RoadmapItem = { id: a.name, name: a.label, unit: score ? '/10' : a.unit || '', rows: a.logs.map((l) => ({ date: l.date, text: l.text, note: l.review || undefined })), rowsTitle: 'Result journey' };
+  if (a.pairs) return { ...base, sides: a.pairs as SidePoint[] };
+  if (a.series.length > 1) return { ...base, series: a.series.map((x) => ({ label: x.label, color: x.color, data: x.points })) };
+  return { ...base, history: a.series[0].points };
+};
+type SkillStepJourney = { name: string; final: boolean; done: boolean; date?: string; target?: number; unit: string; logs: { date: string; value: number; note?: string }[] };
+const SkillJourneyModal: React.FC<{ skill: string; achievedOn?: string; steps: SkillStepJourney[]; onClose: () => void }> = ({ skill, achievedOn, steps, onClose }) => {
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    document.body.setAttribute('data-popup-open', '1');
+    return () => { document.body.style.overflow = ''; document.body.removeAttribute('data-popup-open'); };
+  }, []);
+  return createPortal(
+    <div className="anim-overlay fixed inset-0 z-[130] bg-black/80 flex items-center justify-center p-5" onClick={onClose}>
+      <div data-no-pull className="anim-card w-full max-w-sm max-h-[85vh] bg-[#1c1c1c] border border-white/[0.1] rounded-2xl flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="p-4 border-b border-white/[0.08] flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-subheader text-[17px] text-white">{skill}</div>
+            <div className="text-[11px] text-emerald-400 font-semibold">Achieved{achievedOn ? ` · ${achievedOn}` : ''}</div>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="text-white/50 text-xl leading-none px-1">×</button>
+        </div>
+        <div className="overflow-y-auto p-4" style={{ overscrollBehavior: 'contain' }}>
+          <div className="text-[10px] font-bold uppercase tracking-wide text-[#6ccbde] mb-3">Your journey</div>
+          {steps.map((st, i) => (
+            <div key={st.name + i} className="flex gap-3">
+              <div className="flex flex-col items-center">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black ${st.done ? 'bg-emerald-500 text-black' : 'bg-white/10 text-white/50'}`}>{st.done ? '✓' : st.final ? '★' : i + 1}</div>
+                {i < steps.length - 1 && <div className="w-0.5 flex-1 min-h-[16px] bg-emerald-500/40" />}
+              </div>
+              <div className="flex-1 pb-4 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-white">{st.final ? `${skill} (final skill)` : st.name}</span>
+                  {st.target ? <span className="text-[10px] text-white/40 shrink-0">Target {st.target} {st.unit}</span> : null}
+                </div>
+                {st.done && st.date && <div className="text-[10px] text-emerald-400/80 mt-0.5">Passed {st.date}</div>}
+                {st.logs.length === 0 && <div className="text-[11px] text-white/35 mt-1">No logs.</div>}
+                <div className="mt-1.5 space-y-1.5">
+                  {[...st.logs].reverse().map((l, j) => (
+                    <div key={j} className="rounded-lg bg-white/[0.04] border border-white/[0.06] px-2.5 py-1.5">
+                      <div className="flex items-center justify-between"><span className="text-[10px] text-white/40 font-mono">{l.date}</span><span className="text-xs text-white font-semibold">{l.value} {st.unit}</span></div>
+                      {l.note ? <p className="text-[11px] text-white/65 leading-relaxed mt-0.5 whitespace-pre-line">{l.note}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+
+const TapJourney: React.FC<{ catKey?: string; goals: any[]; records: any[]; children: React.ReactNode }> = ({ catKey, goals, records, children }) => {
+  const [sel, setSel] = React.useState<Act | null>(null);
+  const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!catKey || !e.currentTarget.contains(e.target as Node)) return;
+    let el = e.target as HTMLElement | null;
+    if (el?.closest('button, a, input, select, textarea')) return;
+    while (el && el !== e.currentTarget && !(el.classList.contains('rounded-2xl') && el.className.includes('bg-[#252525]'))) el = el.parentElement;
+    if (!el || el === e.currentTarget) return;
+    const title = el.querySelector('span.uppercase, span[data-actname]')?.textContent || '';
+    const key = normTitle(title);
+    if (!key) return;
+    const a = buildActs(catKey, goals, records).find((x) => normTitle(x.label) === key || normTitle(x.name.split(': ').slice(1).join(': ')) === key);
+    if (a) setSel(a);
+  };
+  const wrap = React.useRef<HTMLDivElement>(null);
+  // Newest logged activity on top: cards are re-ordered with CSS only, so React is not disturbed.
+  React.useLayoutEffect(() => {
+    const root = wrap.current;
+    if (!root || !catKey) return;
+    const acts = buildActs(catKey, goals, records);
+    const rank = (title: string) => {
+      const key = normTitle(title);
+      const i = acts.findIndex((x) => normTitle(x.label) === key || normTitle(x.name.split(': ').slice(1).join(': ')) === key);
+      return i;
+    };
+    const groups = new Map<HTMLElement, HTMLElement[]>();
+    root.querySelectorAll<HTMLElement>('.rounded-2xl').forEach((el) => {
+      if (!el.className.includes('bg-[#252525]') || !el.parentElement) return;
+      const t = el.querySelector('span.uppercase, span[data-actname]')?.textContent;
+      if (!t) return;
+      const p = el.parentElement;
+      groups.set(p, [...(groups.get(p) || []), el]);
+    });
+    groups.forEach((cards, parent) => {
+      if (cards.length < 2) return;
+      const ranks = cards.map((c) => rank(c.querySelector('span.uppercase, span[data-actname]')!.textContent || ''));
+      if (ranks.every((r) => r < 0)) return;
+      const cs = getComputedStyle(parent);
+      if (cs.display !== 'grid' && cs.display !== 'flex') { parent.style.display = 'flex'; parent.style.flexDirection = 'column'; parent.style.gap = '0.75rem'; cards.forEach((c) => { c.style.marginTop = '0'; }); }
+      cards.forEach((c, i) => { c.style.order = String(ranks[i] >= 0 ? ranks[i] : 500 + i); });
+    });
+  });
+  return (
+    <>
+      <div ref={wrap} onClick={onClick}>{children}</div>
+      {sel && <ActivityGraphModal item={actToItem(sel)} tag={sel.passed ? 'Passed' : 'In progress'} fit={false} onClose={() => setSel(null)} />}
+    </>
+  );
+};
+
 export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [topTab, setTopTab] = useState<TopTab>('bca');
   const [perfCategory, setPerfCategory] = useState<PerformanceCategory>('hub');
@@ -994,6 +1109,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   const [showMovementAchievementsPopup, setShowMovementAchievementsPopup] = useState(false);
   const [showFlexAchievementsPopup, setShowFlexAchievementsPopup] = useState(false);
   const [mcgillOpen, setMcgillOpen] = useState(false);
+  const [skillOpen, setSkillOpen] = useState<string | null>(null);
   const [showSkillAchievementsPopup, setShowSkillAchievementsPopup] = useState(false);
   const [clientSex, setClientSex] = useState<'male' | 'female' | undefined>(undefined);
   const [showCoreAchievementsPopup, setShowCoreAchievementsPopup] = useState(false);
@@ -1094,6 +1210,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
   }, [clientId]);
 
   const chronological = [...assessments].reverse();
+  // Pass / Already fit only exist for Posture; every other category just tracks its logs.
+  const plainGoals = goals.map((g) => ({ ...g, status: 'Pending' as const }));
 
   // Which performance categories have anything added (an activity or a score). Empty ones are faded and locked.
   const catHasData = (() => {
@@ -1171,6 +1289,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
       <div className="invisible -mx-5 -mt-4 mb-2" aria-hidden="true">{tabButtons}</div>
     </>
   );
+
+  const CAT_KEYS: Record<string, string> = { posture: 'Posture', flexibility: 'Flexibility & Mobility', balance: 'Balance', core_endurance: 'Core Endurance & Stability', movement: 'Movement', cardio: 'Cardio', muscular_endurance: 'Muscular Endurance', muscular_strength: 'Muscular Strength', saq: 'SAQ', power: 'Power' };
 
   // BCA, Performance and Skills need assessments or goals; Exercise Scores has its own data.
   if (!hasAnyData && topTab !== 'scores') {
@@ -1558,38 +1678,48 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
 
         // A skill is achieved once its final goal is passed.
         const isPassed = (g: GoalEntry) => g.status === 'Pass' || g.status === 'AlreadyFit';
-        const achievedSkills = orderedRoadmaps.filter(([, steps]) => steps.some((x) => x.isFinal && isPassed(x.goal))).reverse();
-        const activeRoadmaps = orderedRoadmaps.filter(([, steps]) => !steps.some((x) => x.isFinal && isPassed(x.goal)));
-        const skillItems: RoadmapItem[] = [...achievedSkills].reverse().map(([skillName, steps]) => {
-          const fin = steps.find((x) => x.isFinal)!.goal;
-          return {
-            id: fin.id,
-            name: skillName,
-            date: fin.dateAchieved,
-            note: fin.coachReview || fin.observation,
-            status: fin.status,
-            scoreText: `${steps.length} step${steps.length === 1 ? '' : 's'}`,
-            rowsTitle: 'Skill roadmap',
-            rows: steps.map((x) => {
-              const unit = x.goal.valueType === 'time_seconds' ? 'sec' : 'reps';
-              const val = x.goal.value ? ` · ${x.goal.value}${x.goal.targetValue ? ` / ${x.goal.targetValue}` : ''} ${unit}` : '';
-              return {
-                date: x.goal.dateAchieved || '',
-                text: `${isPassed(x.goal) ? '✓ ' : ''}${x.isFinal ? `${skillName} (final skill)` : x.name}${val}`,
-                note: x.goal.coachReview || x.goal.observation,
-              };
-            }),
-          };
-        });
-
-        if (activeRoadmaps.length === 0 && achievedSkills.length > 0) {
-          return <AchievementsPage route title="Skills complete" items={skillItems} />;
-        }
+        // Latest logged skill on top: each skill is ranked by its newest log (or by when it was added).
+        const lastOf = (steps: Step[]) => steps.reduce((best, x) => {
+          const recs = chronological.filter((a) => a.customActivityScores?.[x.goal.activityName] != null);
+          const k = recs.length ? `${recs[recs.length - 1].date}|${recs[recs.length - 1].id}` : `${new Date(addedAt(x.goal, 0)).toISOString().slice(0, 10)}|`;
+          return k > best ? k : best;
+        }, '');
+        const byLatest = (list: [string, Step[]][]) => [...list].sort((p, q) => lastOf(q[1]).localeCompare(lastOf(p[1])));
+        const achievedSkills = byLatest(orderedRoadmaps.filter(([, steps]) => steps.some((x) => x.isFinal && isPassed(x.goal))));
+        const activeRoadmaps = byLatest(orderedRoadmaps.filter(([, steps]) => !steps.some((x) => x.isFinal && isPassed(x.goal))));
+        const journeyOf = (steps: Step[]): SkillStepJourney[] => steps.map((x) => ({
+          name: x.name,
+          final: x.isFinal,
+          done: isPassed(x.goal),
+          date: x.goal.dateAchieved,
+          target: x.goal.targetValue,
+          unit: x.goal.valueType === 'time_seconds' ? 'sec' : 'reps',
+          logs: chronological.filter((a) => a.customActivityScores?.[x.goal.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![x.goal.activityName], note: resultNote(a, x.goal.activityName) })),
+        }));
+        const openSkill = achievedSkills.find(([n]) => n === skillOpen);
+        const achievedRow = achievedSkills.length > 0 && (
+          <div className="space-y-2">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 pt-1">Achieved skills</div>
+            {achievedSkills.map(([skillName, steps]) => {
+              const fin = steps.find((x) => x.isFinal)!.goal;
+              return (
+                <button key={skillName} type="button" onClick={() => setSkillOpen(skillName)} className="w-full flex items-center gap-3 bg-[#252525] border border-emerald-500/20 rounded-2xl px-4 py-3 text-left">
+                  <span className="w-6 h-6 rounded-full bg-emerald-500 text-black text-xs font-black flex items-center justify-center shrink-0">✓</span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-subheader text-[15px] text-white truncate">{skillName}</span>
+                    <span className="block text-[10px] text-white/40">{steps.length} step{steps.length === 1 ? '' : 's'}{fin.dateAchieved ? ` · ${fin.dateAchieved}` : ''}</span>
+                  </span>
+                  <span className="text-white/30 text-lg">›</span>
+                </button>
+              );
+            })}
+            {openSkill && <SkillJourneyModal skill={openSkill[0]} achievedOn={openSkill[1].find((x) => x.isFinal)?.goal.dateAchieved} steps={journeyOf(openSkill[1])} onClose={() => setSkillOpen(null)} />}
+          </div>
+        );
 
         return (
           <div className="space-y-3">
-            <AchievementFitRow route title="Skill" items={skillItems} />
-            {[...activeRoadmaps].reverse().map(([skillName, steps]) => (
+            {activeRoadmaps.map(([skillName, steps]) => (
               <div key={skillName} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 space-y-3">
                 <span className="font-subheader text-[17px] text-white">{skillName}</span>
                 <div className="space-y-2">
@@ -1631,6 +1761,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 </div>
               </div>
             ))}
+            {achievedRow}
           </div>
         );
       })()}
@@ -1639,53 +1770,54 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
         <div>
           {perfCategory === 'hub' && (
             <div className="space-y-5">
+              {!Object.values(catHasData).some(Boolean) && <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center"><p className="text-sm text-white/50 font-light leading-relaxed">Nothing shared here yet — your coach will add your results here.</p></div>}
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1`}>
+                <button onClick={() => setPerfCategory('posture')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.posture ? '' : 'hidden'}`}>
                   <XRayBackground type="posture" />
                   <h3 className="font-subheader text-[17px] text-white">Posture</h3>
                   <p className="text-[11px] text-white/40 font-light">Postural alignment.</p>
                 </button>
-                <button disabled={!catHasData.flexibility} onClick={() => setPerfCategory('flexibility')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.flexibility ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.flexibility} onClick={() => setPerfCategory('flexibility')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.flexibility ? '' : 'hidden'}`}>
                   <XRayBackground type="flexibility" />
                   <h3 className="font-subheader text-[17px] text-white">Flexibility & Mobility</h3>
                   <p className="text-[11px] text-white/40 font-light">Thomas, SLR, shoulder tests.</p>
                 </button>
-                <button disabled={!catHasData.balance} onClick={() => setPerfCategory('balance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.balance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.balance} onClick={() => setPerfCategory('balance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.balance ? '' : 'hidden'}`}>
                   <XRayBackground type="balance" />
                   <h3 className="font-subheader text-[17px] text-white">Balance</h3>
                   <p className="text-[11px] text-white/40 font-light">Unipedal Stance Test.</p>
                 </button>
-                <button disabled={!catHasData.core_endurance} onClick={() => setPerfCategory('core_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.core_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.core_endurance} onClick={() => setPerfCategory('core_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.core_endurance ? '' : 'hidden'}`}>
                   <XRayBackground type="core_endurance" />
                   <h3 className="font-subheader text-[17px] text-white">Core Endurance & Stability</h3>
                   <p className="text-[11px] text-white/40 font-light">McGill's Core Endurance Test.</p>
                 </button>
-                <button disabled={!catHasData.movement} onClick={() => setPerfCategory('movement')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.movement ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.movement} onClick={() => setPerfCategory('movement')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-blue-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.movement ? '' : 'hidden'}`}>
                   <XRayBackground type="movement" />
                   <h3 className="font-subheader text-[17px] text-white">Movement</h3>
                   <p className="text-[11px] text-white/40 font-light">Movement pattern screens.</p>
                 </button>
-                <button disabled={!catHasData.cardio} onClick={() => setPerfCategory('cardio')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.cardio ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.cardio} onClick={() => setPerfCategory('cardio')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-cyan-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.cardio ? '' : 'hidden'}`}>
                   <XRayBackground type="cardio" />
                   <h3 className="font-subheader text-[17px] text-white">Cardio</h3>
                   <p className="text-[11px] text-white/40 font-light">VO2 Max & aerobic tests.</p>
                 </button>
-                <button disabled={!catHasData.muscular_endurance} onClick={() => setPerfCategory('muscular_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_endurance ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.muscular_endurance} onClick={() => setPerfCategory('muscular_endurance')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-amber-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_endurance ? '' : 'hidden'}`}>
                   <XRayBackground type="muscular_endurance" />
                   <h3 className="font-subheader text-[17px] text-white">Muscular Endurance</h3>
                   <p className="text-[11px] text-white/40 font-light">Push-ups, pull-ups, squats.</p>
                 </button>
-                <button disabled={!catHasData.muscular_strength} onClick={() => setPerfCategory('muscular_strength')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_strength ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.muscular_strength} onClick={() => setPerfCategory('muscular_strength')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-red-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.muscular_strength ? '' : 'hidden'}`}>
                   <XRayBackground type="muscular_strength" />
                   <h3 className="font-subheader text-[17px] text-white">Muscular Strength</h3>
                   <p className="text-[11px] text-white/40 font-light">1RM bench, squat, deadlift, OHP.</p>
                 </button>
-                <button disabled={!catHasData.saq} onClick={() => setPerfCategory('saq')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.saq ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.saq} onClick={() => setPerfCategory('saq')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-emerald-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.saq ? '' : 'hidden'}`}>
                   <XRayBackground type="saq" />
                   <h3 className="font-subheader text-[17px] text-white">SAQ</h3>
                   <p className="text-[11px] text-white/40 font-light">Speed, Agility & Quickness.</p>
                 </button>
-                <button disabled={!catHasData.power} onClick={() => setPerfCategory('power')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.power ? '' : 'opacity-35 grayscale cursor-not-allowed'}`}>
+                <button disabled={!catHasData.power} onClick={() => setPerfCategory('power')} className={`relative overflow-hidden bg-[#252525] border border-white/[0.06] hover:border-purple-400/40 rounded-2xl p-4 text-left transition space-y-1 ${catHasData.power ? '' : 'hidden'}`}>
                   <XRayBackground type="power" />
                   <h3 className="font-subheader text-[17px] text-white">Power</h3>
                   <p className="text-[11px] text-white/40 font-light">Vertical Jump.</p>
@@ -1716,7 +1848,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                       <img src="/posture-achievement-icon.PNG" alt="" className="w-16 h-16 mx-auto mb-3 object-contain" />
                       <p className="font-subheader text-[12px] uppercase tracking-widest text-[#6ccbde]">Posture</p>
                       <h2 className="font-subheader text-2xl text-white mt-1 leading-tight">You are already fit in posture</h2>
-                      <p className="text-xs text-white/60 mt-2 leading-relaxed">Your coach found nothing to correct. Stand tall, keep moving well, and keep this strong foundation going.</p>
+                      <p className="text-xs text-white/60 mt-2 leading-relaxed">Nothing to correct yet. Stand tall, keep moving well, and keep this strong foundation going.</p>
                       <div className="mt-4 h-[2px] bg-white/10 rounded-full overflow-hidden"><div className="h-full w-full bg-gradient-to-r from-[#ec2226] to-[#6ccbde] rounded-full" /></div>
                     </div>
                   );
@@ -1756,7 +1888,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <ScoreMeter data={historyFor(g.activityName)} color={cardColor} />
                             {reviewText && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewText}</p>
                               </div>
                             )}
@@ -1772,82 +1904,104 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             </div>
           )}
 
+          <TapJourney catKey={CAT_KEYS[perfCategory]} goals={goals} records={chronological as any[]}>
           {perfCategory === 'flexibility' && (
             <div>
               <BackButton />
               {(() => {
-                const tests: { key: keyof AssessmentSnapshot; scoreKey: keyof AssessmentSnapshot; label: string; color: string }[] = [
-                  { key: 'thomasTestPass', scoreKey: 'thomasTestScore', label: 'Thomas Test', color: '#ec2226' },
-                  { key: 'passiveStraightLegRaisePass', scoreKey: 'passiveStraightLegRaiseScore', label: 'Passive Straight Leg Raise', color: '#f59e0b' },
-                  { key: 'shoulderFlexionTestPass', scoreKey: 'shoulderFlexionScore', label: 'Shoulder Flexion Test', color: '#6ccbde' },
-                  { key: 'shoulderExtensionTestPass', scoreKey: 'shoulderExtensionScore', label: 'Shoulder Extension Test', color: '#a78bfa' },
+                const standardTests: { name: string; scoreKey: keyof AssessmentSnapshot; label: string }[] = [
+                  { name: 'Flexibility & Mobility: Thomas Test', scoreKey: 'thomasTestScore', label: 'Thomas Test' },
+                  { name: 'Flexibility & Mobility: Passive Straight Leg Raise', scoreKey: 'passiveStraightLegRaiseScore', label: 'Passive Straight Leg Raise' },
+                  { name: 'Flexibility & Mobility: Shoulder Flexion Test', scoreKey: 'shoulderFlexionScore', label: 'Shoulder Flexion Test' },
+                  { name: 'Flexibility & Mobility: Shoulder Extension Test', scoreKey: 'shoulderExtensionScore', label: 'Shoulder Extension Test' },
                 ];
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Flexibility & Mobility:') && !tests.some((t) => `Flexibility & Mobility: ${t.label}` === g.activityName));
-                const FLEX = 'Flexibility & Mobility: ';
-                const achieved = goals.filter((g) => g.activityName.startsWith(FLEX) && (g.status === 'Pass' || g.status === 'AlreadyFit')).reverse();
-                const flexHistoryFor = (g: GoalEntry): { date: string; value: number; note?: string }[] => {
-                  const t = tests.find((x) => `${FLEX}${x.label}` === g.activityName);
-                  if (t) return chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number, note: resultNote(a, g.activityName, t.scoreKey) }));
-                  return chronological.filter((a) => a.customActivityScores?.[g.activityName] != null).map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName], note: resultNote(a, g.activityName) }));
-                };
-                const flexScoreFor = (g: GoalEntry) => {
-                  if (g.value) return g.value;
-                  const t = tests.find((x) => `${FLEX}${x.label}` === g.activityName);
-                  const h = t ? chronological.filter((a) => a[t.scoreKey] != null) : [];
-                  return h.length > 0 ? String(h[h.length - 1][t!.scoreKey]) : undefined;
-                };
-                const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
-                const visibleTests = tests.filter((t) => !isPassedGoal(goals.find((g) => g.activityName === `${FLEX}${t.label}`)));
-                const visibleCustom = customGoals.filter((g) => !isPassedGoal(g));
+                const standardNames = standardTests.map((t) => t.name);
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith('Flexibility & Mobility:') && !standardNames.includes(g.activityName));
 
-                if (visibleTests.length === 0 && visibleCustom.length === 0 && achieved.length > 0) {
-                  const ordered = [...achieved].reverse();
-                  return (
-                    <AchievementsPage title="Flexibility & Mobility complete" items={ordered.map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
-                  );
+                const historyFor = (activityName: string) => {
+                  const standard = standardTests.find((t) => t.name === activityName);
+                  if (standard) {
+                    return chronological.filter((a) => a[standard.scoreKey] != null).map((a) => ({ date: a.date, value: a[standard.scoreKey] as number, note: resultNote(a, activityName, standard.scoreKey) }));
+                  }
+                  return chronological
+                    .filter((a) => a.customActivityScores?.[activityName] != null)
+                    .map((a) => ({ date: a.date, value: a.customActivityScores![activityName], note: resultNote(a, activityName) }));
+                };
+                const latestScoreFor = (activityName: string) => {
+                  const h = historyFor(activityName);
+                  return h.length > 0 ? h[h.length - 1].value : undefined;
+                };
+
+                // Every pre-defined test always has its card and graph (like Muscular Strength),
+                // even before it has a score or after its scores were removed.
+                const standardGoals: GoalEntry[] = standardTests.map((t) => (
+                  plainGoals.find((g) => g.activityName === t.name)
+                  || ({ id: `std-${t.name}`, activityName: t.name, status: 'Pending', dateAdded: '' } as GoalEntry)
+                ));
+                const allActivities = [...standardGoals, ...customGoals].reverse();
+
+                if (allActivities.length === 0) {
+                  return <p className="text-xs text-white/40 text-center py-6">No flexibility activities logged yet.</p>;
                 }
+
+                // Reaching 10/10 moves an activity out of the graphs into the "Achieved" rows below them.
+                const isAch = (g: GoalEntry) => historyFor(g.activityName).some((h) => h.value >= 10);
+                const order = buildActs('Flexibility & Mobility', goals, chronological as any[]).map((x) => x.name);
+                const rankOf = (g: GoalEntry) => { const i = order.indexOf(g.activityName); return i < 0 ? 999 : i; };
+                const achieved = allActivities.filter(isAch).sort((x, y) => rankOf(x) - rankOf(y));
+                const inProgress = allActivities.filter((g) => !isAch(g));
 
                 return (
                   <div className="space-y-4">
-                    <AchievementFitRow title="Flexibility & Mobility" items={[...achieved].reverse().map((g) => ({ id: g.id, name: g.activityName.replace(FLEX, ''), score: flexScoreFor(g), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: flexHistoryFor(g) }))} />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {visibleTests.map((t) => {
-                      const scoreData = chronological.filter((a) => a[t.scoreKey] != null).map((a) => ({ date: a.date, value: a[t.scoreKey] as number }));
-                      const latest = [...chronological].reverse().find((a) => a[t.key] != null);
-                      return (
-                        <div key={t.key} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
-                          <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${t.color}, transparent)` }} />
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{t.label}</span>
-                            {latest && (
-                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${latest[t.key] ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
-                                {latest[t.key] ? 'Pass' : 'In Progress'}
+
+                    {inProgress.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {inProgress.map((g, idx) => {
+                          const cardColor = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'][idx % 4];
+                          // A review belongs to a result: once every score is deleted, it is not shown any more.
+                          const reviewText = historyFor(g.activityName).length > 0 ? (g.coachReview || g.observation) : undefined;
+                          return (
+                          <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
+                            <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${cardColor}, transparent)` }} />
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
+                              {historyFor(g.activityName).length > 0 && (
+                              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                                historyFor(g.activityName).some((h) => h.value >= 10) ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                              }`}>
+                                {historyFor(g.activityName).some((h) => h.value >= 10) ? 'Achieved' : 'In Progress'}
                               </span>
+                              )}
+                            </div>
+                            <ScoreMeter data={historyFor(g.activityName)} color={cardColor} />
+                            {reviewText && (
+                              <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
+                                <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewText}</p>
+                              </div>
                             )}
                           </div>
-                          <ScoreMeter data={scoreData} color={t.color} />
-                          {goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview && (
-                            <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                              <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
-                              <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{goals.find((g) => g.activityName === `Flexibility & Mobility: ${t.label}`)?.coachReview}</p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {visibleCustom.map((g) => (
-                      <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
-                        <span className="font-subheader text-[17px] text-white block mb-1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
-                        {g.value && <span className="text-[11px] text-white/40 font-light">Score: <span className="font-mono">{g.value}/10</span></span>}
-                        {g.coachReview && (
-                          <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
-                            <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{g.coachReview}</p>
-                          </div>
-                        )}
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
+                    )}
+
+                    {achieved.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 pt-1">Achieved activities</div>
+                        {achieved.map((g) => (
+                          <div key={g.id} role="button" className="w-full flex items-center gap-3 bg-[#252525] border border-emerald-500/20 rounded-2xl px-4 py-3 cursor-pointer">
+                            <span className="w-6 h-6 rounded-full bg-emerald-500 text-black text-xs font-black flex items-center justify-center shrink-0">✓</span>
+                            <span className="flex-1 min-w-0">
+                              <span className="block font-subheader text-[15px] text-white truncate" data-actname="1">{g.activityName.replace('Flexibility & Mobility: ', '')}</span>
+                              <span className="block text-[10px] text-white/40">Best {Math.max(...historyFor(g.activityName).map((h) => h.value))}/10 · {historyFor(g.activityName).length} log{historyFor(g.activityName).length === 1 ? '' : 's'}</span>
+                            </span>
+                            <span className="text-white/30 text-lg">›</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                   </div>
                 );
               })()}
@@ -1863,10 +2017,10 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const sideData: SidePoint[] = chronological
                   .filter((a) => a.unipedalStanceLeftSeconds != null || a.unipedalStanceRightSeconds != null)
                   .map((a) => ({ date: a.date, left: a.unipedalStanceLeftSeconds as number | undefined, right: a.unipedalStanceRightSeconds as number | undefined, note: resultNote(a, STD) }));
-                const customGoals = goals.filter((g) => g.activityName.startsWith(BAL) && g.activityName !== STD);
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith(BAL) && g.activityName !== STD);
                 const palette = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'];
                 const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
-                const stdGoal = goals.find((g) => g.activityName === STD);
+                const stdGoal = plainGoals.find((g) => g.activityName === STD);
                 const customSides = (g: GoalEntry): SidePoint[] =>
                   chronological
                     .filter((a) => a.activitySides?.[g.activityName] != null)
@@ -1906,7 +2060,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         <SideComparison data={sideData} unit="s" />
                         {(stdGoal?.coachReview || stdGoal?.observation) && (
                           <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(stdGoal?.coachReview || stdGoal?.observation)}</p>
                           </div>
                         )}
@@ -1925,7 +2079,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                                 <SideComparison data={customSides(g)} unit="s" />
                                 {(g.coachReview || g.observation) && (
                           <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(g.coachReview || g.observation)}</p>
                           </div>
                         )}
@@ -1939,7 +2093,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
                               {(g.coachReview || g.observation) && (
                           <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                            <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                             <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{(g.coachReview || g.observation)}</p>
                           </div>
                         )}
@@ -1964,7 +2118,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const rightData = chronological.filter((a) => a.mcgillRightSideBridgeSeconds != null).map((a) => ({ date: a.date, value: a.mcgillRightSideBridgeSeconds as number }));
                 const leftData = chronological.filter((a) => a.mcgillLeftSideBridgeSeconds != null).map((a) => ({ date: a.date, value: a.mcgillLeftSideBridgeSeconds as number }));
                 const latest = [...chronological].reverse().find((a) => a.mcgillFlexorExtensorRatio || a.mcgillRightLeftSideRatio || a.mcgillRightToExtensorRatio || a.mcgillLeftToExtensorRatio);
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Core Endurance & Stability:') && g.activityName !== "Core Endurance & Stability: McGill's Test");
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith('Core Endurance & Stability:') && g.activityName !== "Core Endurance & Stability: McGill's Test");
                 const lastOf = (d: { date: string; value: number }[]) => (d.length > 0 ? d[d.length - 1].value : undefined);
                 const outCount = latest ? MCGILL_RATIOS.filter((r) => { const v = latest[r.key]; const n = v ? parseFloat(v) : NaN; return Number.isFinite(n) && r.out(n); }).length : 0;
                 const hasRatios = latest ? MCGILL_RATIOS.some((r) => !!latest[r.key]) : false;
@@ -1972,7 +2126,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const hasMcgill = flexorData.length + extensorData.length + rightData.length + leftData.length > 0;
                 const CORE = 'Core Endurance & Stability: ';
                 const MCG = "Core Endurance & Stability: McGill's Test";
-                const mcgillGoal = goals.find((g) => g.activityName === MCG);
+                const mcgillGoal = plainGoals.find((g) => g.activityName === MCG);
                 const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
                 const mcgillPassed = false; // McGill's test is tracked continuously (like BCA) - it is never marked passed
                 const palette = ['#ec2226', '#f59e0b', '#6ccbde', '#a78bfa'];
@@ -2064,7 +2218,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     )}
                       {mcgillReview && (
                         <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4">
-                          <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                          <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                           <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{mcgillReview}</p>
                         </div>
                       )}
@@ -2119,7 +2273,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <MiniLineChart data={customHistory(g)} color={color} unit="s" />
                               {review && (
                                 <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                  <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                                  <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                                   <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{review}</p>
                                 </div>
                               )}
@@ -2147,7 +2301,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   { name: 'Movement: Overhead Squat Test', scoreKey: 'overheadSquatTestScore', label: 'Overhead Squat Test' },
                 ];
                 const standardNames = standardTests.map((t) => t.name);
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Movement:') && !standardNames.includes(g.activityName));
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith('Movement:') && !standardNames.includes(g.activityName));
 
                 const historyFor = (activityName: string) => {
                   const standard = standardTests.find((t) => t.name === activityName);
@@ -2166,7 +2320,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 // Every pre-defined test always has its card and graph (like Muscular Strength),
                 // even before it has a score or after its scores were removed.
                 const standardGoals: GoalEntry[] = standardTests.map((t) => (
-                  goals.find((g) => g.activityName === t.name)
+                  plainGoals.find((g) => g.activityName === t.name)
                   || ({ id: `std-${t.name}`, activityName: t.name, status: 'Pending', dateAdded: '' } as GoalEntry)
                 ));
                 const allActivities = [...standardGoals, ...customGoals].reverse();
@@ -2175,18 +2329,15 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   return <p className="text-xs text-white/40 text-center py-6">No movement activities logged yet.</p>;
                 }
 
-                const achieved = allActivities.filter((g) => g.status === 'Pass' || g.status === 'AlreadyFit');
-                const inProgress = allActivities.filter((g) => g.status !== 'Pass' && g.status !== 'AlreadyFit');
-
-                if (inProgress.length === 0 && achieved.length > 0) {
-                  return (
-                    <AchievementsPage title="Movement complete" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
-                  );
-                }
+                // Reaching 10/10 moves an activity out of the graphs into the "Achieved" rows below them.
+                const isAch = (g: GoalEntry) => historyFor(g.activityName).some((h) => h.value >= 10);
+                const order = buildActs('Movement', goals, chronological as any[]).map((x) => x.name);
+                const rankOf = (g: GoalEntry) => { const i = order.indexOf(g.activityName); return i < 0 ? 999 : i; };
+                const achieved = allActivities.filter(isAch).sort((x, y) => rankOf(x) - rankOf(y));
+                const inProgress = allActivities.filter((g) => !isAch(g));
 
                 return (
                   <div className="space-y-4">
-                    <AchievementFitRow title="Movement" items={achieved.map((g) => ({ id: g.id, name: g.activityName.replace('Movement: ', ''), score: latestScoreFor(g.activityName), date: g.dateAchieved, note: g.coachReview || g.observation, status: g.status, history: historyFor(g.activityName) }))} />
 
                     {inProgress.length > 0 && (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2201,24 +2352,38 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                               <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide">{g.activityName.replace('Movement: ', '')}</span>
                               {historyFor(g.activityName).length > 0 && (
                               <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                                g.status === 'Pass' ? 'bg-emerald-500/20 text-emerald-300' :
-                                g.status === 'AlreadyFit' ? 'bg-amber-500/20 text-amber-300' :
-                                'bg-rose-500/20 text-rose-300'
+                                historyFor(g.activityName).some((h) => h.value >= 10) ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
                               }`}>
-                                {g.status === 'Pass' ? 'Pass' : g.status === 'AlreadyFit' ? 'Already Fit' : 'In Progress'}
+                                {historyFor(g.activityName).some((h) => h.value >= 10) ? 'Achieved' : 'In Progress'}
                               </span>
                               )}
                             </div>
                             <ScoreMeter data={historyFor(g.activityName)} color={cardColor} />
                             {reviewText && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewText}</p>
                               </div>
                             )}
                           </div>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {achieved.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-white/40 pt-1">Achieved activities</div>
+                        {achieved.map((g) => (
+                          <div key={g.id} role="button" className="w-full flex items-center gap-3 bg-[#252525] border border-emerald-500/20 rounded-2xl px-4 py-3 cursor-pointer">
+                            <span className="w-6 h-6 rounded-full bg-emerald-500 text-black text-xs font-black flex items-center justify-center shrink-0">✓</span>
+                            <span className="flex-1 min-w-0">
+                              <span className="block font-subheader text-[15px] text-white truncate" data-actname="1">{g.activityName.replace('Movement: ', '')}</span>
+                              <span className="block text-[10px] text-white/40">Best {Math.max(...historyFor(g.activityName).map((h) => h.value))}/10 · {historyFor(g.activityName).length} log{historyFor(g.activityName).length === 1 ? '' : 's'}</span>
+                            </span>
+                            <span className="text-white/30 text-lg">›</span>
+                          </div>
+                        ))}
                       </div>
                     )}
 
@@ -2235,7 +2400,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                 const vo2Data = chronological.filter((a) => a.vo2Max != null).map((a) => ({ date: a.date, value: a.vo2Max as number }));
                 const bpData = chronological.filter((a) => a.bloodPressureSystolic != null).map((a) => ({ date: a.date, value: a.bloodPressureSystolic as number }));
                 const conditioningData = chronological.filter((a) => a.aerobicCapacityScore != null).map((a) => ({ date: a.date, value: a.aerobicCapacityScore as number }));
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Cardio:') && g.activityName !== 'Cardio: VO2 Max');
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith('Cardio:') && g.activityName !== 'Cardio: VO2 Max');
                 const unitFor = (vt?: string) => vt === 'distance_km' ? 'km' : vt === 'duration_minutes' ? 'min' : vt === 'steps' ? 'steps' : '';
                 return (
                   <div className="space-y-3">
@@ -2281,7 +2446,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           const review = g.coachReview || g.observation;
                           const reviewBlock = review ? (
                             <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                              <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                              <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                               <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{review}</p>
                             </div>
                           ) : null;
@@ -2331,7 +2496,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   { key: 'bodyweightSquatsReps', label: 'Bodyweight Squats', color: '#6ccbde' },
                 ];
                 const standardNames = standards.map((x) => `${ME}${x.label}`);
-                const customGoals = goals.filter((g) => g.activityName.startsWith(ME) && !standardNames.includes(g.activityName));
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith(ME) && !standardNames.includes(g.activityName));
                 const palette = ['#a78bfa', '#ec2226', '#f59e0b', '#6ccbde'];
                 const isPassedGoal = (g?: GoalEntry) => !!g && (g.status === 'Pass' || g.status === 'AlreadyFit');
                 const standardHistory = (x: { key: keyof AssessmentSnapshot; label: string }) =>
@@ -2343,13 +2508,13 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                     .filter((a) => a.customActivityScores?.[g.activityName] != null)
                     .map((a) => ({ date: a.date, value: a.customActivityScores![g.activityName], note: resultNote(a, g.activityName) }));
                 const reviewFor = (name: string) => {
-                  const g = goals.find((x) => x.activityName === name);
+                  const g = plainGoals.find((x) => x.activityName === name);
                   return g?.coachReview || g?.observation;
                 };
                 const ReviewBlock: React.FC<{ text?: string }> = ({ text }) =>
                   text ? (
                     <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                      <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                      <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                       <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{text}</p>
                     </div>
                   ) : null;
@@ -2406,9 +2571,9 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                   { key: 'deadlift1RM', label: 'Deadlift 1RM', color: '#6ccbde' },
                   { key: 'overheadPress1RM', label: 'Overhead Press 1RM', color: '#a78bfa' },
                 ];
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Muscular Strength:') && !lifts.some((l) => `Muscular Strength: ${l.label}` === g.activityName));
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith('Muscular Strength:') && !lifts.some((l) => `Muscular Strength: ${l.label}` === g.activityName));
                 const reviewFor = (name: string) => {
-                  const g = goals.find((x) => x.activityName === name);
+                  const g = plainGoals.find((x) => x.activityName === name);
                   return g?.coachReview || g?.observation;
                 };
                 return (
@@ -2423,7 +2588,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             <MiniBarChart data={data} color={l.color} unit=" kg" />
                             {reviewFor(`Muscular Strength: ${l.label}`) && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{reviewFor(`Muscular Strength: ${l.label}`)}</p>
                               </div>
                             )}
@@ -2440,7 +2605,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                             {g.value && <span className="text-[11px] text-white/40 font-light"><span className="font-mono">{g.value} kg</span></span>}
                             {(g.coachReview || g.observation) && (
                               <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Coach review</span>
+                                <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
                                 <p className="text-xs text-white/90 font-normal leading-relaxed whitespace-pre-line">{g.coachReview || g.observation}</p>
                               </div>
                             )}
@@ -2459,7 +2624,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <BackButton />
               {(() => {
                 const tTestData = chronological.filter((a) => a.tTestSeconds != null).map((a) => ({ date: a.date, value: a.tTestSeconds as number }));
-                const customGoals = goals.filter((g) => g.activityName.startsWith('SAQ:') && g.activityName !== 'SAQ: T Test');
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith('SAQ:') && g.activityName !== 'SAQ: T Test');
                 return (
                   <div className="space-y-3">
                     <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
@@ -2488,7 +2653,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
               <BackButton />
               {(() => {
                 const jumpData = chronological.filter((a) => a.verticalJumpCm != null).map((a) => ({ date: a.date, value: a.verticalJumpCm as number }));
-                const customGoals = goals.filter((g) => g.activityName.startsWith('Power:'));
+                const customGoals = plainGoals.filter((g) => g.activityName.startsWith('Power:'));
                 return (
                   <div className="space-y-3">
                     <div className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
@@ -2512,6 +2677,7 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
             </div>
           )}
 
+          </TapJourney>
           {perfCategory === 'achievements' && (
             <div>
               <BackButton />
