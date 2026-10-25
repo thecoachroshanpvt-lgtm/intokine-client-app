@@ -10,6 +10,7 @@ export const ClientLoginScreen: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
+  const [forgotEmailOpen, setForgotEmailOpen] = useState(false);
 
   const handleForgot = async () => {
     const trimmed = email.trim().toLowerCase();
@@ -88,11 +89,11 @@ export const ClientLoginScreen: React.FC = () => {
       <div className="w-full max-w-sm space-y-10 relative z-10">
         <div className="flex flex-col items-center text-center">
           {IS_RECORDED && !zakiLogoFailed ? (
-            <img src="/zaki-logo.png" alt="KATBA" onError={() => setZakiLogoFailed(true)} className="w-24 h-auto object-contain" />
+            <img src="/zaki-logo.png" alt="KATBA" onError={() => setZakiLogoFailed(true)} className="w-[13.5rem] max-w-[72%] h-auto object-contain" style={{ filter: 'drop-shadow(0 2px 10px rgba(0,0,0,0.35))' }} />
           ) : (
             <img src="/brand-icon.png" alt="INTOKINE" className="h-5 w-auto object-contain" />
           )}
-          <p className="mt-5 text-[10px] text-white/55 font-semibold uppercase tracking-[0.18em] whitespace-nowrap">Sign in to see your training plan</p>
+          <p className="mt-7 text-[10px] text-white/55 font-semibold uppercase tracking-[0.18em] whitespace-nowrap">Sign in to see your training plan</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-3">
@@ -134,13 +135,11 @@ export const ClientLoginScreen: React.FC = () => {
             {loading ? 'SIGNING IN...' : 'SIGN IN'}
           </button>
 
-          <button
-            type="button"
-            onClick={handleForgot}
-            className="w-full text-center text-[11px] text-white/50 underline font-light"
-          >
-            Forgot password?
-          </button>
+          <div className="flex items-center justify-center gap-3 text-[11px] text-white/50 font-light">
+            <button type="button" onClick={() => setForgotEmailOpen(true)} className="underline">Forgot email?</button>
+            <span className="text-white/20" aria-hidden>|</span>
+            <button type="button" onClick={handleForgot} className="underline">Forgot password?</button>
+          </div>
           {resetMessage && (
             <p className="text-[11px] text-[#6ccbde] text-center font-light">{resetMessage}</p>
           )}
@@ -150,6 +149,34 @@ export const ClientLoginScreen: React.FC = () => {
           Don't have login details? Ask your coach.
         </p>
       </div>
+      {forgotEmailOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-5" onClick={() => setForgotEmailOpen(false)}>
+          <div className="w-full max-w-sm bg-[#1c1c1c] border border-white/[0.1] rounded-t-3xl sm:rounded-2xl p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide">Forgot your email?</h3>
+              <button type="button" onClick={() => setForgotEmailOpen(false)} className="text-white/40 text-xl leading-none px-1" aria-label="Close">×</button>
+            </div>
+            <p className="text-[12px] text-white/60 font-light leading-relaxed">
+              For your privacy, we never show which email belongs to an account. Your login email is the one your coach registered for you.
+            </p>
+            <ol className="space-y-2.5">
+              {[
+                'Search your inbox (and spam) for a message from INTOKINE or your coach with your login details.',
+                'Try your other email addresses, then tap “Forgot password?” with each. A reset link arrives only at the right one.',
+                'Still not sure? Message your coach. They can confirm the email on your account or update it for you.',
+              ].map((t, i) => (
+                <li key={i} className="flex gap-3 text-[12px] text-white/75 font-light leading-relaxed">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-[#6ccbde]/15 text-[#6ccbde] text-[11px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                  <span>{t}</span>
+                </li>
+              ))}
+            </ol>
+            <button type="button" onClick={() => setForgotEmailOpen(false)} className="w-full py-3 rounded-xl text-sm font-bold text-white" style={{ background: 'linear-gradient(90deg, #ec2226, #6ccbde)' }}>
+              Back to sign in
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

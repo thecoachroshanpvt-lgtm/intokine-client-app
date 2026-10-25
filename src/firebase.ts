@@ -23,6 +23,7 @@ import {
   sendPasswordResetEmail,
   signOut,
   updatePassword,
+  verifyBeforeUpdateEmail,
   reauthenticateWithCredential,
   EmailAuthProvider,
   Auth,
@@ -81,6 +82,7 @@ export {
   sendPasswordResetEmail,
   signOut,
   updatePassword,
+  verifyBeforeUpdateEmail,
   reauthenticateWithCredential,
   EmailAuthProvider,
 };

@@ -4,6 +4,7 @@ import {
   onAuthStateChanged,
   doc,
   getDoc,
+  setDoc,
   User,
 } from './firebase';
 import { WelcomeScreen } from './WelcomeScreen';
@@ -68,7 +69,14 @@ function App() {
             const accountDoc = await getDoc(doc(db, 'intokine_client_accounts', user.uid));
             if (accountDoc.exists()) {
               const data = accountDoc.data();
-              setClientInfo({ clientId: data.clientId, name: data.name, email: data.email || '' });
+              setClientInfo({ clientId: data.clientId, name: data.name, email: user.email || data.email || '' });
+              // After the client confirms a new login email, keep the account record (shown in Coach OS) in step with it.
+              if (user.email && String(data.email || '').toLowerCase() !== user.email.toLowerCase()) {
+                try {
+                  await user.getIdToken(true);
+                  await setDoc(doc(db, 'intokine_client_accounts', user.uid), { email: user.email.toLowerCase() }, { merge: true });
+                } catch { /* the sign-in itself still works; the record is updated next time */ }
+              }
               setLookupError('');
 
               // Also fetch their real client record, to get their

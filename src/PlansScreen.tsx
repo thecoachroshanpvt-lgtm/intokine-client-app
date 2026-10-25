@@ -11,6 +11,7 @@ import {
   getDoc,
   signOut,
   updatePassword,
+  verifyBeforeUpdateEmail,
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from './firebase';
@@ -157,9 +158,12 @@ function getPhase(percentThrough: number): string {
   return 'Peak Phase';
 }
 
-/** Settings pop-up: change password and log out. */
+/** Settings pop-up: change email, change password and log out. */
 const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [mode, setMode] = useState<'menu' | 'password'>('menu');
+  const [mode, setMode] = useState<'menu' | 'password' | 'email'>('menu');
+  const [newEmail, setNewEmail] = useState('');
+  const [emailSent, setEmailSent] = useState('');
+  const currentEmail = initializeClientFirebaseApp().auth?.currentUser?.email || '';
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -177,6 +181,34 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const logOut = async () => {
     const { auth } = initializeClientFirebaseApp();
     if (auth) await signOut(auth);
+  };
+
+  const changeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const target = newEmail.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(target)) { setError('Please enter a valid email address.'); return; }
+    if (target === currentEmail.toLowerCase()) { setError('That is already your login email.'); return; }
+    const { auth } = initializeClientFirebaseApp();
+    const user = auth?.currentUser;
+    if (!auth || !user || !user.email) { setError('Please log in again and retry.'); return; }
+    setBusy(true);
+    try {
+      await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, current));
+      await verifyBeforeUpdateEmail(user, target);
+      setEmailSent(target);
+    } catch (err: any) {
+      const code = err?.code || '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') setError('Password is incorrect.');
+      else if (code === 'auth/invalid-email') setError('Please enter a valid email address.');
+      else if (code === 'auth/email-already-in-use') setError('That email is already used by another account.');
+      else if (code === 'auth/too-many-requests') setError('Too many attempts. Please try again later.');
+      else if (code === 'auth/requires-recent-login') setError('Please log out, log in again, and retry.');
+      else if (code === 'auth/network-request-failed') setError('No internet connection. Please try again.');
+      else setError('Could not start the email change. Please try again.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   const changePassword = async (e: React.FormEvent) => {
@@ -209,11 +241,20 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     <div className="anim-overlay fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-5 pb-24" onClick={onClose}>
       <div className="anim-card bg-[#1c1c1c] border border-white/[0.1] rounded-2xl w-full max-w-sm max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="px-4 py-3 border-b border-white/[0.06] flex items-center justify-between">
-          <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide">{mode === 'menu' ? 'Settings' : 'Change password'}</h3>
+          <h3 className="font-subheader text-[17px] text-white uppercase tracking-wide">{mode === 'menu' ? 'Settings' : mode === 'email' ? 'Change email' : 'Change password'}</h3>
           <button type="button" onClick={onClose} className="text-white/40 text-lg leading-none px-1">×</button>
         </div>
         {mode === 'menu' ? (
           <div className="p-4 space-y-2.5">
+            {currentEmail && (
+              <div className="px-1 pb-1">
+                <div className="text-[10px] uppercase font-bold tracking-wide text-white/40">Login email</div>
+                <div className="text-sm text-white/80 font-light break-all">{currentEmail}</div>
+              </div>
+            )}
+            <button type="button" onClick={() => { setMode('email'); setError(''); setCurrent(''); }} className="w-full text-left bg-[#252525] border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-semibold text-white">
+              Change email
+            </button>
             <button type="button" onClick={() => setMode('password')} className="w-full text-left bg-[#252525] border border-white/[0.06] rounded-xl px-4 py-3 text-sm font-semibold text-white">
               Change password
             </button>
@@ -221,6 +262,28 @@ const SettingsModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
               Log out
             </button>
           </div>
+        ) : mode === 'email' ? (
+          emailSent ? (
+            <div className="p-4 space-y-3">
+              <p className="text-sm text-emerald-300 font-semibold">Check your new inbox</p>
+              <p className="text-[12px] text-white/70 font-light leading-relaxed">
+                We sent a verification link to <span className="text-white break-all">{emailSent}</span>. Tap it to confirm the change.
+                Until then, keep signing in with <span className="text-white break-all">{currentEmail}</span>. If you don't see it, check spam.
+              </p>
+              <button type="button" onClick={onClose} className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#ec2226] to-[#6ccbde]">Done</button>
+            </div>
+          ) : (
+            <form onSubmit={changeEmail} className="p-4 space-y-3">
+              <p className="text-[12px] text-white/55 font-light leading-relaxed">Enter the new email you want to log in with. We'll send a link there to confirm it.</p>
+              <input type="email" autoComplete="email" placeholder="New email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className={inputCls} required />
+              <PasswordInput autoComplete="current-password" placeholder="Your password" value={current} onChange={(e) => setCurrent(e.target.value)} className={inputCls} required />
+              {error && <p className="text-xs text-[#ec2226]">{error}</p>}
+              <button type="submit" disabled={busy} className="w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-[#ec2226] to-[#6ccbde] disabled:opacity-50">
+                {busy ? 'Sending...' : 'Send verification link'}
+              </button>
+              <button type="button" onClick={() => { setMode('menu'); setError(''); }} className="w-full text-xs text-white/50">Back</button>
+            </form>
+          )
         ) : done ? (
           <div className="p-4 space-y-3">
             <p className="text-sm text-emerald-300">Your password has been changed.</p>
