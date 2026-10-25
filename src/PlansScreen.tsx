@@ -44,6 +44,7 @@ interface TrainerizeSet {
   targetReps: number;
   rpe?: number;
   restSeconds?: number;
+  timeSeconds?: number;
 }
 
 interface TrainerizeExercise {
@@ -246,6 +247,8 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
   const [plans, setPlans] = useState<VisiblePlan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [startDate, setStartDate] = useState<string | null>(null);
+  // The consistency score never restarts on renewal; it only restarts when the coach resets the client (which sets this date).
+  const [consistencyFrom, setConsistencyFrom] = useState<string | null>(null);
   const [renewalDate, setRenewalDate] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [packageSessions, setPackageSessions] = useState<number | null>(null);
@@ -301,6 +304,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
         if (clientDoc.exists()) {
           const data = clientDoc.data();
           setStartDate(data.startDate || null);
+          setConsistencyFrom(typeof data.consistencyFrom === 'string' && data.consistencyFrom ? data.consistencyFrom : null);
           setRenewalDate(data.renewalDate || null);
           setPackageSessions(typeof data.packageSessions === 'number' && data.packageSessions > 0 ? data.packageSessions : null);
           setPackageBaselineIds(Array.isArray(data.packageBaselineIds) ? data.packageBaselineIds : null);
@@ -771,7 +775,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
       })()}
 
       {/* Overall consistency: diet, routine, session attendance and suggested workouts */}
-      <OverallProgressCard clientId={clientId} startDate={startDate} plans={plans} sessions={allSessionsList} />
+      <OverallProgressCard clientId={clientId} startDate={consistencyFrom} plans={plans} sessions={allSessionsList} clientName={clientName} />
 
       {/* Testimonials - auto-scrolling approved client feedback + a form to share your own */}
       <Testimonials clientId={clientId} clientName={clientName} />
