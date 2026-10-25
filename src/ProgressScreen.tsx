@@ -2276,8 +2276,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                           return (
                             <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                               <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
-                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(CORE, '')} <span className="normal-case text-white/30">(in seconds)</span></span>
-                              <MiniLineChart data={customHistory(g)} color={color} unit="s" />
+                              <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(CORE, '')} <span className="normal-case text-white/30">({g.valueType === 'reps' ? 'in reps' : 'in seconds'})</span></span>
+                              <MiniLineChart data={customHistory(g)} color={color} unit={g.valueType === 'reps' ? ' reps' : 's'} />
                               {review && (
                                 <div className="mt-3 pt-3 border-t border-white/[0.06]">
                                   <span className="font-subheader text-[12px] text-[#6ccbde] uppercase tracking-wide block mb-1">Review</span>
@@ -2555,8 +2555,8 @@ export const ProgressScreen: React.FC<ProgressScreenProps> = ({ clientId }) => {
                         return (
                           <div key={g.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 relative overflow-hidden">
                             <span className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${color}, transparent)` }} />
-                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(ME, '')} <span className="normal-case text-white/30">(in reps)</span></span>
-                            <MiniBarChart data={customHistory(g)} color={color} unit=" reps" />
+                            <span className="text-[10px] text-white/40 uppercase font-bold tracking-wide block mb-2">{g.activityName.replace(ME, '')} <span className="normal-case text-white/30">({g.valueType === 'time_seconds' ? 'in seconds' : 'in reps'})</span></span>
+                            <MiniBarChart data={customHistory(g)} color={color} unit={g.valueType === 'time_seconds' ? 's' : ' reps'} />
                             <ReviewBlock text={g.coachReview || g.observation} />
                           </div>
                         );
