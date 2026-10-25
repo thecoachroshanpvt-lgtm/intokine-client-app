@@ -5,7 +5,15 @@ import { ContactCoachPill } from './CoachContact';
 import { IS_RECORDED } from './variant';
 import { bestOfAllTime, type BestPlan, type BestPerf } from './BestOfAllTime';
 import { ExerciseResultEditor, setText, type ResultMap, type ExerciseResult } from './ExerciseResultEditor';
-import { durationCell } from './duration';
+
+/** 45 -> "45 sec", 90 -> "1 min 30 sec", 600 -> "10 min" */
+const fmtSecs = (total: number): string => {
+  const m = Math.floor(total / 60);
+  const sc = Math.round(total % 60);
+  if (m && sc) return `${m} min ${sc} sec`;
+  if (m) return `${m} min`;
+  return `${sc} sec`;
+};
 
 interface TrainerizeSet {
   id: string;
@@ -18,6 +26,7 @@ interface TrainerizeSet {
   targetReps: number;
   rpe?: number;
   restSeconds?: number;
+  timeSeconds?: number;
   setsCount?: number;
   tempo?: string;
   holdSeconds?: number;
@@ -83,7 +92,7 @@ const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean):
   if (type === 'Weighted') cells.push({ label: 'Weight', value: String(s.targetWeightKg || 0), unit: 'kg' }, { label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Bodyweight') cells.push({ label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Isometric') cells.push({ label: 'Hold', value: String(s.holdSeconds || 0), unit: 'sec' });
-  else if (type === 'DurationCardio') cells.push({ label: 'Time', value: durationCell(s.durationMinutes).value, unit: durationCell(s.durationMinutes).unit }, { label: 'Method', value: s.method || dash, text: true });
+  else if (type === 'DurationCardio') cells.push({ label: 'Time', value: String(s.durationMinutes || 0), unit: 'min' }, { label: 'Method', value: s.method || dash, text: true });
   else if (type === 'DistanceCardio') cells.push({ label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }, { label: 'Method', value: s.method || dash, text: true });
   if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash, text: true });
   if (type === 'Weighted' || type === 'Bodyweight' || type === 'Isometric') cells.push({ label: 'RPE', value: rpe, accent: true });
@@ -484,18 +493,25 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                         </div>
 
                         {/* Rest (left) and Sets (right) sit between this exercise and the next */}
-                        {(first?.setsCount || first?.restSeconds) ? (
-                          <div className="relative pl-12 flex items-center justify-between gap-2">
-                            <span className="min-w-0">
-                              {first?.restSeconds ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">
-                                  Rest <span className="font-mono">{first.restSeconds}</span>s
+                        {(first?.setsCount || first?.restSeconds || first?.timeSeconds) ? (
+                          <div className="relative pl-12 space-y-1.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="min-w-0">
+                                {first?.restSeconds ? (
+                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">
+                                    Rest <span className="font-mono">{fmtSecs(first.restSeconds)}</span>
+                                  </span>
+                                ) : null}
+                              </span>
+                              {first?.setsCount ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold shrink-0">
+                                  <span className="font-mono">{first.setsCount}</span> Sets
                                 </span>
                               ) : null}
-                            </span>
-                            {first?.setsCount ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold shrink-0">
-                                <span className="font-mono">{first.setsCount}</span> Sets
+                            </div>
+                            {first?.timeSeconds ? (
+                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">
+                                Time <span className="font-mono">{fmtSecs(first.timeSeconds)}</span>
                               </span>
                             ) : null}
                           </div>
