@@ -37,9 +37,11 @@ export const buildActs = (catKey: string, goals: any[], recs: any[]): Act[] => {
     if (!mine.length) return;
     const series: Series[] = it.labels.map((label, i) => ({ label, color: COLORS[i % COLORS.length], points: mine.map((r) => ({ date: r.date, value: it.get(r)[i] as number })).filter((p) => p.value !== undefined) }));
     const reviewFor = (r: any) => (r.activityObservations?.[it.name] || (it.std?.obsField ? r[it.std.obsField] : '') || '').toString();
+    const minSec = it.kind === 'number' && it.unit === 'sec' && !it.std && (catKey === 'Core Endurance & Stability' || catKey === 'Muscular Endurance');
+    const mmss = (t: number) => (t >= 60 ? `${Math.floor(t / 60)} min${Math.round(t) % 60 ? ` ${Math.round(t) % 60} sec` : ''}` : `${Math.round(t)} sec`);
     const logs: Log[] = [...mine].reverse().map((r) => {
       const v = it.get(r);
-      const text = it.kind === 'score10' ? `${v[0]}/10` : v.map((x, i) => (x === undefined ? null : (it.labels.length > 1 ? `${it.labels[i]} ` : '') + x)).filter(Boolean).join(' · ') + (it.unit && it.kind !== 'score10' ? ` ${it.unit}` : '');
+      const text = minSec && v[0] !== undefined ? mmss(v[0] as number) : it.kind === 'score10' ? `${v[0]}/10` : v.map((x, i) => (x === undefined ? null : (it.labels.length > 1 ? `${it.labels[i]} ` : '') + x)).filter(Boolean).join(' · ') + (it.unit && it.kind !== 'score10' ? ` ${it.unit}` : '');
       return { id: r.id, date: r.date, text, review: reviewFor(r) };
     });
     const passed = it.kind === 'score10' && series[0].points.some((p) => p.value >= 10);

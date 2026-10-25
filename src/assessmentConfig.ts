@@ -235,7 +235,10 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
         ],
       },
     ],
-    customKinds: [{ label: 'Time in seconds', kind: 'number', unit: 'sec', valueType: 'time_seconds' }],
+    customKinds: [
+      { label: 'Time (min · sec)', kind: 'number', unit: 'sec', valueType: 'time_seconds' },
+      { label: 'Reps', kind: 'number', unit: 'reps', valueType: 'reps' },
+    ],
     review: true,
     placeholder: 'e.g. Plank Hold',
   },
@@ -260,7 +263,10 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
       numberStandard('Muscular Endurance', 'Pull-Ups', 'pullUpMaxReps', 'reps', false),
       numberStandard('Muscular Endurance', 'Bodyweight Squats', 'bodyweightSquatsReps', 'reps', false),
     ],
-    customKinds: [{ label: 'Reps', kind: 'number', unit: 'reps', valueType: 'reps' }],
+    customKinds: [
+      { label: 'Reps', kind: 'number', unit: 'reps', valueType: 'reps' },
+      { label: 'Time (min · sec)', kind: 'number', unit: 'sec', valueType: 'time_seconds' },
+    ],
     review: true,
     placeholder: 'e.g. Wall Sit',
     optional: true,
