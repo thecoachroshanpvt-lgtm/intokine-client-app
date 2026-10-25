@@ -145,7 +145,7 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
   const top = o.parts.filter((p) => p.key === 'diet' || p.key === 'routine');
   top.forEach((p, i) => {
     const x = top.length === 1 ? cx : cx + (i === 0 ? -210 : 210);
-    stat(x, 480, pctOf(p), p.label, p.frac, p.sub);
+    stat(x, 500, pctOf(p), p.label, p.frac, p.sub);
   });
 
   // ---- the number: big and light, no circle
@@ -232,10 +232,10 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
   o.parts.filter((p) => p.key !== 'diet' && p.key !== 'routine').forEach((p) => {
     bottom.push({ value: pctOf(p), label: p.label, frac: p.count !== undefined ? (p.count > 0 ? 1 : 0) : p.frac, sub: p.sub });
   });
-  bottom.push({ value: String(o.variety), label: 'Activity variety', frac: o.variety > 0 ? 1 : 0, sub: 'This month' });
+  bottom.push({ value: String(o.variety), label: 'Variety', frac: o.variety > 0 ? 1 : 0 });
   const my = 1500;
   bottom.forEach((b, i) => {
-    const x = bottom.length === 1 ? cx : cx + (i - (bottom.length - 1) / 2) * 340;
+    const x = bottom.length === 1 ? cx : cx + (i - (bottom.length - 1) / 2) * 420;
     stat(x, my, b.value, b.label, b.frac, b.sub);
   });
 
