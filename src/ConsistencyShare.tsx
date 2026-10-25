@@ -109,23 +109,44 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
     c.fillText(APP_NAME, cx, 336);
   }
 
-  // ---- activity variety: how many different other activities this month, centred above the main score
-  if (o.variety > 0) {
+  // one quiet stat: number, label, hairline underline (+ optional small line)
+  const stat = (x: number, y: number, value: string, label: string, fillFrac: number | null, sub?: string) => {
     shadow();
     c.fillStyle = '#fff';
-    c.font = `300 92px ${BODY}`;
+    c.font = `300 86px ${BODY}`;
     ls(-2);
-    c.fillText(String(o.variety), cx, 516);
+    c.fillText(value, x, y);
     c.fillStyle = 'rgba(255,255,255,0.7)';
     c.font = `600 24px ${BODY}`;
     ls(6);
-    c.fillText('ACTIVITY VARIETY', cx, 566);
-    c.fillStyle = 'rgba(255,255,255,0.5)';
-    c.font = `400 21px ${BODY}`;
-    ls(3);
-    c.fillText('THIS MONTH', cx, 600);
+    c.fillText(label.toUpperCase(), x, y + 54);
     noShadow();
-  }
+    const bw = 130, by = y + 86;
+    c.lineWidth = 3;
+    c.lineCap = 'round';
+    c.strokeStyle = track;
+    c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x + bw / 2, by); c.stroke();
+    if (fillFrac !== null && fillFrac > 0) {
+      c.strokeStyle = ACCENT;
+      c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x - bw / 2 + bw * Math.max(fillFrac, 0.04), by); c.stroke();
+    }
+    if (sub) {
+      shadow();
+      c.fillStyle = 'rgba(255,255,255,0.5)';
+      c.font = `400 21px ${BODY}`;
+      ls(3);
+      c.fillText(sub.toUpperCase(), x, y + 128);
+      noShadow();
+    }
+  };
+  const pctOf = (p: SharePart) => (p.count !== undefined ? String(p.count) : p.frac === null ? '–' : `${Math.round(p.frac * 100)}`);
+
+  // ---- top: Diet and Routine, side by side above the big score
+  const top = o.parts.filter((p) => p.key === 'diet' || p.key === 'routine');
+  top.forEach((p, i) => {
+    const x = top.length === 1 ? cx : cx + (i === 0 ? -210 : 210);
+    stat(x, 480, pctOf(p), p.label, p.frac, p.sub);
+  });
 
   // ---- the number: big and light, no circle
   const pct = o.overall === null ? 0 : o.overall / 100;
@@ -206,43 +227,16 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
   c.fillText(headline(o.overall), cx, 1262);
   noShadow();
 
-  // ---- three quiet numbers with a hairline under each
-  const rows = o.parts;
-  const n = Math.max(rows.length, 1);
-  const col = (W - 2 * 100) / n;
+  // ---- bottom: Workouts and Activity variety, where Diet / Routine / Workouts used to sit
+  const bottom: { value: string; label: string; frac: number | null; sub?: string }[] = [];
+  o.parts.filter((p) => p.key !== 'diet' && p.key !== 'routine').forEach((p) => {
+    bottom.push({ value: pctOf(p), label: p.label, frac: p.count !== undefined ? (p.count > 0 ? 1 : 0) : p.frac, sub: p.sub });
+  });
+  bottom.push({ value: String(o.variety), label: 'Activity variety', frac: o.variety > 0 ? 1 : 0, sub: 'This month' });
   const my = 1500;
-  rows.forEach((p, i) => {
-    const x = 100 + col * i + col / 2;
-    shadow();
-    c.fillStyle = '#fff';
-    c.font = `300 86px ${BODY}`;
-    ls(-2);
-    c.fillText(p.count !== undefined ? String(p.count) : p.frac === null ? '–' : `${Math.round(p.frac * 100)}`, x, my);
-    c.fillStyle = 'rgba(255,255,255,0.7)';
-    c.font = `600 24px ${BODY}`;
-    ls(6);
-    c.fillText(p.label.toUpperCase(), x, my + 54);
-    noShadow();
-    // hairline under every number: grey track, accent colour for the share done.
-    // A count (Workouts) has no share, so its line is drawn full once there is at least one.
-    const bw = 130, by = my + 86;
-    const fillFrac = p.count !== undefined ? (p.count > 0 ? 1 : 0) : p.frac;
-    c.lineWidth = 3;
-    c.lineCap = 'round';
-    c.strokeStyle = track;
-    c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x + bw / 2, by); c.stroke();
-    if (fillFrac !== null && fillFrac > 0) {
-      c.strokeStyle = ACCENT;
-      c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x - bw / 2 + bw * Math.max(fillFrac, 0.04), by); c.stroke();
-    }
-    if (p.sub) {
-      shadow();
-      c.fillStyle = 'rgba(255,255,255,0.5)';
-      c.font = `400 21px ${BODY}`;
-      ls(3);
-      c.fillText(p.sub.toUpperCase(), x, my + 128);
-      noShadow();
-    }
+  bottom.forEach((b, i) => {
+    const x = bottom.length === 1 ? cx : cx + (i - (bottom.length - 1) / 2) * 340;
+    stat(x, my, b.value, b.label, b.frac, b.sub);
   });
 
   // ---- footer
