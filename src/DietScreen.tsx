@@ -170,7 +170,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       (snap) => {
         // If an older copy of the plan is still stored, show the newest one (plan ids carry their creation time).
         const stamp = (d: any) => Number(String(d.id || '').split('-')[1]) || 0;
-        const newest = [...snap.docs].sort((a, b) => stamp(b) - stamp(a) || String(b.data().lastUpdated || '').localeCompare(String(a.data().lastUpdated || '')))[0];
+        const upd = (d: any) => Number(d.data().updatedAt) || 0;
+        const newest = [...snap.docs].sort((a, b) => upd(b) - upd(a) || String(b.data().lastUpdated || '').localeCompare(String(a.data().lastUpdated || '')) || stamp(b) - stamp(a) || String(b.data().lastUpdated || '').localeCompare(String(a.data().lastUpdated || '')))[0];
         setPlan(newest ? (newest.data() as DietPlan) : null);
         setLoading(false);
       },
