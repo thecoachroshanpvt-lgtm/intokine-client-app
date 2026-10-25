@@ -173,10 +173,12 @@ export const OverallProgressCard: React.FC<{
   // Workouts is the total number of sessions and suggested workouts done since the start.
   const shareParts = useMemo(() => {
     const by = (k: string) => parts.find((p) => p.key === k);
-    const doneTotal = allTime.filter((p) => p.key === 'sessions' || p.key === 'workouts').reduce((a, p) => a + p.done, 0);
+    const wp = allTime.filter((p) => p.key === 'sessions' || p.key === 'workouts');
+    const doneTotal = wp.reduce((a, p) => a + p.done, 0);
+    const totalAll = wp.reduce((a, p) => a + p.total, 0);
     const out: { key: string; label: string; frac: number | null; count?: number; sub?: string }[] = [];
     (['diet', 'routine'] as const).forEach((k) => { const p = by(k); if (p) out.push({ key: k, label: p.label, frac: p.frac }); });
-    out.push({ key: 'workouts', label: 'Workouts', frac: null, count: Math.round(doneTotal) });
+    out.push({ key: 'workouts', label: 'Workouts', frac: totalAll > 0 ? Math.min(1, doneTotal / totalAll) : null, count: Math.round(doneTotal) });
     return out;
   }, [parts, allTime]);
   // Other activities: how many different ones this month (football, cricket, badminton ...). Shown above the big score on the share card.

@@ -139,7 +139,9 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
       noShadow();
     }
   };
-  const pctOf = (p: SharePart) => (p.count !== undefined ? String(p.count) : p.frac === null ? '–' : `${Math.round(p.frac * 100)}`);
+  // nothing yet (0 or no data) shows an empty dash, never a 0
+  const nz = (v: string) => (v === '0' ? '–' : v);
+  const pctOf = (p: SharePart) => nz(p.count !== undefined ? String(p.count) : p.frac === null ? '–' : `${Math.round(p.frac * 100)}`);
 
   // ---- top: Diet and Routine, side by side above the big score
   const top = o.parts.filter((p) => p.key === 'diet' || p.key === 'routine');
@@ -230,9 +232,9 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
   // ---- bottom: Workouts and Activity variety, where Diet / Routine / Workouts used to sit
   const bottom: { value: string; label: string; frac: number | null; sub?: string }[] = [];
   o.parts.filter((p) => p.key !== 'diet' && p.key !== 'routine').forEach((p) => {
-    bottom.push({ value: pctOf(p), label: p.label, frac: p.count !== undefined ? (p.count > 0 ? 1 : 0) : p.frac, sub: p.sub });
+    bottom.push({ value: pctOf(p), label: p.label, frac: p.frac, sub: p.sub });
   });
-  bottom.push({ value: String(o.variety), label: 'Variety', frac: o.variety > 0 ? 1 : 0 });
+  bottom.push({ value: nz(String(o.variety)), label: 'Variety', frac: Math.min(1, o.variety / 4) });
   const my = 1500;
   bottom.forEach((b, i) => {
     const x = bottom.length === 1 ? cx : cx + (i - (bottom.length - 1) / 2) * 420;
