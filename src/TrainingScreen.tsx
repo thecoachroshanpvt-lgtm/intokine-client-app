@@ -135,7 +135,7 @@ const VideoThumb: React.FC<{ url?: string; name: string; dim?: boolean; onOpen: 
       type="button"
       onClick={onOpen}
       aria-label={`Watch ${name} demonstration`}
-      className={`relative shrink-0 w-[88px] h-[66px] rounded-xl overflow-hidden bg-black/30 flex items-center justify-center ${dim ? 'opacity-50' : ''}`}
+      className={`relative shrink-0 w-[64px] h-[48px] rounded-lg overflow-hidden bg-black/30 flex items-center justify-center ${dim ? 'opacity-50' : ''}`}
     >
       {yt ? (
         <img src={`https://img.youtube.com/vi/${yt}/hqdefault.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -347,7 +347,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
         )}
 
         {workout.coachSessionNotes && (
-          <div className="mt-4 flex gap-2.5">
+          <div className="mt-2.5 flex gap-2">
             <div className="w-[3px] rounded-full bg-[#6ccbde] shrink-0" />
             <p className="text-[12px] text-white/75 leading-relaxed italic">"{workout.coachSessionNotes}"</p>
           </div>
@@ -372,17 +372,17 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                     <div className="flex-1 h-px bg-white/[0.08]" />
                   </div>
                 )}
-                <div className="relative space-y-2.5">
+                <div className="relative space-y-2">
                   {/* the rail the exercises hang on */}
-                  <div className="absolute left-[17px] top-5 bottom-5 w-px bg-white/[0.1]" />
+                  <div className="absolute left-[13px] top-4 bottom-4 w-px bg-white/[0.1]" />
                   {g.items.map((ex) => {
                     const isDone = isDoneId(ex.id);
 
                     if (ex.isStretchReminder) {
                       return (
-                        <button key={ex.id} onClick={() => toggleExerciseDone(ex.id)} className="relative w-full pl-12 text-left block">
-                          <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold ${isDone ? 'bg-emerald-500 text-[#0b0c10]' : 'bg-[#252525] text-[#6ccbde]'}`}>{isDone ? '✓' : '✦'}</span>
-                          <span className={`block rounded-2xl px-4 py-3.5 bg-[#252525] font-subheader text-[16px] leading-tight ${isDone ? 'text-white/45' : 'text-white'}`}>{ex.name}</span>
+                        <button key={ex.id} onClick={() => toggleExerciseDone(ex.id)} className="relative w-full pl-10 text-left block">
+                          <span className={`absolute left-0 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold ${isDone ? 'bg-emerald-500 text-[#0b0c10]' : 'bg-[#252525] text-[#6ccbde]'}`}>{isDone ? '✓' : '✦'}</span>
+                          <span className={`block rounded-2xl px-3 py-2.5 bg-[#252525] font-subheader text-[15px] leading-tight ${isDone ? 'text-white/45' : 'text-white'}`}>{ex.name}</span>
                         </button>
                       );
                     }
@@ -396,32 +396,32 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                     const isNext = ex.id === upNextId;
                     return (
                       <React.Fragment key={ex.id}>
-                        <div className="relative pl-12">
+                        <div className="relative pl-10">
                           <button
                             onClick={() => toggleExerciseDone(ex.id)}
                             aria-label={isDone ? 'Mark as not done' : 'Mark as done'}
-                            className={`absolute left-0 top-3 w-9 h-9 rounded-full flex items-center justify-center font-mono font-bold text-[15px] transition ${
-                              isDone ? 'bg-emerald-500 text-[#0b0c10]' : isNext ? 'bg-[#6ccbde] text-[#0b0c10] shadow-[0_0_0_5px_rgba(108,203,222,0.18)]' : 'bg-[#252525] text-white/70'
+                            className={`absolute left-0 top-2.5 w-7 h-7 rounded-full flex items-center justify-center font-mono font-bold text-[13px] transition ${
+                              isDone ? 'bg-emerald-500 text-[#0b0c10]' : isNext ? 'bg-[#6ccbde] text-[#0b0c10] shadow-[0_0_0_4px_rgba(108,203,222,0.18)]' : 'bg-[#252525] text-white/70'
                             }`}
                           >
                             {isDone ? '✓' : idx}
                           </button>
 
-                          <div className={`rounded-2xl p-4 transition ${isDone ? 'bg-[#252525]/60' : 'bg-[#252525]'}`}>
-                            <div className="flex items-start gap-3">
+                          <div className={`rounded-2xl p-3 transition ${isDone ? 'bg-[#252525]/60' : 'bg-[#252525]'}`}>
+                            <div className="flex items-start gap-2.5">
                             <button onClick={() => toggleExerciseDone(ex.id)} className="flex-1 min-w-0 text-left">
                               {isNext && <span className="block font-subheader text-[11px] uppercase tracking-[0.14em] text-[#6ccbde] mb-0.5">Up next</span>}
                               <span className="flex items-start gap-2 flex-wrap">
                                 {ex.supersetTag && <span className="text-[9px] font-bold text-[#6ccbde] bg-[#6ccbde]/10 px-1.5 py-0.5 rounded mt-1.5">{ex.supersetTag}</span>}
-                                <span className={`font-subheader text-[18px] leading-[1.15] break-words ${isDone ? 'text-white/45 line-through decoration-white/30' : 'text-white'}`}>{ex.name}</span>
+                                <span className={`font-subheader text-[16px] leading-[1.15] break-words ${isDone ? 'text-white/45 line-through decoration-white/30' : 'text-white'}`}>{ex.name}</span>
                               </span>
-                              <span className="block text-[11px] text-white/40 mt-1">
+                              <span className="block text-[10.5px] text-white/40 mt-0.5">
                                 {[TYPE_LABEL[ex.exerciseType || 'Weighted'], ex.targetMuscle, ex.equipment].filter(Boolean).join(' · ')}
                               </span>
                               {IS_RECORDED && (() => {
                                 const best = bestOfAllTime(ex.name, ex.exerciseType, bestPlans, bestPerf);
                                 return best ? (
-                                  <span className="inline-flex items-center gap-1.5 mt-1.5 px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">
+                                  <span className="inline-flex items-center gap-1.5 mt-1 px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">
                                     Best <span className="font-mono">{best}</span>
                                   </span>
                                 ) : null;
@@ -432,16 +432,16 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
 
                             {/* Targets */}
                             {ex.sets.length > 0 && (
-                              <div className={`mt-4 ${isDone ? 'opacity-50' : ''}`}>
+                              <div className={`mt-2.5 ${isDone ? 'opacity-50' : ''}`}>
                                 {!multi ? (
                                   <div className="flex items-stretch">
                                     {headCells.map((c, i) => (
-                                      <div key={c.label} className={`flex-1 min-w-0 ${i > 0 ? 'pl-3 ml-3 border-l border-white/[0.1]' : ''}`}>
-                                        <div className={`${c.text ? 'text-[15px] font-semibold leading-tight' : 'font-mono text-[24px] font-bold leading-none'} truncate ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
+                                      <div key={c.label} className={`flex-1 min-w-0 ${i > 0 ? 'pl-2.5 ml-2.5 border-l border-white/[0.1]' : ''}`}>
+                                        <div className={`${c.text ? 'text-[15px] font-semibold leading-tight' : 'font-mono text-[20px] font-bold leading-none'} truncate ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
                                           {c.value}
                                           {c.unit && c.value !== '–' && <span className="text-[11px] font-medium text-white/40 ml-1">{c.unit}</span>}
                                         </div>
-                                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40 mt-1">{c.label}</div>
+                                        <div className="text-[9px] font-bold uppercase tracking-[0.14em] text-white/40 mt-0.5">{c.label}</div>
                                       </div>
                                     ))}
                                   </div>
@@ -454,10 +454,10 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                                       ))}
                                     </div>
                                     {ex.sets.map((s, sIdx) => (
-                                      <div key={s.id || sIdx} className="grid items-center text-center rounded-xl bg-white/[0.04] py-2" style={{ gridTemplateColumns: cols }}>
+                                      <div key={s.id || sIdx} className="grid items-center text-center rounded-lg bg-white/[0.04] py-1.5" style={{ gridTemplateColumns: cols }}>
                                         <span className="font-mono text-[12px] text-white/40">{s.setType !== 'Working' ? s.setType[0] : s.setNumber || sIdx + 1}</span>
                                         {setCells(ex, s, withTempo).map((c) => (
-                                          <span key={c.label} className={`${c.text ? 'text-[14px]' : 'font-mono text-[16px]'} font-semibold leading-tight truncate px-1 ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
+                                          <span key={c.label} className={`${c.text ? 'text-[14px]' : 'font-mono text-[15px]'} font-semibold leading-tight truncate px-1 ${c.accent ? 'text-[#6ccbde]' : 'text-white'}`}>
                                             {c.value}
                                             {c.unit && c.value !== '–' && <span className="text-[10px] font-medium text-white/40 ml-0.5">{c.unit}</span>}
                                           </span>
@@ -468,6 +468,23 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                                 )}
                               </div>
                             )}
+
+                            {/* Rest / Sets / Time: 1 → centred · 2 → left + right · 3 → Rest left, Time middle, Sets right */}
+                            {(() => {
+                              const pills: { key: string; node: React.ReactNode }[] = [];
+                              if (first?.restSeconds) pills.push({ key: 'rest', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">Rest <span className="font-mono">{fmtSecs(first.restSeconds)}</span></span> });
+                              if (first?.setsCount) pills.push({ key: 'sets', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold"><span className="font-mono">{first.setsCount}</span> Sets</span> });
+                              if (first?.timeSeconds) pills.push({ key: 'time', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">Time <span className="font-mono">{fmtSecs(first.timeSeconds)}</span></span> });
+                              if (!pills.length) return null;
+                              const rest = pills.find((p) => p.key === 'rest'), sets = pills.find((p) => p.key === 'sets'), time = pills.find((p) => p.key === 'time');
+                              const ordered = pills.length === 3 ? [rest!, time!, sets!] : pills;
+                              const place = (i: number) => pills.length === 1 ? 'col-start-2 justify-self-center' : pills.length === 2 ? (i === 0 ? 'col-start-1 justify-self-start' : 'col-start-3 justify-self-end') : ['justify-self-start', 'justify-self-center', 'justify-self-end'][i];
+                              return (
+                                <div className={`mt-2.5 pt-2.5 border-t border-white/[0.06] grid grid-cols-3 items-center ${isDone ? 'opacity-50' : ''}`}>
+                                  {ordered.map((p, i) => <span key={p.key} className={place(i)}>{p.node}</span>)}
+                                </div>
+                              );
+                            })()}
 
                             {/* Zaki: what the client really did, when it was not the planned numbers */}
                             {IS_RECORDED && results[ex.id]?.edited && editingId !== ex.id && (
@@ -502,36 +519,12 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                             {ex.coachCues && (
                               <div className="mt-4 flex gap-2.5">
                                 <div className="w-[3px] rounded-full bg-[#ec2226]/70 shrink-0" />
-                                <p className="text-[12px] text-white/60 leading-relaxed">{ex.coachCues}</p>
+                                <p className="text-[11.5px] text-white/60 leading-snug">{ex.coachCues}</p>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        {/* Rest (left) and Sets (right) sit between this exercise and the next */}
-                        {(first?.setsCount || first?.restSeconds || first?.timeSeconds) ? (
-                          <div className="relative pl-12 space-y-1.5">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="min-w-0">
-                                {first?.restSeconds ? (
-                                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">
-                                    Rest <span className="font-mono">{fmtSecs(first.restSeconds)}</span>
-                                  </span>
-                                ) : null}
-                              </span>
-                              {first?.setsCount ? (
-                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold shrink-0">
-                                  <span className="font-mono">{first.setsCount}</span> Sets
-                                </span>
-                              ) : null}
-                            </div>
-                            {first?.timeSeconds ? (
-                              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">
-                                Time <span className="font-mono">{fmtSecs(first.timeSeconds)}</span>
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : null}
                       </React.Fragment>
                     );
                   })}
