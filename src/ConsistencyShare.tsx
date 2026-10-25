@@ -33,7 +33,7 @@ const headline = (overall: number | null) =>
 
 export type ShareMode = 'card' | 'photo' | 'sticker';
 
-async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null; dim: number }) {
+async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; variety: number; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null; dim: number }) {
   try {
     await Promise.all([document.fonts.load(`300 100px Raleway`), document.fonts.load(`600 40px Raleway`), document.fonts.load(`400 40px Raleway`)]);
   } catch { /* the fallback fonts are used */ }
@@ -107,6 +107,24 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
     c.fillStyle = '#fff';
     c.font = `600 48px ${BODY}`;
     c.fillText(APP_NAME, cx, 336);
+  }
+
+  // ---- activity variety: how many different other activities this month, centred above the main score
+  if (o.variety > 0) {
+    shadow();
+    c.fillStyle = '#fff';
+    c.font = `300 92px ${BODY}`;
+    ls(-2);
+    c.fillText(String(o.variety), cx, 516);
+    c.fillStyle = 'rgba(255,255,255,0.7)';
+    c.font = `600 24px ${BODY}`;
+    ls(6);
+    c.fillText('ACTIVITY VARIETY', cx, 566);
+    c.fillStyle = 'rgba(255,255,255,0.5)';
+    c.font = `400 21px ${BODY}`;
+    ls(3);
+    c.fillText('THIS MONTH', cx, 600);
+    noShadow();
   }
 
   // ---- the number: big and light, no circle
@@ -236,7 +254,7 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
   noShadow();
 }
 
-export const ConsistencyShare: React.FC<{ name: string; overall: number | null; parts: SharePart[]; days: number; onClose: () => void }> = ({ name, overall, parts, days, onClose }) => {
+export const ConsistencyShare: React.FC<{ name: string; overall: number | null; variety?: number; parts: SharePart[]; days: number; onClose: () => void }> = ({ name, overall, variety = 0, parts, days, onClose }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mode, setMode] = useState<ShareMode>('card');
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
@@ -251,9 +269,9 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
     const cv = document.createElement('canvas');
     canvasRef.current = cv;
     setPreview('');
-    draw(cv, { name, overall, parts, days, mode, photo, dim }).then(() => { if (live) setPreview(cv.toDataURL('image/png')); });
+    draw(cv, { name, overall, variety, parts, days, mode, photo, dim }).then(() => { if (live) setPreview(cv.toDataURL('image/png')); });
     return () => { live = false; };
-  }, [name, overall, parts, days, mode, photo, dim]);
+  }, [name, overall, variety, parts, days, mode, photo, dim]);
 
   const toFile = () =>
     new Promise<File | null>((resolve) => {

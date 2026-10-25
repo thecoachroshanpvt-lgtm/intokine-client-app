@@ -19,6 +19,7 @@ import { TrainingScreen } from './TrainingScreen';
 import { SessionCard } from './SessionCard';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { OverallProgressCard } from './OverallProgressCard';
+import { OtherActivityCard } from './OtherActivityCard';
 import { IS_RECORDED } from './variant';
 import { useZakiMeetings, ZakiMeetingCard } from './ZakiMeetings';
 import { CoachWhatsappButton } from './CoachContact';
@@ -773,6 +774,9 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
           </>
         );
       })()}
+
+      {/* Other physical activities (football, cricket, badminton ...) the client adds themselves */}
+      <OtherActivityCard clientId={clientId} />
 
       {/* Overall consistency: diet, routine, session attendance and suggested workouts */}
       <OverallProgressCard clientId={clientId} startDate={consistencyFrom} plans={plans} sessions={allSessionsList} clientName={clientName} />

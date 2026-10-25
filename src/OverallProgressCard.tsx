@@ -44,6 +44,7 @@ export const OverallProgressCard: React.FC<{
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
   const [followUps, setFollowUps] = useState<FollowUp[]>([]);
   const [routineLogs, setRoutineLogs] = useState<RoutineLog[]>([]);
+  const [otherActs, setOtherActs] = useState<{ name: string; date: string }[]>([]);
 
   useEffect(() => {
     const { db } = initializeClientFirebaseApp();
@@ -68,7 +69,8 @@ export const OverallProgressCard: React.FC<{
     );
     const u4 = onSnapshot(query(collection(db, 'intokine_routine_logs'), where('clientId', '==', clientId)), (s) => setRoutineLogs(s.docs.map((d) => d.data() as RoutineLog)), () => {});
     const u5 = onSnapshot(doc(db, 'intokine_clients', clientId), (s) => setOwnName(String((s.data() as any)?.name || '')), () => {});
-    return () => { u1(); u2(); u3(); u4(); u5(); };
+    const u6 = onSnapshot(query(collection(db, 'intokine_other_activities'), where('clientId', '==', clientId)), (s) => setOtherActs(s.docs.map((d) => d.data() as any)), () => {});
+    return () => { u1(); u2(); u3(); u4(); u5(); u6(); };
   }, [clientId]);
 
   // The four parts for a window: the last N days, or everything since the client started ('all').
@@ -172,11 +174,16 @@ export const OverallProgressCard: React.FC<{
   const shareParts = useMemo(() => {
     const by = (k: string) => parts.find((p) => p.key === k);
     const doneTotal = allTime.filter((p) => p.key === 'sessions' || p.key === 'workouts').reduce((a, p) => a + p.done, 0);
-    const out: { key: string; label: string; frac: number | null; count?: number }[] = [];
+    const out: { key: string; label: string; frac: number | null; count?: number; sub?: string }[] = [];
     (['diet', 'routine'] as const).forEach((k) => { const p = by(k); if (p) out.push({ key: k, label: p.label, frac: p.frac }); });
     out.push({ key: 'workouts', label: 'Workouts', frac: null, count: Math.round(doneTotal) });
     return out;
   }, [parts, allTime]);
+  // Other activities: how many different ones this month (football, cricket, badminton ...). Shown above the big score on the share card.
+  const variety = useMemo(() => {
+    const month = monthKey(new Date());
+    return new Set(otherActs.filter((a) => (a.date || '').startsWith(month)).map((a) => String(a.name || '').trim().toLowerCase()).filter(Boolean)).size;
+  }, [otherActs]);
 
   return (
     <>
@@ -226,7 +233,7 @@ export const OverallProgressCard: React.FC<{
         <span aria-hidden>›</span>
       </div>
     </div>
-    {share && <ConsistencyShare name={clientName || ownName} overall={overall} days={DAYS} parts={shareParts} onClose={() => setShare(false)} />}
+    {share && <ConsistencyShare name={clientName || ownName} overall={overall} days={DAYS} parts={shareParts} variety={variety} onClose={() => setShare(false)} />}
     </>
   );
 };
