@@ -213,17 +213,17 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
     ls(6);
     c.fillText(p.label.toUpperCase(), x, my + 54);
     noShadow();
-    // hairline: grey track, accent colour for the share done (a count, like sessions, has no hairline)
+    // hairline under every number: grey track, accent colour for the share done.
+    // A count (Workouts) has no share, so its line is drawn full once there is at least one.
     const bw = 130, by = my + 86;
-    if (p.count === undefined) {
-      c.lineWidth = 3;
-      c.lineCap = 'round';
-      c.strokeStyle = track;
-      c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x + bw / 2, by); c.stroke();
-      if (p.frac !== null && p.frac > 0) {
-        c.strokeStyle = ACCENT;
-        c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x - bw / 2 + bw * Math.max(p.frac, 0.04), by); c.stroke();
-      }
+    const fillFrac = p.count !== undefined ? (p.count > 0 ? 1 : 0) : p.frac;
+    c.lineWidth = 3;
+    c.lineCap = 'round';
+    c.strokeStyle = track;
+    c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x + bw / 2, by); c.stroke();
+    if (fillFrac !== null && fillFrac > 0) {
+      c.strokeStyle = ACCENT;
+      c.beginPath(); c.moveTo(x - bw / 2, by); c.lineTo(x - bw / 2 + bw * Math.max(fillFrac, 0.04), by); c.stroke();
     }
     if (p.sub) {
       shadow();

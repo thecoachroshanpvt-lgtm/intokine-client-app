@@ -78,14 +78,18 @@ export const OverallProgressCard: React.FC<{
     const from = new Date(now);
     from.setDate(from.getDate() - ((span === 'all' ? DAYS : span) - 1));
     let winStart = dateKey(from);
+    // The score starts from the date the coach set when resetting the client; if there is none, from the earliest thing the client did.
+    // A package renewal never moves it.
+    const earliest = [...mealLogs.map((l) => l.date), ...sessions.map((s) => s.date), ...plans.map((p) => p.date)].filter(Boolean).sort()[0];
     if (span === 'all') {
-      // from the start date; if there is none, from the earliest thing the client did (at most about three years back)
-      const earliest = [...mealLogs.map((l) => l.date), ...sessions.map((s) => s.date), ...plans.map((p) => p.date)].filter(Boolean).sort()[0];
       const floor = new Date(now);
       floor.setDate(floor.getDate() - 1100);
       const base = startDate && startDate <= today ? startDate : earliest && earliest <= today ? earliest : winStart;
       winStart = base < dateKey(floor) ? dateKey(floor) : base;
-    } else if (startDate && startDate > winStart && startDate <= today) winStart = startDate;
+    } else {
+      const joined = startDate || earliest;
+      if (joined && joined > winStart && joined <= today) winStart = joined;
+    }
     const days: string[] = [];
     for (let k = winStart; k <= today; ) {
       days.push(k);
