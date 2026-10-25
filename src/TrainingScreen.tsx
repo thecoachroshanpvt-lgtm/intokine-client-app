@@ -41,6 +41,7 @@ interface TrainerizeSet {
   tempo?: string;
   holdSeconds?: number;
   rounds?: number;
+  drillMode?: 'rounds' | 'duration';
   durationMinutes?: number;
   distanceKm?: number;
   method?: string;
@@ -106,7 +107,7 @@ const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean):
   else if (type === 'Bodyweight') cells.push({ label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Isometric') { const d = durCell((s.holdSeconds || 0) / 60); cells.push({ label: 'Hold', value: d.value, unit: d.unit }); }
   else if (type === 'TimeDistanceCardio') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Time', value: d.value, unit: d.unit }, { label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }); }
-  else if (type === 'Drill') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Rounds', value: s.rounds ? String(s.rounds) : dash }, { label: 'Duration', value: s.durationMinutes ? d.value : dash, unit: s.durationMinutes ? d.unit : undefined }); }
+  else if (type === 'Drill') { if (s.drillMode === 'duration') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Duration', value: s.durationMinutes ? d.value : dash, unit: s.durationMinutes ? d.unit : undefined }); } else cells.push({ label: 'Rounds', value: s.rounds ? String(s.rounds) : dash }); }
   else if (type === 'DurationCardio') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Time', value: d.value, unit: d.unit }, { label: 'Method', value: s.method || dash, text: true }); }
   else if (type === 'DistanceCardio') cells.push({ label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }, { label: 'Method', value: s.method || dash, text: true });
   if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash, text: true });
