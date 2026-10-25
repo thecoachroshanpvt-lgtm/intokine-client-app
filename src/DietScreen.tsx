@@ -8,6 +8,7 @@ import { MealLogSheet } from './MealLogSheet';
 import type { SheetMeal, SheetResult } from './MealLogSheet';
 import { MacroGraphs } from './MacroGraphs';
 import { OwnMealSheet } from './OwnMealSheet';
+import { IS_RECORDED } from './variant';
 import type { OwnMealResult } from './OwnMealSheet';
 import { dayMacros, addDaysKey, PHOTO_DAYS, PORTIONS, reviewApplies, reviewHasMacros } from './dietMacros';
 import type { MealEntry as LoggedMeal, MealReview } from './dietMacros';
@@ -368,7 +369,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       if (!db) throw new Error('offline');
       const at = new Date().toISOString();
       const entry: Record<string, any> = r
-        ? { status: 'eaten', own: true, mealTime: r.mealTime, note: r.note, foods: r.foods, portion: 1, macros: r.macros, at }
+        ? { status: 'eaten', own: true, mealTime: r.mealTime, note: r.note, portion: 1, macros: r.macros, at }
         : { status: 'none', own: true, at };
       const eaten = new Set(todayLog?.eaten || []);
       if (r) eaten.add(id);
@@ -411,7 +412,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   }
 
   // Targets-only plan: the client adds their own meals (online/offline clients app only, not Zaki).
-  const selfOn = !!plan.selfLog;
+  const selfOn = !!plan.selfLog && !IS_RECORDED;
   // What was really eaten today: the option and amount the client picked, plus the macros the nutritionist added for "something else".
   const todayRes = dayMacros(meals, todayLog, reviews[today]);
   const eatenKcal = todayRes.total.kcal;
@@ -573,6 +574,13 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         {todayRes.pending > 0 && <p className="text-[11px] text-amber-300 text-center">{todayRes.pending} {todayRes.pending === 1 ? 'meal is' : 'meals are'} waiting for your nutritionist to add the macros</p>}
         {allDone && <p className="text-xs text-emerald-400 font-semibold text-center">All meals done today. Great work!</p>}
       </div>
+      {(plan.notes || '').trim() && (
+        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
+          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] mb-2">Notes from your coach</div>
+          <div className="text-xs text-white/60 font-light whitespace-pre-wrap leading-relaxed">{(plan.notes || '').trim()}</div>
+        </div>
+      )}
+
       {isRealContact(plan.nutritionistContact) && <FloatingWhatsApp href={buildWhatsAppLink(plan.nutritionistContact)} />}
 
       {detail && createPortal(
@@ -788,13 +796,6 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       )}
 
       <SupplementsCard items={plan.supplements || []} taken={shownSupps} onToggle={toggleSupplement} />
-
-      {plan.notes && (
-        <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-4">
-          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] mb-2">Notes from your coach</div>
-          <div className="text-xs text-white/60 font-light whitespace-pre-wrap leading-relaxed">{plan.notes}</div>
-        </div>
-      )}
 
       {(meals.length > 0 || selfOn) && (
         <button type="button" onClick={() => setMacroPage(true)} className="w-full text-left rounded-2xl p-4 border border-white/[0.08] bg-[#252525] flex items-center justify-between gap-3">
