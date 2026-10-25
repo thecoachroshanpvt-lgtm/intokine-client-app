@@ -109,14 +109,6 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
     c.fillText(APP_NAME, cx, 336);
   }
 
-  // ---- title
-  shadow();
-  c.fillStyle = 'rgba(255,255,255,0.9)';
-  c.font = `600 36px ${BODY}`;
-  ls(10);
-  c.fillText('MY CONSISTENCY', cx, 452);
-  noShadow();
-
   // ---- the number: big and light, no circle
   const pct = o.overall === null ? 0 : o.overall / 100;
   shadow();
