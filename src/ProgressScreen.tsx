@@ -1080,6 +1080,13 @@ const TapJourney: React.FC<{ catKey?: string; goals: any[]; records: any[]; chil
       const p = el.parentElement;
       groups.set(p, [...(groups.get(p) || []), el]);
     });
+    // An activity with nothing logged yet shows no empty "Not enough data yet" graph: its card stays hidden until a first result is added.
+    root.querySelectorAll<HTMLElement>('.rounded-2xl').forEach((el) => {
+      if (!el.className.includes('bg-[#252525]')) return;
+      const t = el.querySelector('span.uppercase, span[data-actname]')?.textContent;
+      if (!t || !el.textContent?.includes('Not enough data yet')) return;
+      el.style.display = el.textContent.replace(/Not enough data yet/g, '').trim() === t.trim() ? 'none' : '';
+    });
     groups.forEach((cards, parent) => {
       if (cards.length < 2) return;
       const ranks = cards.map((c) => rank(c.querySelector('span.uppercase, span[data-actname]')!.textContent || ''));
