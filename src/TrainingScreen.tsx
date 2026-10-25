@@ -6,6 +6,16 @@ import { IS_RECORDED } from './variant';
 import { bestOfAllTime, type BestPlan, type BestPerf } from './BestOfAllTime';
 import { ExerciseResultEditor, setText, type ResultMap, type ExerciseResult } from './ExerciseResultEditor';
 
+/** Minutes (decimal) as a set cell: 10 -> 10 min, 0.75 -> 45 sec, 2.5 -> 2:30 min */
+const durCell = (m: number): { value: string; unit: string } => {
+  const total = Math.round((m || 0) * 60);
+  const mi = Math.floor(total / 60);
+  const sc = total % 60;
+  if (mi && sc) return { value: `${mi}:${String(sc).padStart(2, '0')}`, unit: 'min' };
+  if (sc) return { value: String(sc), unit: 'sec' };
+  return { value: String(mi), unit: 'min' };
+};
+
 /** 45 -> "45 sec", 90 -> "1 min 30 sec", 600 -> "10 min" */
 const fmtSecs = (total: number): string => {
   const m = Math.floor(total / 60);
@@ -30,6 +40,7 @@ interface TrainerizeSet {
   setsCount?: number;
   tempo?: string;
   holdSeconds?: number;
+  rounds?: number;
   durationMinutes?: number;
   distanceKm?: number;
   method?: string;
@@ -42,7 +53,7 @@ interface TrainerizeExercise {
   equipment?: string;
   targetMuscle?: string;
   supersetTag?: string;
-  exerciseType?: 'Weighted' | 'Bodyweight' | 'Isometric' | 'DistanceCardio' | 'DurationCardio';
+  exerciseType?: 'Weighted' | 'Bodyweight' | 'Isometric' | 'DistanceCardio' | 'DurationCardio' | 'TimeDistanceCardio' | 'Drill';
   sets: TrainerizeSet[];
   coachCues?: string;
   phase?: string;
@@ -81,6 +92,8 @@ const TYPE_LABEL: Record<string, string> = {
   Isometric: 'Isometric',
   DistanceCardio: 'Cardio · Distance',
   DurationCardio: 'Cardio · Duration',
+  TimeDistanceCardio: 'Cardio · Time + distance',
+  Drill: 'Drill',
 };
 
 // The columns shown for one set, depending on the exercise type.
@@ -91,8 +104,10 @@ const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean):
   const cells: { label: string; value: string; unit?: string; accent?: boolean; text?: boolean }[] = [];
   if (type === 'Weighted') cells.push({ label: 'Weight', value: String(s.targetWeightKg || 0), unit: 'kg' }, { label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Bodyweight') cells.push({ label: 'Reps', value: String(s.targetReps || 0) });
-  else if (type === 'Isometric') cells.push({ label: 'Hold', value: String(s.holdSeconds || 0), unit: 'sec' });
-  else if (type === 'DurationCardio') cells.push({ label: 'Time', value: String(s.durationMinutes || 0), unit: 'min' }, { label: 'Method', value: s.method || dash, text: true });
+  else if (type === 'Isometric') { const d = durCell((s.holdSeconds || 0) / 60); cells.push({ label: 'Hold', value: d.value, unit: d.unit }); }
+  else if (type === 'TimeDistanceCardio') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Time', value: d.value, unit: d.unit }, { label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }); }
+  else if (type === 'Drill') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Rounds', value: s.rounds ? String(s.rounds) : dash }, { label: 'Duration', value: s.durationMinutes ? d.value : dash, unit: s.durationMinutes ? d.unit : undefined }); }
+  else if (type === 'DurationCardio') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Time', value: d.value, unit: d.unit }, { label: 'Method', value: s.method || dash, text: true }); }
   else if (type === 'DistanceCardio') cells.push({ label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }, { label: 'Method', value: s.method || dash, text: true });
   if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash, text: true });
   if (type === 'Weighted' || type === 'Bodyweight' || type === 'Isometric') cells.push({ label: 'RPE', value: rpe, accent: true });

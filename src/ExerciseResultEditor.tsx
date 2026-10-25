@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { splitDuration, joinDuration, fmtDuration } from './duration';
 
 // Zaki: what the client really did on one exercise when they could not do the coach's numbers.
 // Saved on the workout (intokine_given_session_plans) as clientExerciseResults[exerciseId] = { edited: true, sets: [...] }.
@@ -41,7 +40,7 @@ const FIELDS: Record<Kind, Field[]> = {
   ],
 };
 
-const kindOf = (t?: string): Kind => (t === 'Bodyweight' || t === 'Isometric' || t === 'DistanceCardio' || t === 'DurationCardio' ? t : 'Weighted');
+const kindOf = (t?: string): Kind => (t === 'TimeDistanceCardio' ? 'DistanceCardio' : t === 'Drill' ? 'DurationCardio' : t === 'Bodyweight' || t === 'Isometric' || t === 'DistanceCardio' || t === 'DurationCardio' ? t : 'Weighted');
 
 /** The coach's planned numbers for one set, in the same fields the client edits. */
 export const targetOf = (kind: string | undefined, s: any): SetResult => {
@@ -60,8 +59,8 @@ export const setText = (kind: string | undefined, r: SetResult): string => {
   if (k === 'Weighted') return `${r.weightKg ?? 0} kg × ${r.reps ?? 0}${rpe}`;
   if (k === 'Bodyweight') return `${r.reps ?? 0} reps${rpe}`;
   if (k === 'Isometric') return `${r.holdSeconds ?? 0} sec hold${rpe}`;
-  if (k === 'DistanceCardio') return `${r.distanceKm ?? 0} km${r.durationMinutes ? ` in ${fmtDuration(r.durationMinutes)}` : ''}`;
-  return `${fmtDuration(r.durationMinutes ?? 0)}${r.distanceKm ? ` · ${r.distanceKm} km` : ''}`;
+  if (k === 'DistanceCardio') return `${r.distanceKm ?? 0} km${r.durationMinutes ? ` in ${r.durationMinutes} min` : ''}`;
+  return `${r.durationMinutes ?? 0} min${r.distanceKm ? ` · ${r.distanceKm} km` : ''}`;
 };
 
 export const ExerciseResultEditor: React.FC<{
@@ -99,46 +98,20 @@ export const ExerciseResultEditor: React.FC<{
         {draft.map((d, i) => (
           <div key={i} className="flex items-end gap-2">
             {draft.length > 1 && <span className="w-5 pb-2 text-center font-mono text-[11px] text-white/40">{i + 1}</span>}
-            {fields.map((f) => {
-              if (f.key === 'durationMinutes') {
-                // Time is typed as minutes and seconds (stored as minutes), so 45 sec or 2 min 30 sec are easy to enter.
-                const cur = parseFloat(d[f.key]);
-                const sp = splitDuration(isNaN(cur) ? 0 : cur);
-                const has = !isNaN(cur) && cur > 0;
-                const setTime = (m: string, sec: string) => {
-                  const total = joinDuration(parseFloat(m) || 0, parseFloat(sec) || 0);
-                  setVal(i, f.key, total > 0 ? String(total) : '');
-                };
-                return (
-                  <div key={f.key} className="flex-[2] min-w-0">
-                    <span className="block text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1">Time (min : sec)</span>
-                    <div className="flex items-center gap-1.5">
-                      <input type="number" inputMode="numeric" min="0" step="1" placeholder="min" value={has && sp.min ? String(sp.min) : ''}
-                        onChange={(e) => setTime(e.target.value, String(sp.sec))}
-                        className="w-full min-w-0 bg-[#1c1c1c] border border-white/[0.1] rounded-lg px-2 py-2 text-center font-mono text-[15px] text-white placeholder-white/25 focus:outline-none focus:border-amber-300" />
-                      <span className="text-white/40 font-bold">:</span>
-                      <input type="number" inputMode="numeric" min="0" step="1" placeholder="sec" value={has && sp.sec ? String(sp.sec) : ''}
-                        onChange={(e) => setTime(String(sp.min), e.target.value)}
-                        className="w-full min-w-0 bg-[#1c1c1c] border border-white/[0.1] rounded-lg px-2 py-2 text-center font-mono text-[15px] text-white placeholder-white/25 focus:outline-none focus:border-amber-300" />
-                    </div>
-                  </div>
-                );
-              }
-              return (
-                <label key={f.key} className="flex-1 min-w-0">
-                  <span className="block text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1">{f.label}{f.unit ? ` (${f.unit})` : ''}</span>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step={f.step}
-                    value={d[f.key]}
-                    onChange={(e) => setVal(i, f.key, e.target.value)}
-                    className="w-full bg-[#1c1c1c] border border-white/[0.1] rounded-lg px-2 py-2 text-center font-mono text-[15px] text-white focus:outline-none focus:border-amber-300"
-                  />
-                </label>
-              );
-            })}
+            {fields.map((f) => (
+              <label key={f.key} className="flex-1 min-w-0">
+                <span className="block text-[9px] font-bold uppercase tracking-wider text-white/40 mb-1">{f.label}{f.unit ? ` (${f.unit})` : ''}</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step={f.step}
+                  value={d[f.key]}
+                  onChange={(e) => setVal(i, f.key, e.target.value)}
+                  className="w-full bg-[#1c1c1c] border border-white/[0.1] rounded-lg px-2 py-2 text-center font-mono text-[15px] text-white focus:outline-none focus:border-amber-300"
+                />
+              </label>
+            ))}
           </div>
         ))}
       </div>

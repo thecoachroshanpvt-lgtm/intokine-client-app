@@ -1,4 +1,3 @@
-import { fmtDuration } from './duration';
 // Zaki: the best of all time on one exercise.
 // It counts what was really done: the planned numbers of workouts the client finished, and the coach's own Performance entries.
 // Workouts that are planned but not finished never count.
@@ -50,10 +49,10 @@ export const bestOfAllTime = (name: string, kind: string | undefined, plans: Bes
     const m = Math.max(0, ...c.map((x) => x.hold));
     return m > 0 ? `${m} sec hold` : null;
   }
-  if (k === 'DistanceCardio') {
+  if (k === 'DistanceCardio' || k === 'TimeDistanceCardio') {
     const m = Math.max(0, ...c.map((x) => x.dist));
     return m > 0 ? `${m} km` : null;
   }
   const m = Math.max(0, ...c.map((x) => x.dur));
-  return m > 0 ? fmtDuration(m) : null;
+  return m > 0 ? `${Math.round(m * 10) / 10} min` : null;
 };
