@@ -469,23 +469,6 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                               </div>
                             )}
 
-                            {/* Rest / Sets / Time: 1 → centred · 2 → left + right · 3 → Rest left, Time middle, Sets right */}
-                            {(() => {
-                              const pills: { key: string; node: React.ReactNode }[] = [];
-                              if (first?.restSeconds) pills.push({ key: 'rest', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">Rest <span className="font-mono">{fmtSecs(first.restSeconds)}</span></span> });
-                              if (first?.setsCount) pills.push({ key: 'sets', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold"><span className="font-mono">{first.setsCount}</span> Sets</span> });
-                              if (first?.timeSeconds) pills.push({ key: 'time', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">Time <span className="font-mono">{fmtSecs(first.timeSeconds)}</span></span> });
-                              if (!pills.length) return null;
-                              const rest = pills.find((p) => p.key === 'rest'), sets = pills.find((p) => p.key === 'sets'), time = pills.find((p) => p.key === 'time');
-                              const ordered = pills.length === 3 ? [rest!, time!, sets!] : pills;
-                              const place = (i: number) => pills.length === 1 ? 'col-start-2 justify-self-center' : pills.length === 2 ? (i === 0 ? 'col-start-1 justify-self-start' : 'col-start-3 justify-self-end') : ['justify-self-start', 'justify-self-center', 'justify-self-end'][i];
-                              return (
-                                <div className={`mt-2.5 pt-2.5 border-t border-white/[0.06] grid grid-cols-3 items-center ${isDone ? 'opacity-50' : ''}`}>
-                                  {ordered.map((p, i) => <span key={p.key} className={place(i)}>{p.node}</span>)}
-                                </div>
-                              );
-                            })()}
-
                             {/* Zaki: what the client really did, when it was not the planned numbers */}
                             {IS_RECORDED && results[ex.id]?.edited && editingId !== ex.id && (
                               <div className="mt-4 rounded-xl border border-amber-300/25 bg-amber-300/[0.06] px-3 py-2.5">
@@ -525,6 +508,24 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                           </div>
                         </div>
 
+                        <div className="relative pl-10">
+                        {/* Between this exercise and the next: Rest / Sets / Time apply after the exercises before it. 1 → centred · 2 → left + right · 3 → Rest left, Time middle, Sets right */}
+                        {(() => {
+                          const pills: { key: string; node: React.ReactNode }[] = [];
+                          if (first?.restSeconds) pills.push({ key: 'rest', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400/10 text-amber-300 text-[11px] font-semibold">Rest <span className="font-mono">{fmtSecs(first.restSeconds)}</span></span> });
+                          if (first?.setsCount) pills.push({ key: 'sets', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#6ccbde]/10 text-[#6ccbde] text-[11px] font-semibold"><span className="font-mono">{first.setsCount}</span> Sets</span> });
+                          if (first?.timeSeconds) pills.push({ key: 'time', node: <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-400/10 text-emerald-300 text-[11px] font-semibold">Time <span className="font-mono">{fmtSecs(first.timeSeconds)}</span></span> });
+                          if (!pills.length) return null;
+                          const rest = pills.find((p) => p.key === 'rest'), sets = pills.find((p) => p.key === 'sets'), time = pills.find((p) => p.key === 'time');
+                          const ordered = pills.length === 3 ? [rest!, time!, sets!] : pills;
+                          const place = (i: number) => pills.length === 1 ? 'col-start-2 justify-self-center' : pills.length === 2 ? (i === 0 ? 'col-start-1 justify-self-start' : 'col-start-3 justify-self-end') : ['justify-self-start', 'justify-self-center', 'justify-self-end'][i];
+                          return (
+                            <div className="grid grid-cols-3 items-center px-1">
+                              {ordered.map((p, i) => <span key={p.key} className={place(i)}>{p.node}</span>)}
+                            </div>
+                          );
+                        })()}
+                        </div>
                       </React.Fragment>
                     );
                   })}
