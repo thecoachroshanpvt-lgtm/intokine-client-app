@@ -5,7 +5,7 @@ import { APP_NAME } from './variant';
 // The "share your consistency" card: a Strava-style 9:16 picture for an Instagram story.
 // Opened by tapping "Your consistency" on the home page. It is drawn on a canvas (so it is a real picture, with no screenshot needed),
 // shown as a preview, and handed to the phone's share sheet (Instagram, WhatsApp, Save image...).
-// Two looks: "Card" (full dark brand background) and "Sticker" (transparent, to lay over your own photo in the story).
+// Looks: "Card" (dark brand background), "Photo" (your picture behind) and "Video" (your video behind, saved as a ready story video).
 
 export interface SharePart { key: string; label: string; frac: number | null; count?: number; sub?: string }
 
@@ -39,7 +39,7 @@ const headline = (overall: number | null) =>
   : overall >= 20 ? 'Small steps'
   : 'Begin again';
 
-export type ShareMode = 'card' | 'photo' | 'sticker';
+export type ShareMode = 'card' | 'photo' | 'video';
 
 async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: number | null; variety: number; parts: SharePart[]; days: number; mode: ShareMode; photo: HTMLImageElement | null; dim: number }) {
   try {
@@ -77,6 +77,7 @@ async function draw(canvas: HTMLCanvasElement, o: { name: string; overall: numbe
     // the logo, writing and rings are see-through, so the photo shows behind them
     c.globalAlpha = 0.82;
   }
+  if (o.mode === 'video') c.globalAlpha = 0.82; // transparent layer; the video and its dark layer are added while recording
 
   if (o.mode === 'card') {
     const bg = c.createLinearGradient(0, 0, 0, H);
@@ -264,6 +265,10 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [dim, setDim] = useState(0.5); // how dark the layer over the photo is
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const videoFileRef = useRef<HTMLInputElement | null>(null);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [videoOut, setVideoOut] = useState<File | null>(null); // the finished story video
+  const [progress, setProgress] = useState(0);
   const [preview, setPreview] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
@@ -273,19 +278,90 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
     const cv = document.createElement('canvas');
     canvasRef.current = cv;
     setPreview('');
+    setVideoOut(null);
     draw(cv, { name, overall, variety, parts, days, mode, photo, dim }).then(() => { if (live) setPreview(cv.toDataURL('image/png')); });
     return () => { live = false; };
-  }, [name, overall, variety, parts, days, mode, photo, dim]);
+  }, [name, overall, variety, parts, days, mode, photo, dim, videoUrl]);
 
-  const toFile = () =>
+  const toImageFile = () =>
     new Promise<File | null>((resolve) => {
       const cv = canvasRef.current;
       if (!cv) return resolve(null);
       cv.toBlob((b) => resolve(b ? new File([b], `${APP_NAME.toLowerCase()}-consistency.png`, { type: 'image/png' }) : null), 'image/png');
     });
 
+  // Video: play the chosen video on a story-sized canvas, put the card over it, and record the result.
+  const makeVideo = async (): Promise<File | null> => {
+    const overlay = canvasRef.current;
+    if (!overlay || !videoUrl) return null;
+    if (typeof MediaRecorder === 'undefined' || !(HTMLCanvasElement.prototype as any).captureStream) throw new Error('unsupported');
+    const v = document.createElement('video');
+    v.src = videoUrl;
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = 'auto';
+    await new Promise<void>((res, rej) => { v.onloadeddata = () => res(); v.onerror = () => rej(new Error('video')); });
+    const out = document.createElement('canvas');
+    out.width = W;
+    out.height = H;
+    const g = out.getContext('2d');
+    if (!g) throw new Error('canvas');
+    const stream: MediaStream = (out as any).captureStream(30);
+    try {
+      const vs: MediaStream | undefined = (v as any).captureStream ? (v as any).captureStream() : undefined;
+      vs?.getAudioTracks().forEach((t) => stream.addTrack(t));
+    } catch { /* no sound */ }
+    const types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    const mime = types.find((t) => (MediaRecorder as any).isTypeSupported?.(t)) || '';
+    const mr = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined);
+    const chunks: Blob[] = [];
+    mr.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    const limit = Math.min(v.duration || 60, 60);
+    let raf = 0;
+    const frame = () => {
+      g.fillStyle = '#000';
+      g.fillRect(0, 0, W, H);
+      const k = Math.max(W / v.videoWidth, H / v.videoHeight);
+      const pw = v.videoWidth * k, ph = v.videoHeight * k;
+      g.drawImage(v, (W - pw) / 2, (H - ph) / 2, pw, ph);
+      g.fillStyle = `rgba(0,0,0,${dim})`;
+      g.fillRect(0, 0, W, H);
+      const sc = g.createLinearGradient(0, 0, 0, H);
+      sc.addColorStop(0, 'rgba(0,0,0,0.3)'); sc.addColorStop(0.3, 'rgba(0,0,0,0)'); sc.addColorStop(0.65, 'rgba(0,0,0,0)'); sc.addColorStop(1, 'rgba(0,0,0,0.35)');
+      g.fillStyle = sc;
+      g.fillRect(0, 0, W, H);
+      g.drawImage(overlay, 0, 0);
+      setProgress(Math.min(1, v.currentTime / limit));
+      if (v.ended || v.currentTime >= limit) { mr.state !== 'inactive' && mr.stop(); return; }
+      raf = requestAnimationFrame(frame);
+    };
+    const done = new Promise<void>((res) => { mr.onstop = () => res(); });
+    mr.start(500);
+    await v.play();
+    frame();
+    await done;
+    cancelAnimationFrame(raf);
+    v.pause();
+    const type = (mr.mimeType || mime || 'video/webm').split(';')[0];
+    const ext = type.includes('mp4') ? 'mp4' : 'webm';
+    return new File([new Blob(chunks, { type })], `${APP_NAME.toLowerCase()}-consistency.${ext}`, { type });
+  };
+
+  const toFile = async (): Promise<File | null> => {
+    if (mode !== 'video') return toImageFile();
+    if (videoOut) return videoOut;
+    const f = await makeVideo();
+    setVideoOut(f);
+    return f;
+  };
+
   const save = async () => {
-    const f = await toFile();
+    setBusy(true);
+    setMsg('');
+    let f: File | null = null;
+    try { f = await toFile(); } catch { setMsg('This phone cannot make the video here. Try the Photo look instead.'); }
+    setBusy(false);
+    setProgress(0);
     if (!f) return;
     const url = URL.createObjectURL(f);
     const a = document.createElement('a');
@@ -295,7 +371,7 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
-    setMsg('Saved. Open Instagram, add a story, and pick the picture from your photos.');
+    setMsg(mode === 'video' ? 'Saved. Open Instagram, add a story, and pick the video from your gallery.' : 'Saved. Open Instagram, add a story, and pick the picture from your photos.');
   };
 
   const share = async () => {
@@ -303,6 +379,7 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
     setMsg('');
     try {
       const f = await toFile();
+      setProgress(0);
       if (!f) throw new Error('no file');
       const nav: any = navigator;
       if (nav.canShare && nav.canShare({ files: [f] })) {
@@ -312,7 +389,8 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
       }
     } catch (e: any) {
       // closing the share sheet is not an error
-      if (e?.name !== 'AbortError') setMsg('Could not open the share sheet. Use "Save image" and add it to your story.');
+      if (e?.message === 'unsupported' || e?.message === 'video') setMsg('This phone cannot make the video here. Try the Photo look instead.');
+      else if (e?.name !== 'AbortError') setMsg(`Could not open the share sheet. Use "Save ${mode === 'video' ? 'video' : 'image'}" and add it to your story.`);
     }
     setBusy(false);
   };
@@ -326,14 +404,20 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
         </div>
 
         <div className="flex bg-black/30 rounded-full p-0.5">
-          {([['Card', 'card'], ['Photo', 'photo'], ['Sticker', 'sticker']] as const).map(([l, v]) => (
-            <button key={l} type="button" onClick={() => { setMode(v); if (v === 'photo' && !photo) fileRef.current?.click(); }}
+          {([['Card', 'card'], ['Photo', 'photo'], ['Video', 'video']] as const).map(([l, v]) => (
+            <button key={l} type="button" disabled={busy} onClick={() => { setMode(v); if (v === 'photo' && !photo) fileRef.current?.click(); if (v === 'video' && !videoUrl) videoFileRef.current?.click(); }}
               className={`flex-1 py-1.5 rounded-full text-[11px] font-bold ${mode === v ? 'bg-[#6ccbde]/20 text-[#6ccbde]' : 'text-white/50'}`}>{l}</button>
           ))}
         </div>
 
-        <div className="mx-auto rounded-2xl overflow-hidden border border-white/[0.08]" style={{ aspectRatio: '9 / 16', maxHeight: '58vh', background: mode === 'sticker' ? 'repeating-conic-gradient(#3a3a3a 0% 25%, #2a2a2a 0% 50%) 50% / 24px 24px' : '#0b0c10' }}>
-          {preview ? <img src={preview} alt="Your consistency card" className="w-full h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-[11px] text-white/40">Making your card...</div>}
+        <div className="mx-auto rounded-2xl overflow-hidden border border-white/[0.08]" style={{ aspectRatio: '9 / 16', maxHeight: '58vh', background: '#0b0c10', position: 'relative' }}>
+          {mode === 'video' && videoUrl && (
+            <>
+              <video src={videoUrl} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${dim})` }} />
+            </>
+          )}
+          {preview ? <img src={preview} alt="Your consistency card" className="relative w-full h-full object-contain" /> : <div className="w-full h-full flex items-center justify-center text-[11px] text-white/40">Making your card...</div>}
         </div>
         <input ref={fileRef} type="file" accept="image/*" className="hidden"
           onChange={(e) => {
@@ -346,9 +430,18 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
             img.onerror = () => setMsg('Could not open that photo. Try another one.');
             img.src = url;
           }} />
-        {mode === 'photo' && (
+        <input ref={videoFileRef} type="file" accept="video/*" className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            if (videoUrl) URL.revokeObjectURL(videoUrl);
+            setVideoUrl(URL.createObjectURL(file));
+            setMode('video');
+          }} />
+        {(mode === 'photo' || mode === 'video') && (
           <div className="space-y-2">
-            <button type="button" onClick={() => fileRef.current?.click()} className="w-full py-2 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold">{photo ? 'Change photo' : 'Choose a photo'}</button>
+            <button type="button" onClick={() => (mode === 'video' ? videoFileRef : fileRef).current?.click()} className="w-full py-2 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold">{mode === 'video' ? (videoUrl ? 'Change video' : 'Choose a video') : photo ? 'Change photo' : 'Choose a photo'}</button>
             <label className="flex items-center gap-3 text-[11px] text-white/60">
               <span className="shrink-0">Darker layer</span>
               <input type="range" min={0} max={75} step={5} value={Math.round(dim * 100)} onChange={(e) => setDim(Number(e.target.value) / 100)} className="flex-1" />
@@ -356,14 +449,14 @@ export const ConsistencyShare: React.FC<{ name: string; overall: number | null; 
             </label>
           </div>
         )}
-        {mode === 'sticker' && <p className="text-[10px] text-white/45 text-center">Sticker has a see-through background. Save it, then place it over your own photo in the story.</p>}
+        {mode === 'video' && <p className="text-[10px] text-white/45 text-center">Your video is made with the card on top (up to 60 seconds). Keep this screen open while it is being made.</p>}
 
-        <button type="button" disabled={!preview || busy} onClick={share}
+        <button type="button" disabled={!preview || busy || (mode === 'video' && !videoUrl)} onClick={share}
           className="w-full py-3 rounded-2xl text-sm font-bold text-white disabled:opacity-40"
           style={{ background: `linear-gradient(90deg, ${BRAND} 0%, ${ACCENT} 100%)` }}>
-          {busy ? 'Opening...' : 'Share to Instagram story'}
+          {busy ? (mode === 'video' && progress > 0 ? `Making video... ${Math.round(progress * 100)}%` : 'Opening...') : 'Share to Instagram story'}
         </button>
-        <button type="button" disabled={!preview} onClick={save} className="w-full py-2.5 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold disabled:opacity-40">Save image</button>
+        <button type="button" disabled={!preview || busy || (mode === 'video' && !videoUrl)} onClick={save} className="w-full py-2.5 rounded-2xl border border-white/[0.12] text-white/80 text-xs font-bold disabled:opacity-40">{mode === 'video' ? 'Save video' : 'Save image'}</button>
         {msg && <p className="text-[11px] text-white/55 text-center">{msg}</p>}
       </div>
     </div>,

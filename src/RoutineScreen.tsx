@@ -5,7 +5,7 @@ import { ConsistencyDetail } from './ConsistencyDetail';
 import type { TrackerSeries } from './ConsistencyDetail';
 import { initializeClientFirebaseApp, collection, query, where, onSnapshot, doc, setDoc } from './firebase';
 
-// Routine: shows ONLY what the dietitian added for this client (a follow-up note and the things to track).
+// Routine: shows ONLY what the dietitian added for this client (the things to track).
 // Each item is asked daily, weekly or monthly. Answers save as the client taps and appear in the dietitian's Tracker.
 //
 // intokine_followups/{id}                                          written by the dietitian
@@ -554,7 +554,7 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
       <div className="px-5 pb-8 pt-4 max-w-4xl mx-auto">
         <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 text-center">
           <p className="text-sm text-white/50 font-light leading-relaxed">
-            Your dietitian has not added a follow-up yet. Once they do, your notes and what to track will show here.
+            Your dietitian has not added a follow-up yet. Once they do, what to track will show here.
           </p>
         </div>
       </div>
@@ -638,7 +638,6 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     );
   };
 
-  const notes = active.filter((f) => f.note && f.note.trim());
   const todayDone = answeredOn(today).length;
   // Streak: days in a row with every daily item done (today counts once it is complete).
   let streak = 0;
@@ -764,17 +763,6 @@ export const RoutineScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         </div>,
         document.body
       )}
-
-      {notes.map((f) => (
-        <div key={f.id} className="bg-[#252525] border border-white/[0.06] rounded-2xl p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#6ccbde] uppercase font-bold tracking-[0.12em]">From your dietitian</span>
-            <span className="text-[10px] text-white/30">{f.date}</span>
-          </div>
-          <p className="text-sm text-white/85 font-light leading-relaxed whitespace-pre-wrap">{f.note}</p>
-          {f.nextDate && <p className="text-[11px] text-white/40">Next follow-up: {f.nextDate}</p>}
-        </div>
-      ))}
 
       {error && <p className="text-xs text-[#ec2226]">{error}</p>}
 
