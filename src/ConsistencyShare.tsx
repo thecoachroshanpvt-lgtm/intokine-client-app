@@ -29,7 +29,15 @@ const loadImage = (src: string) =>
   });
 
 const headline = (overall: number | null) =>
-  overall === null ? 'Your movement journey starts here' : overall >= 90 ? 'Moving beautifully' : overall >= 80 ? 'Moving with purpose' : overall >= 60 ? 'Finding your flow' : overall >= 40 ? 'Keep moving' : 'Every movement counts';
+  overall === null ? 'Start today'
+  : overall >= 100 ? 'Perfect score'
+  : overall >= 90 ? 'Almost perfect'
+  : overall >= 80 ? 'Moving with purpose'
+  : overall >= 70 ? 'Strong and steady'
+  : overall >= 55 ? 'Find your flow'
+  : overall >= 40 ? 'Keep moving'
+  : overall >= 20 ? 'Small steps'
+  : 'Begin again';
 
 export type ShareMode = 'card' | 'photo' | 'sticker';
 
