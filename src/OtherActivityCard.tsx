@@ -44,18 +44,61 @@ export const OtherActivityCard: React.FC<{ clientId: string }> = ({ clientId }) 
     return () => { document.body.style.overflow = prev; document.body.removeAttribute('data-popup-open'); };
   }, [open]);
 
-  const monthPrefix = todayKey().slice(0, 7);
-  const thisMonth = useMemo(() => entries.filter((e) => (e.date || '').startsWith(monthPrefix)), [entries, monthPrefix]);
-  const variety = useMemo(() => new Set(thisMonth.map((e) => e.name.trim().toLowerCase())).size, [thisMonth]);
+  const today = todayKey();
+  const monthPrefix = today.slice(0, 7);
+  // The card itself shows only today's activities; from tomorrow it returns to its empty look.
+  const todays = useMemo(() => entries.filter((e) => e.date === today), [entries, today]);
   const counts = useMemo(() => {
     const m = new Map<string, { label: string; n: number }>();
-    thisMonth.forEach((e) => {
+    todays.forEach((e) => {
       const k = e.name.trim().toLowerCase();
       const cur = m.get(k);
       if (cur) cur.n += 1; else m.set(k, { label: e.name.trim(), n: 1 });
     });
     return Array.from(m.values()).sort((a, b) => b.n - a.n);
-  }, [thisMonth]);
+  }, [todays]);
+
+  // Variety graph: how many DIFFERENT activities were played in each slot.
+  const [view, setView] = useState<'week' | 'month' | 'year'>('week');
+  const graph = useMemo(() => {
+    const now = new Date();
+    const key = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const slots: { label: string; match: (date: string) => boolean }[] = [];
+    if (view === 'week') {
+      const mondayOffset = (now.getDay() + 6) % 7;
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - mondayOffset + i);
+        const k = key(d);
+        slots.push({ label: 'MTWTFSS'[i], match: (x) => x === k });
+      }
+    } else if (view === 'month') {
+      const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+      const weeks = Math.ceil(days / 7);
+      for (let w = 0; w < weeks; w++) {
+        slots.push({
+          label: `W${w + 1}`,
+          match: (x) => {
+            if (!x.startsWith(monthPrefix)) return false;
+            const day = Number(x.slice(8, 10));
+            return Math.ceil(day / 7) === w + 1;
+          },
+        });
+      }
+    } else {
+      const names = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+      for (let m = 0; m < 12; m++) {
+        const pre = `${now.getFullYear()}-${pad(m + 1)}`;
+        slots.push({ label: names[m], match: (x) => x.startsWith(pre) });
+      }
+    }
+    const bars = slots.map((sl) => {
+      const set = new Set(entries.filter((e) => sl.match(e.date || '')).map((e) => e.name.trim().toLowerCase()));
+      return { label: sl.label, value: set.size };
+    });
+    const all = new Set<string>();
+    entries.forEach((e) => { if (slots.some((sl) => sl.match(e.date || ''))) all.add(e.name.trim().toLowerCase()); });
+    return { bars, total: all.size, max: Math.max(1, ...bars.map((b) => b.value)) };
+  }, [entries, view, monthPrefix]);
   const recent = useMemo(() => [...entries].sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.id.localeCompare(a.id)).slice(0, 12), [entries]);
 
   const save = async () => {
@@ -102,15 +145,45 @@ export const OtherActivityCard: React.FC<{ clientId: string }> = ({ clientId }) 
         {counts.length === 0 ? (
           <p className="text-[12px] text-white/50 font-light mt-1.5">Played football, cricket, badminton or anything else? Add it here.</p>
         ) : (
-          <div className="flex flex-wrap gap-1.5 mt-2.5">
-            {counts.map((c) => (
-              <span key={c.label} className="px-2.5 py-1 rounded-full bg-white/[0.06] text-[11px] font-semibold text-white/85">
-                {c.label} <span className="font-mono text-[#6ccbde]">×{c.n}</span>
-              </span>
-            ))}
+          <>
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {counts.map((c) => (
+                <span key={c.label} className="px-2.5 py-1 rounded-full bg-white/[0.06] text-[11px] font-semibold text-white/85">
+                  {c.label} {c.n > 1 && <span className="font-mono text-[#6ccbde]">×{c.n}</span>}
+                </span>
+              ))}
+            </div>
+            <p className="text-[10px] text-white/35 mt-2">Today</p>
+          </>
+        )}
+
+        {entries.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-white/[0.06]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] uppercase font-semibold text-white/40">Activity variety</span>
+              <div className="flex gap-1">
+                {([['week', 'Weekly'], ['month', 'Monthly'], ['year', 'Yearly']] as const).map(([k, l]) => (
+                  <button key={k} type="button" onClick={() => setView(k)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${view === k ? 'bg-[#6ccbde] text-[#0b0c10]' : 'bg-white/[0.06] text-white/55'}`}>{l}</button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-end gap-1.5 h-20">
+              {graph.bars.map((b, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center justify-end h-full min-w-0">
+                  <span className="text-[9px] font-mono text-white/50 mb-0.5">{b.value > 0 ? b.value : ''}</span>
+                  <div className="w-full rounded-t-md" style={{ height: `${b.value > 0 ? Math.max(6, (b.value / graph.max) * 100 * 0.7) : 3}%`, background: b.value > 0 ? '#6ccbde' : 'rgba(255,255,255,0.08)' }} />
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-1.5 mt-1">
+              {graph.bars.map((b, i) => <span key={i} className="flex-1 text-center text-[9px] text-white/35 font-mono">{b.label}</span>)}
+            </div>
+            <p className="text-[10px] text-white/35 mt-2">
+              {view === 'week' ? 'This week' : view === 'month' ? 'This month' : 'This year'} · {graph.total} different {graph.total === 1 ? 'activity' : 'activities'}
+            </p>
           </div>
         )}
-        {counts.length > 0 && <p className="text-[10px] text-white/35 mt-2">This month · {variety} different {variety === 1 ? 'activity' : 'activities'}</p>}
       </div>
 
       {open && createPortal(
