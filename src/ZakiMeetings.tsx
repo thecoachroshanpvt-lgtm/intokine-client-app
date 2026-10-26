@@ -11,6 +11,7 @@ export interface ZakiMeeting {
   time: string; // "19:00" or "07:00 PM"
   meetLink: string;
   notes?: string;
+  tz?: string; // time zone the coach set the time in (older meetings have none: Dubai)
 }
 
 const dateKey = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -42,6 +43,30 @@ function minutesOf(t: string): number | null {
   }
   return h > 23 ? null : h * 60 + Number(m[2]);
 }
+// The coach sets the time in their own time zone. The exact moment is worked out from that zone, so every client gets the Join button
+// at the same real moment and sees the time in their own phone's time zone (India and Saudi no longer differ).
+const DEFAULT_TZ = 'Asia/Dubai';
+function tzOffsetMs(ms: number, tz: string): number {
+  const p = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' })
+    .formatToParts(new Date(ms)).reduce<Record<string, number>>((a, x) => { if (x.type !== 'literal') a[x.type] = Number(x.value); return a; }, {});
+  return Date.UTC(p.year, p.month - 1, p.day, p.hour % 24, p.minute, p.second) - Math.floor(ms / 1000) * 1000;
+}
+function startMsOf(m: { date: string; time: string; tz?: string }): number | null {
+  const dm = /^(\d{4})-(\d{2})-(\d{2})$/.exec(m.date || '');
+  const mins = minutesOf(m.time);
+  if (!dm || mins === null) return null;
+  const guess = Date.UTC(Number(dm[1]), Number(dm[2]) - 1, Number(dm[3]), Math.floor(mins / 60), mins % 60);
+  const tz = m.tz || DEFAULT_TZ;
+  try {
+    let ms = guess - tzOffsetMs(guess, tz);
+    ms = guess - tzOffsetMs(ms, tz);
+    return ms;
+  } catch {
+    return null;
+  }
+}
+const clockOf = (d: Date) => ({ clock: `${d.getHours() % 12 === 0 ? 12 : d.getHours() % 12}:${String(d.getMinutes()).padStart(2, '0')}`, period: d.getHours() >= 12 ? 'PM' : 'AM' });
+
 // The Join button is available from the meeting time until this many minutes after it starts.
 const JOIN_WINDOW_MIN = 180;
 
@@ -69,8 +94,10 @@ export function useZakiMeetings(clientId: string): ZakiMeeting[] {
       () => {}
     );
   }, [clientId]);
-  const today = dateKey(new Date());
-  return all.filter((m) => m.date >= today).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const nowMs = Date.now();
+  const startOf = (m: ZakiMeeting) => startMsOf(m) ?? (parseDateKey(m.date)?.getTime() ?? 0);
+  // Still shown until the Join window has closed (a meeting later today or one that is running now stays).
+  return all.filter((m) => startOf(m) + JOIN_WINDOW_MIN * 60000 + 6 * 3600000 >= nowMs).sort((a, b) => startOf(a) - startOf(b));
 }
 
 export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
@@ -82,15 +109,15 @@ export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
   }, []);
   const now = new Date();
   const today = dateKey(now);
-  const d = parseDateKey(m.date);
-  const t = formatTime(m.time);
+  const startMs = startMsOf(m);
+  const local = startMs !== null ? new Date(startMs) : null; // the meeting in this phone's own time zone
+  const d = local ?? parseDateKey(m.date);
+  const t = local ? clockOf(local) : formatTime(m.time);
   const link = safeLink(m.meetLink);
-  const isToday = m.date === today;
-  const startMin = minutesOf(m.time);
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  // Join is only available at the assigned time (and for a few hours after it starts), on the meeting day.
-  const joinOpen = isToday && startMin !== null && nowMin >= startMin && nowMin <= startMin + JOIN_WINDOW_MIN;
-  const ended = isToday && startMin !== null && nowMin > startMin + JOIN_WINDOW_MIN;
+  const isToday = local ? dateKey(local) === today : m.date === today;
+  // Join is only available from the meeting moment (and for a few hours after it starts).
+  const joinOpen = startMs !== null && now.getTime() >= startMs && now.getTime() <= startMs + JOIN_WINDOW_MIN * 60000;
+  const ended = startMs !== null && now.getTime() > startMs + JOIN_WINDOW_MIN * 60000;
   return (
     <div className="rounded-2xl p-3 border border-[#c084fc]/30 bg-gradient-to-br from-[#c084fc]/15 to-[#c084fc]/[0.03]">
       <div className="flex items-center gap-3">
@@ -139,7 +166,7 @@ export const ZakiMeetingCard: React.FC<{ m: ZakiMeeting }> = ({ m }) => {
         )
       ) : (
         <div className="mt-3 w-full rounded-xl bg-[#c084fc]/[0.07] border border-[#c084fc]/20 text-[11px] text-white/55 text-center py-2.5">
-          {ended ? 'This meeting has ended.' : `The Join Google Meet button appears at ${t ? `${t.clock} ${t.period}` : 'the meeting time'}${isToday ? '' : ` on ${d ? d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : m.date}`}.`}
+          {ended ? 'This meeting has ended.' : `The Join Google Meet button appears at ${t ? `${t.clock} ${t.period}` : 'the meeting time'}${isToday ? '' : ` on ${d ? d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : m.date}`} (your local time).`}
         </div>
       )}
     </div>
