@@ -101,7 +101,6 @@ const TYPE_LABEL: Record<string, string> = {
 const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean): { label: string; value: string; unit?: string; accent?: boolean; text?: boolean }[] => {
   const type = ex.exerciseType || 'Weighted';
   const dash = '–';
-  const rpe = s.rpe ? String(s.rpe) : dash;
   const cells: { label: string; value: string; unit?: string; accent?: boolean; text?: boolean }[] = [];
   if (type === 'Weighted') cells.push({ label: 'Weight', value: String(s.targetWeightKg || 0), unit: 'kg' }, { label: 'Reps', value: String(s.targetReps || 0) });
   else if (type === 'Bodyweight') cells.push({ label: 'Reps', value: String(s.targetReps || 0) });
@@ -111,7 +110,6 @@ const setCells = (ex: TrainerizeExercise, s: TrainerizeSet, withTempo: boolean):
   else if (type === 'DurationCardio') { const d = durCell(s.durationMinutes || 0); cells.push({ label: 'Time', value: d.value, unit: d.unit }, { label: 'Method', value: s.method || dash, text: true }); }
   else if (type === 'DistanceCardio') cells.push({ label: 'Distance', value: String(s.distanceKm || 0), unit: 'km' }, { label: 'Method', value: s.method || dash, text: true });
   if (withTempo && (type === 'Weighted' || type === 'Bodyweight')) cells.push({ label: 'Tempo', value: s.tempo || dash, text: true });
-  if (type === 'Weighted' || type === 'Bodyweight' || type === 'Isometric') cells.push({ label: 'RPE', value: rpe, accent: true });
   return cells;
 };
 
@@ -208,6 +206,12 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   // Zaki: numbers the client changed on exercises they could not do as planned. Saved together with Mark Workout Complete.
   const [results, setResults] = useState<ResultMap>(workout.clientExerciseResults || {});
   const [editingId, setEditingId] = useState<string | null>(null);
+  // How hard each exercise felt (RPE 1-10). Only the client enters this; it is saved with Mark Workout Complete.
+  const [rpes, setRpes] = useState<Record<string, number>>(() => {
+    const o: Record<string, number> = {};
+    Object.entries(workout.clientExerciseResults || {}).forEach(([id, r]) => { if (r && typeof r.rpe === 'number') o[id] = r.rpe; });
+    return o;
+  });
   const [saveNote, setSaveNote] = useState('');
   // Zaki only: what the client has really done before, to show the best of all time on each exercise.
   const [bestPlans, setBestPlans] = useState<BestPlan[]>([]);
@@ -274,6 +278,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
       const stamp = new Date().toISOString();
       const edits: ResultMap = {};
       exercises.forEach((e) => { if (results[e.id]?.edited && completedExerciseIds.has(e.id)) edits[e.id] = results[e.id]; });
+      exercises.forEach((e) => { if (rpes[e.id]) edits[e.id] = { ...(edits[e.id] || { edited: false, sets: [] }), rpe: rpes[e.id] }; });
       try {
         await setDoc(doc(db, 'intokine_given_session_plans', workout.id), { clientCompletedAt: stamp, ...(Object.keys(edits).length > 0 ? { clientExerciseResults: edits } : {}) }, { merge: true });
       } catch (err) {
@@ -297,7 +302,6 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   const meta = [
     workout.durationMinutes ? `${workout.durationMinutes} min` : '',
     realCount ? `${realCount} exercises` : '',
-    workout.rpeTarget ? `RPE ${workout.rpeTarget}` : '',
   ].filter(Boolean);
 
   return (
@@ -466,6 +470,20 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                                     ))}
                                   </div>
                                 )}
+                              </div>
+                            )}
+
+                            {/* RPE: entered by the client, never by the coach */}
+                            {['Weighted', 'Bodyweight', 'Isometric'].includes(ex.exerciseType || 'Weighted') && ex.sets.length > 0 && !ex.isStretchReminder && (
+                              <div className="mt-4">
+                                <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-white/40 mb-1.5">Your RPE · how hard was it?{rpes[ex.id] ? <span className="text-[#6ccbde]"> · {rpes[ex.id]}</span> : null}</div>
+                                <div className="flex gap-1">
+                                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                                    <button key={n} type="button" disabled={alreadyDone}
+                                      onClick={() => setRpes((p) => { const o = { ...p }; if (o[ex.id] === n) delete o[ex.id]; else o[ex.id] = n; return o; })}
+                                      className={`flex-1 h-8 rounded-lg text-[12px] font-mono font-bold border transition ${rpes[ex.id] === n ? 'bg-[#6ccbde]/20 text-[#6ccbde] border-[#6ccbde]/60' : 'border-white/[0.08] text-white/45'} disabled:opacity-60`}>{n}</button>
+                                  ))}
+                                </div>
                               </div>
                             )}
 

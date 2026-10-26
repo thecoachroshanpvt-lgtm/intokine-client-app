@@ -10,7 +10,7 @@ export interface SetResult {
   durationMinutes?: number;
   distanceKm?: number;
 }
-export interface ExerciseResult { edited: boolean; sets: SetResult[] }
+export interface ExerciseResult { edited: boolean; sets: SetResult[]; rpe?: number } // rpe: how hard the exercise felt (1-10), entered by the client
 export type ResultMap = Record<string, ExerciseResult>;
 
 type Kind = 'Weighted' | 'Bodyweight' | 'Isometric' | 'DistanceCardio' | 'DurationCardio';
@@ -42,12 +42,12 @@ const FIELDS: Record<Kind, Field[]> = {
 
 const kindOf = (t?: string): Kind => (t === 'TimeDistanceCardio' ? 'DistanceCardio' : t === 'Drill' ? 'DurationCardio' : t === 'Bodyweight' || t === 'Isometric' || t === 'DistanceCardio' || t === 'DurationCardio' ? t : 'Weighted');
 
-/** The coach's planned numbers for one set, in the same fields the client edits. */
+/** The coach's planned numbers for one set, in the same fields the client edits. RPE is left empty: the client enters it after training. */
 export const targetOf = (kind: string | undefined, s: any): SetResult => {
   const k = kindOf(kind);
-  if (k === 'Weighted') return { weightKg: s.targetWeightKg || 0, reps: s.targetReps || 0, rpe: s.rpe };
-  if (k === 'Bodyweight') return { reps: s.targetReps || 0, rpe: s.rpe };
-  if (k === 'Isometric') return { holdSeconds: s.holdSeconds || 0, rpe: s.rpe };
+  if (k === 'Weighted') return { weightKg: s.targetWeightKg || 0, reps: s.targetReps || 0 };
+  if (k === 'Bodyweight') return { reps: s.targetReps || 0 };
+  if (k === 'Isometric') return { holdSeconds: s.holdSeconds || 0 };
   if (k === 'DistanceCardio') return { distanceKm: s.distanceKm || 0, durationMinutes: s.durationMinutes };
   return { durationMinutes: s.durationMinutes || 0, distanceKm: s.distanceKm };
 };
