@@ -4,6 +4,7 @@ import { TrainingScreen } from './TrainingScreen';
 import { SuggestedWorkoutCard } from './SuggestedWorkoutCard';
 import { InlineLoader } from './InlineLoader';
 import { useZakiMeetings, ZakiMeetingCard } from './ZakiMeetings';
+import { localClock } from './localTime';
 
 // Workouts tab of the recorded-sessions app. There are no coach sessions to schedule, so this is simply
 // the workouts the coach has sent, viewed by Today, Week, Month and History.
@@ -120,7 +121,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
       <div className="flex-1 min-w-0">
         <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Scheduled by your coach</div>
         <div className="font-subheader text-[17px] text-white mt-1.5">Workout not logged yet</div>
-        <div className="text-[11px] text-white/50 truncate">{[x.time, x.coachName ? `Coach ${x.coachName}` : ''].filter(Boolean).join(' · ') || 'Your coach will add the workout here.'}</div>
+        <div className="text-[11px] text-white/50 truncate">{[(() => { const lc = x.time ? localClock(x.time, x.date) : null; return lc ? `${lc.clock} ${lc.period}${lc.differs ? ' (your time)' : ''}` : x.time; })(), x.coachName ? `Coach ${x.coachName}` : ''].filter(Boolean).join(' · ') || 'Your coach will add the workout here.'}</div>
       </div>
       <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: '#6ccbde', borderColor: '#6ccbde40', backgroundColor: '#6ccbde26' }}>SCHEDULED</span>
     </div>
