@@ -8,6 +8,7 @@ import { MealLogSheet } from './MealLogSheet';
 import type { SheetMeal, SheetResult } from './MealLogSheet';
 import { MacroGraphs } from './MacroGraphs';
 import { OwnMealSheet } from './OwnMealSheet';
+import { MealChatButton, MealChatSheet, useMealChats } from './MealChat';
 import { IS_RECORDED } from './variant';
 import type { OwnMealResult } from './OwnMealSheet';
 import { dayMacros, addDaysKey, PHOTO_DAYS, PORTIONS, reviewApplies, reviewHasMacros } from './dietMacros';
@@ -125,6 +126,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
   const [detail, setDetail] = useState(false); // the day-by-day popup of the consistency card
   // Supplement ticks are collected first and only saved after the client confirms them in a popup.
   // Meals are logged one by one in their own popup (photo, option, amount).
+  const chats = useMealChats(clientId);
+  const [chatMeal, setChatMeal] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Record<string, Record<string, MealReview>>>({}); // date -> meal id -> nutritionist review
   const [sheetMeal, setSheetMeal] = useState<string | null>(null);
   const [sheetSaving, setSheetSaving] = useState(false);
@@ -634,6 +637,12 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
         document.body
       )}
 
+      {chatMeal && (() => {
+        const cm = meals.find((x) => x.id === chatMeal);
+        const crv = reviews[today]?.[chatMeal];
+        return <MealChatSheet clientId={clientId} date={today} mealId={chatMeal} mealName={cm?.mealTime || 'Meal'} msgs={chats} legacyNote={crv && crv.verdict !== 'mismatch' ? (crv.note || '').trim() : ''} legacyBy={(crv as any)?.by} onClose={() => setChatMeal(null)} />;
+      })()}
+
       {savedMsg && (
         <div className="fixed left-0 right-0 bottom-28 z-40 flex justify-center pointer-events-none">
           <span className="px-4 py-2 rounded-full bg-emerald-500 text-black text-xs font-bold shadow-lg">Update saved</span>
@@ -762,8 +771,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                     {st === 'skipped' && <span className="block text-[#ec2226] font-semibold">Skipped · counts as 0</span>}
                     {!st && !done && <span className="block text-[#6ccbde]/80">📷 Tap to log this meal</span>}
                     {rv && rv.verdict === 'mismatch' && <span className="block text-amber-300 mt-0.5">Your nutritionist says the photo does not match the plan{rv.note ? `: ${rv.note}` : '.'}</span>}
-                    {rv && rv.verdict !== 'mismatch' && (rv.note || '').trim() && <span className="block text-[#6ccbde] mt-0.5">Note from your nutritionist: {(rv.note || '').trim()}</span>}
-                    {rv && rv.verdict === 'ok' && !(rv.note || '').trim() && <span className="block text-white/40 mt-0.5">Photo checked by your nutritionist ✓</span>}
+                    {rv && rv.verdict === 'ok' && <span className="block text-white/40 mt-0.5">Photo checked by your nutritionist ✓</span>}
                   </span>
                   <span className="block mt-2 pl-9">
                     {shown ? (
@@ -790,6 +798,7 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                     </span>
                   ) : null}
                 </button>
+                <MealChatButton clientId={clientId} date={today} mealId={meal.id} msgs={chats} legacyNote={rv && rv.verdict !== 'mismatch' ? (rv.note || '').trim() : ''} onOpen={() => setChatMeal(meal.id)} />
               </div>
             );
           })}
