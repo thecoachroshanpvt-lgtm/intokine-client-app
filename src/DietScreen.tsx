@@ -762,7 +762,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
                     {st === 'skipped' && <span className="block text-[#ec2226] font-semibold">Skipped · counts as 0</span>}
                     {!st && !done && <span className="block text-[#6ccbde]/80">📷 Tap to log this meal</span>}
                     {rv && rv.verdict === 'mismatch' && <span className="block text-amber-300 mt-0.5">Your nutritionist says the photo does not match the plan{rv.note ? `: ${rv.note}` : '.'}</span>}
-                    {rv && rv.verdict === 'ok' && !rv.note && <span className="block text-white/40 mt-0.5">Photo checked by your nutritionist ✓</span>}
+                    {rv && rv.verdict !== 'mismatch' && (rv.note || '').trim() && <span className="block text-[#6ccbde] mt-0.5">Note from your nutritionist: {(rv.note || '').trim()}</span>}
+                    {rv && rv.verdict === 'ok' && !(rv.note || '').trim() && <span className="block text-white/40 mt-0.5">Photo checked by your nutritionist ✓</span>}
                   </span>
                   <span className="block mt-2 pl-9">
                     {shown ? (
