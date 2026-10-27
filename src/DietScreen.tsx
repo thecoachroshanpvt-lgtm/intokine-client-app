@@ -9,7 +9,6 @@ import type { SheetMeal, SheetResult } from './MealLogSheet';
 import { MacroGraphs } from './MacroGraphs';
 import { OwnMealSheet } from './OwnMealSheet';
 import { MealChatButton, MealChatSheet, useMealChats } from './MealChat';
-import { IS_RECORDED } from './variant';
 import type { OwnMealResult } from './OwnMealSheet';
 import { dayMacros, addDaysKey, PHOTO_DAYS, PORTIONS, reviewApplies, reviewHasMacros } from './dietMacros';
 import type { MealEntry as LoggedMeal, MealReview } from './dietMacros';
@@ -415,8 +414,8 @@ export const DietScreen: React.FC<{ clientId: string }> = ({ clientId }) => {
     );
   }
 
-  // Targets-only plan: the client adds their own meals (online/offline clients app only, not Zaki).
-  const selfOn = !!plan.selfLog && !IS_RECORDED;
+  // Targets-only plan: the client adds their own meals (all client apps: online, offline and Katba).
+  const selfOn = !!plan.selfLog;
   // What was really eaten today: the option and amount the client picked, plus the macros the nutritionist added for "something else".
   const todayRes = dayMacros(meals, todayLog, reviews[today]);
   const eatenKcal = todayRes.total.kcal;
