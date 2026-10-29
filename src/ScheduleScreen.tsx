@@ -82,6 +82,7 @@ function parseDateKey(key: string): Date | null {
 }
 
 // "14:00" -> { clock: "2:00", period: "PM" }; anything unexpected is shown as-is.
+import { localClock } from './localTime';
 function formatTime(t: string): { clock: string; period: string } | null {
   // Accepts "14:00" (24-hour) and "02:00 PM" (what the coach app saves).
   const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
@@ -374,7 +375,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                     <span className="text-[11px] text-white/40 uppercase font-semibold block pt-1">{g.month}</span>
                     {g.items.map((e) => {
                       const d = parseDateKey(e.date);
-                      const t = e.time ? formatTime(e.time) : null;
+                      const t = e.time ? (localClock(e.time, e.date) ?? formatTime(e.time)) : null;
                       const md = e.movedTo ? parseDateKey(e.movedTo) : null;
                       const color = HISTORY_COLORS[e.tag];
                       return (
@@ -434,7 +435,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                     return (
                       <SuggestedWorkoutCard
                         key={w.id}
-                        title={w.planTitle}
+                        title={w.planTitle} rest={!!(w as any).isRestDay}
                         label="Do it yourself"
                         hint={`Do it any time today${w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}`}
                         done={done}
@@ -514,7 +515,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                       {dayWorkouts.map((w) => (
                         <SuggestedWorkoutCard
                           key={w.id}
-                          title={w.planTitle}
+                          title={w.planTitle} rest={!!(w as any).isRestDay}
                           label="Suggested workout"
                           hint={w.durationMinutes ? `${w.durationMinutes} mins` : undefined}
                           done={!!w.clientCompletedAt}
@@ -596,7 +597,7 @@ export const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ clientId, client
                         {monthWorkouts.map((w) => (
                           <SuggestedWorkoutCard
                             key={w.id}
-                            title={w.planTitle}
+                            title={w.planTitle} rest={!!(w as any).isRestDay}
                             label="Suggested workout"
                             hint={w.durationMinutes ? `${w.durationMinutes} mins` : undefined}
                             done={!!w.clientCompletedAt}

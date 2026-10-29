@@ -33,7 +33,7 @@ interface Part { key: string; label: string; done: number; total: number; frac: 
 export const OverallProgressCard: React.FC<{
   clientId: string;
   startDate: string | null;
-  plans: { date: string; isSuggestedWorkout?: boolean; clientCompletedAt?: string }[];
+  plans: { date: string; isSuggestedWorkout?: boolean; isRestDay?: boolean; clientCompletedAt?: string }[];
   sessions: { date: string; status?: string; attendanceStatus?: string }[];
   clientName?: string;
 }> = ({ clientId, startDate, plans, sessions, clientName }) => {
@@ -151,7 +151,7 @@ export const OverallProgressCard: React.FC<{
     // Workouts: suggested workouts marked complete out of those given.
     let wDone = 0, wTotal = 0;
     plans.forEach((p) => {
-      if (!p.isSuggestedWorkout || p.date < winStart || p.date > today) return;
+      if (!p.isSuggestedWorkout || p.isRestDay || p.date < winStart || p.date > today) return;
       const ok = !!p.clientCompletedAt;
       if (p.date === today && !ok) return;
       wTotal += 1;

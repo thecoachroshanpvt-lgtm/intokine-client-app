@@ -107,6 +107,7 @@ function parseDateKey(key: string): Date | null {
 }
 
 // "14:00" -> { clock: "2:00", period: "PM" }; anything unexpected is shown as-is.
+import { localClock } from './localTime';
 function formatTime(t: string): { clock: string; period: string } | null {
   // Accepts "14:00" (24-hour) and "02:00 PM" (what the coach app saves).
   const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)?/i.exec((t || '').trim());
@@ -740,7 +741,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
                 ) : (
                   rows.map((r) => {
                     const rd = parseDateKey(r.date);
-                    const rt = r.time ? formatTime(r.time) : null;
+                    const rt = r.time ? (localClock(r.time, r.date) ?? formatTime(r.time)) : null;
                     return (
                       <div key={r.key} className="flex items-center gap-3 bg-[#252525] border border-white/[0.06] rounded-xl px-3 py-2">
                         <div className="w-16 shrink-0 text-xs font-semibold text-white">
@@ -816,7 +817,7 @@ export const PlansScreen: React.FC<PlansScreenProps> = ({ clientId, clientName, 
               return (
                 <SuggestedWorkoutCard
                   key={w.id}
-                  title={w.planTitle}
+                  title={w.planTitle} rest={!!(w as any).isRestDay}
                   label="Do it yourself"
                   hint={`Do it any time today${w.durationMinutes ? ` · ${w.durationMinutes} mins` : ''}`}
                   done={done}

@@ -140,7 +140,7 @@ export const WorkoutsScreen: React.FC<{ clientId: string }> = ({ clientId }) => 
   const card = (p: Plan) => (
     <SuggestedWorkoutCard
       key={p.id}
-      title={p.planTitle}
+      title={p.planTitle} rest={!!(p as any).isRestDay}
       label={p.date === today ? 'Today' : pretty(p.date)}
       hint={`${p.structuredExercises?.length || 0} exercises${p.durationMinutes ? ` · ${p.durationMinutes} mins` : ''}`}
       done={!!p.clientCompletedAt}

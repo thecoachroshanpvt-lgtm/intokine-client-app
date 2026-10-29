@@ -16,6 +16,8 @@ interface Props {
   /** Set when the coach already moved the workout: where it was moved from and why. */
   postponedFrom?: string;
   postponeReason?: string;
+  /** A rest day from a preset plan: shown as a plain card, nothing to open or mark done. */
+  rest?: boolean;
 }
 
 const prettyDate = (k: string) => {
@@ -23,7 +25,19 @@ const prettyDate = (k: string) => {
   return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) : k;
 };
 
-export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done, missed, onClick, postpone, postponedFrom, postponeReason }) => {
+export const SuggestedWorkoutCard: React.FC<Props> = ({ title, label, hint, done, missed, onClick, postpone, postponedFrom, postponeReason, rest }) => {
+  if (rest) {
+    return (
+      <div className="w-full rounded-2xl bg-[#252525] border border-white/[0.06] p-4 flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="font-subheader text-[12px] uppercase tracking-wide text-[#6ccbde] leading-none">Rest day</div>
+          <div className="font-subheader text-[19px] text-white mt-1.5 truncate">{title}</div>
+          <div className="text-[11px] text-white/60 truncate">Recover well. Eat, sleep and hydrate.</div>
+        </div>
+        <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap self-start" style={{ color: '#6ccbde', borderColor: '#6ccbde40', backgroundColor: '#6ccbde26' }}>REST</span>
+      </div>
+    );
+  }
   const isMissed = !!missed && !done;
   const color = done ? '#34d399' : isMissed ? '#a1a1aa' : '#ec2226';
   const canAsk = !!postpone && !done;
