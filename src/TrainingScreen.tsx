@@ -129,22 +129,20 @@ const PlayBadge: React.FC<{ size?: string }> = ({ size = 'w-8 h-8' }) => (
 
 const VideoThumb: React.FC<{ url?: string; name: string; dim?: boolean; onOpen: () => void }> = ({ url, name, dim, onOpen }) => {
   const yt = youtubeId(url);
+  if (!url) return null; // no video yet: nothing to show
   return (
     <button
       type="button"
       onClick={onOpen}
       aria-label={`Watch ${name} demonstration`}
-      className={`relative shrink-0 w-[64px] h-[48px] rounded-lg overflow-hidden bg-black/30 flex items-center justify-center ${dim ? 'opacity-50' : ''}`}
+      className={`relative shrink-0 w-[76px] h-[56px] rounded-xl overflow-hidden bg-[#1c1c1c] ${dim ? 'opacity-50' : ''}`}
     >
       {yt ? (
-        <img src={`https://img.youtube.com/vi/${yt}/hqdefault.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
-      ) : url ? (
+        // mqdefault is a true 16:9 picture (hqdefault has black bars above and below), cropped to fill the box
+        <img src={`https://img.youtube.com/vi/${yt}/mqdefault.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" />
+      ) : (
         <video src={`${url}#t=0.5`} muted playsInline preload="metadata" className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
-      ) : null}
-      <span className="relative flex flex-col items-center gap-1">
-        <PlayBadge />
-        {!url && <span className="text-[8px] font-bold uppercase tracking-[0.14em] text-white/40">Demo</span>}
-      </span>
+      )}
     </button>
   );
 };
