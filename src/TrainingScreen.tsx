@@ -204,6 +204,24 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   const [markingComplete, setMarkingComplete] = useState(false);
   const [alreadyDone, setAlreadyDone] = useState(!!workout.clientCompletedAt);
   const [videoEx, setVideoEx] = useState<TrainerizeExercise | null>(null);
+  // The shared demo-video list kept by the coaches (one video per exercise name). It wins over a video saved on the workout itself,
+  // so a video added or changed later shows up straight away, even on workouts that were sent before.
+  const [vids, setVids] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const { db } = initializeClientFirebaseApp();
+    if (!db) return;
+    const unsub = onSnapshot(
+      collection(db, 'intokine_exercise_videos'),
+      (snap) => {
+        const o: Record<string, string> = {};
+        snap.docs.forEach((d) => { const r: any = d.data(); if (r && r.url && r.name) o[String(r.name).trim().toLowerCase()] = String(r.url); });
+        setVids(o);
+      },
+      () => {}
+    );
+    return () => unsub();
+  }, []);
+  const videoOf = (e: { name: string; videoUrl?: string }) => vids[(e.name || '').trim().toLowerCase()] || e.videoUrl;
   // Zaki: numbers the client changed on exercises they could not do as planned. Saved together with Mark Workout Complete.
   const [results, setResults] = useState<ResultMap>(workout.clientExerciseResults || {});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -436,7 +454,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                                 ) : null;
                               })()}
                             </button>
-                            <VideoThumb url={ex.videoUrl} name={ex.name} dim={isDone} onOpen={() => setVideoEx(ex)} />
+                            <VideoThumb url={videoOf(ex)} name={ex.name} dim={isDone} onOpen={() => setVideoEx(ex)} />
                             </div>
 
                             {/* Targets */}
@@ -599,7 +617,7 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
 
       {chatEx && <MealChatSheet clientId={clientId} date={workout.date || ''} mealId={exKey(chatEx.name)} mealName={chatEx.name} msgs={chats} anyDate kind="exercise" who="your coach" emptyText="No messages yet. Tell your coach if you cannot do this exercise, need another option, or find the movement hard." onClose={() => setChatEx(null)} />}
 
-      {videoEx && <VideoPopup url={videoEx.videoUrl} name={videoEx.name} onClose={() => setVideoEx(null)} />}
+      {videoEx && <VideoPopup url={videoOf(videoEx)} name={videoEx.name} onClose={() => setVideoEx(null)} />}
     </div>
   );
 };
