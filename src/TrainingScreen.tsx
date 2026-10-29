@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { initializeClientFirebaseApp, doc, setDoc, collection, query, where, onSnapshot } from './firebase';
 import { ContactCoachPill } from './CoachContact';
 import { IS_RECORDED } from './variant';
+import { MealChatButton, MealChatSheet, useMealChats } from './MealChat';
 import { bestOfAllTime, type BestPlan, type BestPerf } from './BestOfAllTime';
 import { ExerciseResultEditor, setText, type ResultMap, type ExerciseResult } from './ExerciseResultEditor';
 
@@ -206,10 +207,14 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
   // Zaki: numbers the client changed on exercises they could not do as planned. Saved together with Mark Workout Complete.
   const [results, setResults] = useState<ResultMap>(workout.clientExerciseResults || {});
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Katba: chat with the coach about one exercise (for example "I do not have a pull-up bar"). The thread belongs to the movement, so it carries over between workouts.
+  const chats = useMealChats(clientId);
+  const [chatEx, setChatEx] = useState<TrainerizeExercise | null>(null);
+  const exKey = (name: string) => `ex:${(name || '').trim().toLowerCase()}`;
   // How hard each exercise felt (RPE 1-10). Only the client enters this; it is saved with Mark Workout Complete.
   const [rpes, setRpes] = useState<Record<string, number>>(() => {
     const o: Record<string, number> = {};
-    Object.entries(workout.clientExerciseResults || {}).forEach(([id, r]) => { if (r && typeof r.rpe === 'number') o[id] = r.rpe; });
+    Object.entries(workout.clientExerciseResults || {}).forEach(([id, r]) => { const rr = r as ExerciseResult; if (rr && typeof rr.rpe === 'number') o[id] = rr.rpe; });
     return o;
   });
   const [saveNote, setSaveNote] = useState('');
@@ -517,6 +522,10 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
                               </button>
                             )}
 
+                            {IS_RECORDED && !ex.isStretchReminder && ex.name.trim() && (
+                              <MealChatButton clientId={clientId} date={workout.date || ''} mealId={exKey(ex.name)} msgs={chats} anyDate who="your coach" askText="Message your coach about this exercise" onOpen={() => setChatEx(ex)} />
+                            )}
+
                             {ex.coachCues && (
                               <div className="mt-4 flex gap-2.5">
                                 <div className="w-[3px] rounded-full bg-[#ec2226]/70 shrink-0" />
@@ -587,6 +596,8 @@ export const TrainingScreen: React.FC<TrainingScreenProps> = ({ clientId, workou
           {saveNote && <p className="mt-3 text-center text-[12px] text-amber-300">{saveNote}</p>}
         </div>
       )}
+
+      {chatEx && <MealChatSheet clientId={clientId} date={workout.date || ''} mealId={exKey(chatEx.name)} mealName={chatEx.name} msgs={chats} anyDate kind="exercise" who="your coach" emptyText="No messages yet. Tell your coach if you cannot do this exercise, need another option, or find the movement hard." onClose={() => setChatEx(null)} />}
 
       {videoEx && <VideoPopup url={videoEx.videoUrl} name={videoEx.name} onClose={() => setVideoEx(null)} />}
     </div>
