@@ -6,6 +6,7 @@ export interface SetResult {
   weightKg?: number;
   reps?: number;
   rpe?: number;
+  rounds?: number;
   holdSeconds?: number;
   durationMinutes?: number;
   distanceKm?: number;
@@ -40,10 +41,18 @@ const FIELDS: Record<Kind, Field[]> = {
   ],
 };
 
+// A drill is planned either in rounds or by time. The client edits the same thing the coach planned (rounds OR time), never distance.
+const drillIsRounds = (sets: any[]) => (sets && sets[0] ? sets[0].drillMode !== 'duration' : true);
+const fieldsFor = (kind: string | undefined, sets: any[]): Field[] =>
+  kind === 'Drill'
+    ? drillIsRounds(sets) ? [{ key: 'rounds', label: 'Rounds', step: '1' }] : [{ key: 'durationMinutes', label: 'Time', unit: 'min', step: '1' }]
+    : FIELDS[kindOf(kind)];
+
 const kindOf = (t?: string): Kind => (t === 'TimeDistanceCardio' ? 'DistanceCardio' : t === 'Drill' ? 'DurationCardio' : t === 'Bodyweight' || t === 'Isometric' || t === 'DistanceCardio' || t === 'DurationCardio' ? t : 'Weighted');
 
 /** The coach's planned numbers for one set, in the same fields the client edits. RPE is left empty: the client enters it after training. */
 export const targetOf = (kind: string | undefined, s: any): SetResult => {
+  if (kind === 'Drill') return s.drillMode === 'duration' ? { durationMinutes: s.durationMinutes || 0 } : { rounds: s.rounds || 0 };
   const k = kindOf(kind);
   if (k === 'Weighted') return { weightKg: s.targetWeightKg || 0, reps: s.targetReps || 0 };
   if (k === 'Bodyweight') return { reps: s.targetReps || 0 };
@@ -54,6 +63,7 @@ export const targetOf = (kind: string | undefined, s: any): SetResult => {
 
 /** "40 kg × 8 · RPE 8" style text for one set. */
 export const setText = (kind: string | undefined, r: SetResult): string => {
+  if (kind === 'Drill') return r.rounds !== undefined ? `${r.rounds} rounds` : `${r.durationMinutes ?? 0} min`;
   const k = kindOf(kind);
   const rpe = r.rpe ? ` · RPE ${r.rpe}` : '';
   if (k === 'Weighted') return `${r.weightKg ?? 0} kg × ${r.reps ?? 0}${rpe}`;
@@ -71,7 +81,7 @@ export const ExerciseResultEditor: React.FC<{
   onCancel: () => void;
   onReset?: () => void;
 }> = ({ kind, sets, initial, onSave, onCancel, onReset }) => {
-  const fields = FIELDS[kindOf(kind)];
+  const fields = fieldsFor(kind, sets);
   const rows = sets.length > 0 ? sets : [{}];
   const [draft, setDraft] = useState<Record<string, string>[]>(() =>
     rows.map((s, i) => {
